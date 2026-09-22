@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "오늘의 퀘스트",
-  description: "우리 파티의 오늘의 용사를 공정하게 소환합니다.",
+  description: "길드의 오늘의 퀘스트를 수행할 단 한 명의 용사를 소환합니다.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

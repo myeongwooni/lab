@@ -15,8 +15,15 @@ const QUESTS = [
   "설거지 왕국을 구하라",
 ];
 
-const AVATAR_COUNT = 6;
 const PARTICLE_COUNT = 16;
+const HERO_CLASSES = [
+  { icon: "⚔", name: "검사" },
+  { icon: "✦", name: "마도사" },
+  { icon: "➹", name: "궁수" },
+  { icon: "♜", name: "수호기사" },
+  { icon: "☾", name: "도적" },
+  { icon: "✚", name: "성직자" },
+];
 
 function parseNames(value: string) {
   return [...new Set(value.split(/[\n,]/).map((name) => name.trim()).filter(Boolean))];
@@ -167,16 +174,22 @@ export default function Home() {
       {result && <div className="screen-flash" aria-hidden="true" />}
 
       <header className="hero">
-        <span className="eyebrow">TODAY&apos;S PICK / RANDOM QUEST</span>
-        <h1>오늘의 퀘스트</h1>
-        <p>오늘의 주인공, 공정하게 한 명만.</p>
+        <div className="guild-emblem" aria-hidden="true">♜</div>
+        <span className="eyebrow">GUILD QUEST BOARD · DAILY CONTRACT</span>
+        <h1><span>오늘의</span> 퀘스트</h1>
+        <p>길드의 운명을 맡길 단 한 명의 용사를 소환하세요.</p>
       </header>
 
       <section className={`quest-board ${countdown ? "is-counting" : ""}`} aria-label="퀘스트 추첨기">
+        <i className="corner-rune rune-left" aria-hidden="true">✦</i>
+        <i className="corner-rune rune-right" aria-hidden="true">✦</i>
         <div className="setup-panel">
-          <label htmlFor="quest">오늘의 임무</label>
+          <div className="section-heading">
+            <label htmlFor="quest">길드 의뢰 내용</label>
+            <span>ORDER #001</span>
+          </div>
           <div className="quest-input-wrap">
-            <span className="input-icon" aria-hidden="true">Q</span>
+            <span className="input-icon" aria-hidden="true">⚔</span>
             <input
               id="quest"
               value={quest}
@@ -200,8 +213,8 @@ export default function Home() {
           </div>
 
           <div className="names-heading">
-            <label htmlFor="names">파티원 명단</label>
-            <span>{names.length}명 참가</span>
+            <label htmlFor="names">모험가 명단</label>
+            <span>파티원 {names.length}명</span>
           </div>
           <textarea
             id="names"
@@ -219,32 +232,35 @@ export default function Home() {
 
           <button className="summon-button" type="button" onClick={draw} disabled={!canDraw}>
             <span aria-hidden="true">✦</span>
-            {isDrawing ? "운명이 고르는 중…" : "오늘의 용사 소환하기"}
+            {isDrawing ? "소환 의식 진행 중…" : "운명의 룬으로 용사 소환"}
             <span aria-hidden="true">✦</span>
           </button>
-          <p className="fairness">브라우저의 보안 난수로 공정하게 추첨합니다.</p>
+          <p className="fairness">고대 룬도 납득할 브라우저 보안 난수로 추첨합니다.</p>
         </div>
 
         <div className="party-panel" aria-live="polite">
           <div className="panel-title">
-            <span>현재 파티</span>
-            <span className="status-dot">ONLINE</span>
+            <span>원정대 대기실</span>
+            <span className="status-dot">GUILD READY</span>
           </div>
 
           <div className="party-grid">
-            {names.length ? names.map((name, index) => (
-              <div
-                className={`party-member ${highlighted === name ? "is-highlighted" : ""} ${result === name ? "is-winner" : ""}`}
-                key={name}
-              >
-                <span className={`avatar avatar-${index % AVATAR_COUNT}`} aria-hidden="true">
-                  {name.slice(0, 1)}
-                </span>
-                <span className="member-name">{name}</span>
-                <span className="member-level">PLAYER {String(index + 1).padStart(2, "0")}</span>
-              </div>
-            )) : (
-              <div className="empty-party">아직 모인 파티원이 없습니다.</div>
+            {names.length ? names.map((name, index) => {
+              const heroClass = HERO_CLASSES[index % HERO_CLASSES.length];
+              const level = String((index * 7 + 12) % 87 + 1).padStart(2, "0");
+
+              return (
+                <div
+                  className={`party-member hero-class-${index % HERO_CLASSES.length} ${highlighted === name ? "is-highlighted" : ""} ${result === name ? "is-winner" : ""}`}
+                  key={name}
+                >
+                  <span className="avatar" aria-hidden="true">{heroClass.icon}</span>
+                  <span className="member-name">{name}</span>
+                  <span className="member-level">{heroClass.name} · LV.{level}</span>
+                </div>
+              );
+            }) : (
+              <div className="empty-party">길드에 등록된 모험가가 없습니다.</div>
             )}
           </div>
 
@@ -255,29 +271,29 @@ export default function Home() {
                   <i key={index} style={{ "--particle": index } as CSSProperties} />
                 ))}
               </div>
-              <span className="result-kicker">TODAY&apos;S HERO</span>
-              <div className="result-crown" aria-hidden="true">PICKED</div>
+              <span className="result-kicker">THE CHOSEN HERO</span>
+              <div className="result-crown" aria-hidden="true">QUEST ACCEPTED</div>
               <p className="winner-name">{result}</p>
-              <p className="winner-quest">“{quest.trim()}”</p>
+              <p className="winner-quest"><span>부여된 퀘스트</span>“{quest.trim()}”</p>
               <div className="result-actions">
-                <button type="button" onClick={shareResult}>{copied ? "복사 완료!" : "결과 공유"}</button>
-                <button type="button" onClick={removeWinner} disabled={names.length <= 2}>용사 제외</button>
-                <button type="button" onClick={draw}>다시 소환</button>
+                <button type="button" onClick={shareResult}>{copied ? "전령 파견 완료!" : "전령 보내기"}</button>
+                <button type="button" onClick={removeWinner} disabled={names.length <= 2}>파티에서 제외</button>
+                <button type="button" onClick={draw}>재소환</button>
               </div>
             </div>
           ) : (
             <div className={`summoning-circle ${isDrawing ? "is-active" : ""} ${countdown ? "is-countdown" : ""}`} aria-hidden="true">
               <div className="scan-lines" />
-              <span className="roulette-label">{countdown ? "FINAL PICK" : isDrawing ? "CHOOSING..." : "READY"}</span>
+              <span className="roulette-label">{countdown ? "DESTINY REVEALED" : isDrawing ? "RUNE SEARCHING..." : "SUMMONING ALTAR"}</span>
               <div className="roulette-name">{countdown ?? highlighted ?? "?"}</div>
               <div className="loading-blocks"><i /><i /><i /><i /><i /><i /><i /><i /></div>
-              <p>{countdown ? "잠시 후 공개됩니다" : isDrawing ? "오늘의 주인공을 찾는 중" : "버튼을 눌러 시작하세요"}</p>
+              <p>{countdown ? "룬이 최후의 용사를 가리킵니다" : isDrawing ? "소환진이 파티원의 운명을 읽는 중" : "소환 의식을 시작하세요"}</p>
             </div>
           )}
         </div>
       </section>
 
-      <footer>오늘의 퀘스트 — 결과는 쿨하게, 수행은 확실하게.</footer>
+      <footer>길드 기록 제001호 · 선택받은 용사는 퀘스트를 거부할 수 없습니다.</footer>
     </main>
   );
 }
