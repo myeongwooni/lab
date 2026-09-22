@@ -15,7 +15,7 @@ const QUESTS = [
   "설거지 왕국을 구하라",
 ];
 
-const AVATAR_COUNT = 8;
+const AVATAR_COUNT = 6;
 const PARTICLE_COUNT = 16;
 
 function parseNames(value: string) {
@@ -162,23 +162,21 @@ export default function Home() {
 
   return (
     <main className={`${isDrawing ? "is-drawing" : ""} ${result ? "has-winner" : ""}`}>
-      <div className="pixel-cloud cloud-one" aria-hidden="true" />
-      <div className="pixel-cloud cloud-two" aria-hidden="true" />
+      <div className="ambient-shape shape-one" aria-hidden="true" />
+      <div className="ambient-shape shape-two" aria-hidden="true" />
       {result && <div className="screen-flash" aria-hidden="true" />}
 
       <header className="hero">
-        <span className="eyebrow">★ DAILY PARTY MISSION ★</span>
+        <span className="eyebrow">TODAY&apos;S PICK / RANDOM QUEST</span>
         <h1>오늘의 퀘스트</h1>
-        <p><span>NEW!</span> 운명은 공평하고, 임무는 피할 수 없습니다.</p>
+        <p>오늘의 주인공, 공정하게 한 명만.</p>
       </header>
 
       <section className={`quest-board ${countdown ? "is-counting" : ""}`} aria-label="퀘스트 추첨기">
-        <div className="board-tape tape-left" aria-hidden="true" />
-        <div className="board-tape tape-right" aria-hidden="true" />
         <div className="setup-panel">
           <label htmlFor="quest">오늘의 임무</label>
           <div className="quest-input-wrap">
-            <span className="pixel-icon" aria-hidden="true">!</span>
+            <span className="input-icon" aria-hidden="true">Q</span>
             <input
               id="quest"
               value={quest}
@@ -240,13 +238,10 @@ export default function Home() {
                 key={name}
               >
                 <span className={`avatar avatar-${index % AVATAR_COUNT}`} aria-hidden="true">
-                  <i className="pixel-hair" />
-                  <i className="pixel-face" />
-                  <i className="pixel-body" />
-                  <i className="pixel-feet" />
+                  {name.slice(0, 1)}
                 </span>
                 <span className="member-name">{name}</span>
-                <span className="member-level">LV.{String((index * 7 + 12) % 87 + 1).padStart(2, "0")}</span>
+                <span className="member-level">PLAYER {String(index + 1).padStart(2, "0")}</span>
               </div>
             )) : (
               <div className="empty-party">아직 모인 파티원이 없습니다.</div>
@@ -260,8 +255,8 @@ export default function Home() {
                   <i key={index} style={{ "--particle": index } as CSSProperties} />
                 ))}
               </div>
-              <span className="result-kicker">★ QUEST HERO ★</span>
-              <div className="result-crown" aria-hidden="true">WIN!</div>
+              <span className="result-kicker">TODAY&apos;S HERO</span>
+              <div className="result-crown" aria-hidden="true">PICKED</div>
               <p className="winner-name">{result}</p>
               <p className="winner-quest">“{quest.trim()}”</p>
               <div className="result-actions">
@@ -273,16 +268,16 @@ export default function Home() {
           ) : (
             <div className={`summoning-circle ${isDrawing ? "is-active" : ""} ${countdown ? "is-countdown" : ""}`} aria-hidden="true">
               <div className="scan-lines" />
-              <span className="roulette-label">{countdown ? "WHO IS THE HERO?" : isDrawing ? "SCANNING PARTY..." : "PRESS START"}</span>
+              <span className="roulette-label">{countdown ? "FINAL PICK" : isDrawing ? "CHOOSING..." : "READY"}</span>
               <div className="roulette-name">{countdown ?? highlighted ?? "?"}</div>
               <div className="loading-blocks"><i /><i /><i /><i /><i /><i /><i /><i /></div>
-              <p>{countdown ? "두근두근..." : isDrawing ? "운명의 신호를 수신 중" : "용사를 기다리는 중"}</p>
+              <p>{countdown ? "잠시 후 공개됩니다" : isDrawing ? "오늘의 주인공을 찾는 중" : "버튼을 눌러 시작하세요"}</p>
             </div>
           )}
         </div>
       </section>
 
-      <footer>오늘의 퀘스트 · 결과에 대한 이의 제기는 다음 생에</footer>
+      <footer>오늘의 퀘스트 — 결과는 쿨하게, 수행은 확실하게.</footer>
     </main>
   );
 }
