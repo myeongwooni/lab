@@ -1,0 +1,11 @@
+{
+  "name": "lab",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "wongoji": "npm run dev --workspace apps/wongoji"
+  }
+}
