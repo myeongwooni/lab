@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "wongoji": "npm run dev --workspace apps/wongoji",
-    "coinchain": "npm run dev --workspace apps/coinchain",
+    "cointower": "npm run dev --workspace apps/cointower",
     "quest": "npm run dev --workspace apps/quest"
   }
 }

@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-export const VISITOR_COOKIE = "coinchain_id";
+export const VISITOR_COOKIE = "cointower_id";
 
 const ADJECTIVES = [
   "겁 없는", "손이 떨린", "눈 감은", "숨 참은", "새벽의", "마지막",
@@ -20,7 +20,7 @@ export function newVisitorId(): string {
 
 export function publicId(visitorId: string): string {
   return createHash("sha256")
-    .update(`coinchain:${visitorId}`)
+    .update(`cointower:${visitorId}`)
     .digest("hex")
     .slice(0, 10);
 }
@@ -33,7 +33,7 @@ export function nicknameFor(publicIdValue: string): string {
 }
 
 export function ipHash(ip: string): string {
-  return createHash("sha256").update(`coinchain:ip:${ip}`).digest("hex").slice(0, 16);
+  return createHash("sha256").update(`cointower:ip:${ip}`).digest("hex").slice(0, 16);
 }
 
 export function clientIp(headers: Headers): string {

@@ -8,7 +8,7 @@
 ```
 apps/
   wongoji/     이어달리기 원고지 — 한 사람이 하루에 한 글자씩 이어 쓰는 공용 원고지
-  coinchain/   동전 체인 — 모두가 이어 온 연속 기록, 끊은 사람의 이름이 남는 곳
+  cointower/   동전탑 — 앞면만으로 몇 층까지 쌓는지 겨루는 기록판
   quest/       오늘의 퀘스트 — 파티원 중 오늘의 용사를 소환하는 랜덤 추첨기
 ```
 
@@ -17,7 +17,7 @@ npm workspaces를 씁니다. 루트에서 한 번만 설치하면 모든 앱의 
 ```bash
 npm install
 npm run wongoji      # apps/wongoji 개발 서버 (:3000)
-npm run coinchain    # apps/coinchain 개발 서버 (:3001)
+npm run cointower    # apps/cointower 개발 서버 (:3001)
 npm run quest        # apps/quest 개발 서버 (:3002)
 ```
 
@@ -40,10 +40,10 @@ npm run quest        # apps/quest 개발 서버 (:3002)
 | 앱 | Root Directory | 필요한 환경변수 |
 | --- | --- | --- |
 | wongoji | `apps/wongoji` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
-| coinchain | `apps/coinchain` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+| cointower | `apps/cointower` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
 | quest | `apps/quest` | 없음 |
 
-키에 앱별 접두어(`wongoji:`, `coin:`)를 붙이므로 하나의 Upstash 인스턴스를 공유해도
+키에 앱별 접두어(`wongoji:`, `tower:`)를 붙이므로 하나의 Upstash 인스턴스를 공유해도
 서로 침범하지 않습니다.
 
 Root Directory를 지정하면 Vercel이 해당 경로 변경분만 보고 빌드하므로,
