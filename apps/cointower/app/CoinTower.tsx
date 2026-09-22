@@ -12,6 +12,7 @@ type View = {
   nickname: string | null;
   named: boolean;
   best: number;
+  durable: boolean;
 };
 
 type Phase = "idle" | "flipping" | "ended";
@@ -182,6 +183,13 @@ export default function CoinTower({
         <h1>동전탑</h1>
         <span className="odds">앞면과 뒷면, 정확히 반반</span>
       </div>
+
+      {!view.durable && (
+        <p className="alarm" role="status">
+          기록 저장소에 닿지 못했습니다. 지금 보이는 순위는 실제 기록이 아니며, 이번에
+          쌓은 탑도 남지 않을 수 있습니다.
+        </p>
+      )}
 
       <section className={`stage ${phase}${face === "tails" ? " fell" : ""}`}>
         <div className="coin" key={seq} data-face={face ?? "none"}>
