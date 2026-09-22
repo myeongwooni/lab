@@ -9,6 +9,7 @@
 apps/
   wongoji/     이어달리기 원고지 — 한 사람이 하루에 한 글자씩 이어 쓰는 공용 원고지
   coinchain/   동전 체인 — 모두가 이어 온 연속 기록, 끊은 사람의 이름이 남는 곳
+  quest/       오늘의 퀘스트 — 파티원 중 오늘의 용사를 소환하는 랜덤 추첨기
 ```
 
 npm workspaces를 씁니다. 루트에서 한 번만 설치하면 모든 앱의 의존성이 함께 설치됩니다.
@@ -17,6 +18,7 @@ npm workspaces를 씁니다. 루트에서 한 번만 설치하면 모든 앱의 
 npm install
 npm run wongoji      # apps/wongoji 개발 서버 (:3000)
 npm run coinchain    # apps/coinchain 개발 서버 (:3001)
+npm run quest        # apps/quest 개발 서버 (:3002)
 ```
 
 앱마다 포트를 다르게 고정해 두었으므로 동시에 띄워도 부딪히지 않습니다.
@@ -24,8 +26,9 @@ npm run coinchain    # apps/coinchain 개발 서버 (:3001)
 ## 새 서비스 추가하기
 
 1. `apps/<이름>/` 폴더를 만들고 `package.json`의 `name`을 `<이름>`으로 둡니다.
-2. 루트 `package.json`의 `scripts`에 개발 서버 단축 명령을 추가합니다.
-3. 루트에서 `npm install` 한 번.
+2. `dev` 스크립트에 아직 쓰지 않은 포트를 `--port`로 고정합니다.
+3. 루트 `package.json`의 `scripts`에 개발 서버 단축 명령을 추가합니다.
+4. 루트에서 `npm install` 한 번.
 
 `apps/*`가 이미 workspace 글롭이라 루트 설정을 따로 고칠 일은 없습니다.
 
@@ -38,6 +41,7 @@ npm run coinchain    # apps/coinchain 개발 서버 (:3001)
 | --- | --- | --- |
 | wongoji | `apps/wongoji` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
 | coinchain | `apps/coinchain` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+| quest | `apps/quest` | 없음 |
 
 키에 앱별 접두어(`wongoji:`, `coin:`)를 붙이므로 하나의 Upstash 인스턴스를 공유해도
 서로 침범하지 않습니다.
