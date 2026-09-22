@@ -6,6 +6,7 @@
     "apps/*"
   ],
   "scripts": {
-    "wongoji": "npm run dev --workspace apps/wongoji"
+    "wongoji": "npm run dev --workspace apps/wongoji",
+    "quest": "npm run dev --workspace apps/quest"
   }
 }

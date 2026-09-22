@@ -8,6 +8,7 @@
 ```
 apps/
   wongoji/     이어달리기 원고지 — 한 사람이 하루에 한 글자씩 이어 쓰는 공용 원고지
+  quest/       오늘의 퀘스트 — 파티원 중 오늘의 용사를 소환하는 랜덤 추첨기
 ```
 
 npm workspaces를 씁니다. 루트에서 한 번만 설치하면 모든 앱의 의존성이 함께 설치됩니다.
@@ -15,6 +16,7 @@ npm workspaces를 씁니다. 루트에서 한 번만 설치하면 모든 앱의 
 ```bash
 npm install
 npm run wongoji      # apps/wongoji 개발 서버
+npm run quest        # apps/quest 개발 서버
 ```
 
 ## 새 서비스 추가하기
@@ -33,6 +35,7 @@ npm run wongoji      # apps/wongoji 개발 서버
 | 앱 | Root Directory | 필요한 환경변수 |
 | --- | --- | --- |
 | wongoji | `apps/wongoji` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+| quest | `apps/quest` | 없음 |
 
 Root Directory를 지정하면 Vercel이 해당 경로 변경분만 보고 빌드하므로,
 한 앱을 고쳐도 다른 앱이 다시 배포되지 않습니다.
