@@ -186,8 +186,8 @@ export default function CoinTower({
 
       {!view.durable && (
         <p className="alarm" role="status">
-          저장소가 연결되지 않아 기록이 보관되지 않습니다. 지금 보이는 순위는 사람마다
-          다르고 곧 사라집니다.
+          기록 저장소에 닿지 못했습니다. 지금 보이는 순위는 실제 기록이 아니며, 이번에
+          쌓은 탑도 남지 않을 수 있습니다.
         </p>
       )}
 
