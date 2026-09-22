@@ -32,6 +32,25 @@ export function nicknameFor(publicIdValue: string): string {
   }`;
 }
 
+export const NAME_MAX = 16;
+
+/** Names land on a public board, so strip anything that could disguise or
+ *  break a row — controls, zero-width characters, stacked whitespace —
+ *  rather than trusting the input length alone. Returns null when nothing
+ *  usable is left. */
+export function cleanName(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const stripped = raw
+    .normalize("NFC")
+    .replace(/[\p{Cc}\p{Cf}]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!stripped) return null;
+  return [...stripped].length > NAME_MAX
+    ? [...stripped].slice(0, NAME_MAX).join("")
+    : stripped;
+}
+
 export function ipHash(ip: string): string {
   return createHash("sha256").update(`cointower:ip:${ip}`).digest("hex").slice(0, 16);
 }

@@ -17,6 +17,7 @@ export const usingRedis = Boolean(REST_URL && REST_TOKEN);
 
 const BOARD = "tower:board";
 const WHEN = "tower:when";
+const NAMES = "tower:names";
 const RUNS = "tower:runs";
 const FLIPS = "tower:flips";
 const slotKey = (id: string) => `tower:slot:${id}`;
@@ -38,10 +39,43 @@ async function redis<T>(...command: (string | number)[]): Promise<T> {
 const mem = {
   board: new Map<string, number>(),
   when: new Map<string, number>(),
+  names: new Map<string, string>(),
   runs: 0,
   flips: 0,
   slots: new Map<string, number>(),
 };
+
+/** Names people chose for themselves, by id. Missing ids are simply
+ *  absent — the caller falls back to the generated nickname, so a board
+ *  row always has something to show. */
+export async function chosenNames(
+  ids: string[],
+): Promise<Record<string, string>> {
+  if (!ids.length) return {};
+  if (!usingRedis) {
+    const out: Record<string, string> = {};
+    for (const id of ids) {
+      const name = mem.names.get(id);
+      if (name) out[id] = name;
+    }
+    return out;
+  }
+  const values = await redis<(string | null)[]>("HMGET", NAMES, ...ids);
+  const out: Record<string, string> = {};
+  ids.forEach((id, i) => {
+    const name = values[i];
+    if (name) out[id] = name;
+  });
+  return out;
+}
+
+export async function setChosenName(id: string, name: string): Promise<void> {
+  if (!usingRedis) {
+    mem.names.set(id, name);
+    return;
+  }
+  await redis("HSET", NAMES, id, name);
+}
 
 export type Board = {
   top: Entry[];

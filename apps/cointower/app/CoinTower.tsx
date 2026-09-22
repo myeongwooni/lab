@@ -1,9 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Board, Entry } from "@/lib/store";
 
-type Ranked = Entry & { name: string };
+type Ranked = { id: string; best: number; at: number; name: string };
+
+type View = {
+  top: Ranked[];
+  runs: number;
+  flips: number;
+  me: string | null;
+  nickname: string | null;
+  named: boolean;
+  best: number;
+};
+
 type Phase = "idle" | "flipping" | "ended";
 
 /** Each flip waits a little longer than the last, so a run that is going
@@ -22,25 +32,54 @@ function dateLabel(ms: number): string {
   return `${d.getUTCMonth() + 1}.${d.getUTCDate()}`;
 }
 
+function trim(n: number): string {
+  return n.toFixed(1).replace(/\.0$/, "");
+}
+
+/** "이 기록은 N번에 한 번" — Korean myriad groupings, because 1048576 reads
+ *  as nothing while 백만 reads as a number people can feel. */
+function oneInLabel(n: number): string {
+  if (n < 10_000) return n.toLocaleString("ko-KR");
+  if (n < 1e8) return `${trim(n / 1e4)}만`;
+  if (n < 1e12) return `${trim(n / 1e8)}억`;
+  if (n < 1e16) return `${trim(n / 1e12)}조`;
+  return `${trim(n / 1e16)}경`;
+}
+
+function percentLabel(p: number): string {
+  const pct = p * 100;
+  if (pct >= 10) return `${trim(pct)}%`;
+  if (pct >= 0.1) return `${pct.toFixed(2)}%`;
+  if (pct >= 0.001) return `${pct.toFixed(4)}%`;
+  return `${pct.toExponential(1)}%`;
+}
+
+/** A run of n means n heads in a row, so the chance of getting at least
+ *  this far is 2^-n. */
+function odds(run: number): { oneIn: string; percent: string } {
+  const p = Math.pow(2, -run);
+  return { oneIn: oneInLabel(Math.pow(2, run)), percent: percentLabel(p) };
+}
+
 export default function CoinTower({
   initial,
-  initialTop,
+  nameMax,
 }: {
-  initial: Board;
-  initialTop: Ranked[];
+  initial: View;
+  nameMax: number;
 }) {
-  const [top, setTop] = useState<Ranked[]>(initialTop);
-  const [runs, setRuns] = useState(initial.runs);
-  const [flips, setFlips] = useState(initial.flips);
-  const [me, setMe] = useState<string | null>(null);
-  const [nickname, setNickname] = useState("");
-  const [best, setBest] = useState(0);
+  const [view, setView] = useState<View>(initial);
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [count, setCount] = useState(0);
   const [face, setFace] = useState<"heads" | "tails" | null>(null);
   const [seq, setSeq] = useState(0);
   const [verdict, setVerdict] = useState("");
+  const [finished, setFinished] = useState<number | null>(null);
+
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [nameNote, setNameNote] = useState("");
 
   const running = useRef(false);
   const alive = useRef(true);
@@ -52,24 +91,7 @@ export default function CoinTower({
     };
   }, []);
 
-  const absorb = useCallback(
-    (data: {
-      top: Ranked[];
-      runs: number;
-      flips: number;
-      me: string | null;
-      nickname: string | null;
-      best: number;
-    }) => {
-      setTop(data.top);
-      setRuns(data.runs);
-      setFlips(data.flips);
-      setMe(data.me);
-      setNickname(data.nickname ?? "");
-      setBest(data.best);
-    },
-    [],
-  );
+  const absorb = useCallback((data: View) => setView(data), []);
 
   useEffect(() => {
     let on = true;
@@ -91,6 +113,7 @@ export default function CoinTower({
     setCount(0);
     setFace(null);
     setVerdict("");
+    setFinished(null);
 
     try {
       const res = await fetch("/api/run", { method: "POST" });
@@ -115,6 +138,7 @@ export default function CoinTower({
       setSeq((s) => s + 1);
       setFace("tails");
       setPhase("ended");
+      setFinished(data.run);
       absorb(data);
 
       if (data.run === 0) setVerdict("첫 동전부터 뒷면. 탑을 세우지 못했어요.");
@@ -128,8 +152,29 @@ export default function CoinTower({
     }
   };
 
+  const saveName = async () => {
+    setNameNote("");
+    try {
+      const res = await fetch("/api/name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: draft }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setNameNote(data.error ?? "이름을 바꾸지 못했어요.");
+        return;
+      }
+      absorb(data);
+      setEditing(false);
+    } catch {
+      setNameNote("이름을 바꾸지 못했어요. 잠시 뒤에 다시.");
+    }
+  };
+
   const busy = phase === "flipping";
-  const leader = top[0];
+  const leader = view.top[0];
+  const chance = finished !== null && finished > 0 ? odds(finished) : null;
 
   return (
     <main className="wrap">
@@ -142,17 +187,31 @@ export default function CoinTower({
         <div className="coin" key={seq} data-face={face ?? "none"}>
           {face === "tails" ? "뒤" : face === "heads" ? "앞" : "?"}
         </div>
-        <div className="count">{count}</div>
-        <span className="label">연속 앞면</span>
-        <div className="stack" aria-hidden="true">
+
+        <div className="tower" aria-hidden="true">
           {Array.from({ length: count }, (_, i) => (
-            <span className="brick" key={i} />
+            <span className="chip" key={i} />
           ))}
         </div>
+
+        <div className="count">{count}</div>
+        <span className="label">연속 앞면</span>
+
         <p className="verdict">
           {verdict ||
             (busy ? "던지는 중…" : "앞면이 나오는 동안 동전은 계속 던져집니다.")}
         </p>
+
+        {chance && (
+          <p className="chance">
+            여기까지 쌓을 확률 <b>{chance.percent}</b>
+            <span className="sep">·</span>
+            {chance.oneIn}번에 한 번
+          </p>
+        )}
+        {finished === 0 && (
+          <p className="chance">두 번에 한 번은 이렇게 끝납니다.</p>
+        )}
       </section>
 
       <section className="throw">
@@ -160,17 +219,78 @@ export default function CoinTower({
           {busy ? "던지는 중…" : "던지기 시작"}
           <span className="sub">횟수 제한 없음. 될 때까지.</span>
         </button>
-        {nickname && (
+
+        {editing ? (
+          <form
+            className="rename"
+            onSubmit={(e) => {
+              e.preventDefault();
+              saveName();
+            }}
+          >
+            <input
+              id="name"
+              type="text"
+              maxLength={nameMax}
+              value={draft}
+              autoFocus
+              enterKeyHint="done"
+              placeholder="기록판에 남길 이름"
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setEditing(false);
+              }}
+            />
+            <button type="submit" className="ghost">
+              저장
+            </button>
+            <button
+              type="button"
+              className="ghost quiet"
+              onClick={() => setEditing(false)}
+            >
+              취소
+            </button>
+          </form>
+        ) : (
+          view.nickname && (
+            <p className="who">
+              기록판에서 당신의 이름은 <b>{view.nickname}</b>
+              <button
+                type="button"
+                className="linky"
+                onClick={() => {
+                  setDraft(view.named ? (view.nickname ?? "") : "");
+                  setNameNote("");
+                  setEditing(true);
+                }}
+              >
+                바꾸기
+              </button>
+            </p>
+          )
+        )}
+        {!view.nickname && !editing && (
           <p className="who">
-            이 기록판에서 당신의 이름은 <b>{nickname}</b>
+            <button
+              type="button"
+              className="linky"
+              onClick={() => {
+                setDraft("");
+                setEditing(true);
+              }}
+            >
+              이름 정하기
+            </button>
           </p>
         )}
+        {nameNote && <p className="who warn">{nameNote}</p>}
       </section>
 
       <dl className="figures">
         <div className="figure">
           <dt>내 최고</dt>
-          <dd>{best}</dd>
+          <dd>{view.best}</dd>
         </div>
         <div className="figure">
           <dt>전체 1위</dt>
@@ -178,16 +298,16 @@ export default function CoinTower({
         </div>
         <div className="figure">
           <dt>던져진 동전</dt>
-          <dd>{flips.toLocaleString("ko-KR")}</dd>
+          <dd>{view.flips.toLocaleString("ko-KR")}</dd>
         </div>
       </dl>
 
       <section>
         <h2>가장 높이 쌓은 사람</h2>
-        {top.length ? (
+        {view.top.length ? (
           <ol className="board">
-            {top.map((e, i) => (
-              <li key={e.id} className={e.id === me ? "mine" : undefined}>
+            {view.top.map((e, i) => (
+              <li key={e.id} className={e.id === view.me ? "mine" : undefined}>
                 <span className="rank">{i + 1}</span>
                 <span className="name">{e.name}</span>
                 <span className="when">{dateLabel(e.at)}</span>
@@ -210,12 +330,14 @@ export default function CoinTower({
           층수가 기록됩니다.
         </li>
         <li>
-          <span className="bullet">·</span>확률은 정확히 반반입니다. 10층은 1,024번에 한 번,
-          20층은 백만 번에 한 번 나옵니다.
+          <span className="bullet">·</span>확률은 정확히 반반이라 n층에 닿을 확률은
+          2의 n제곱분의 1입니다. 10층은 1,024번에 한 번, 20층은 백만 번에 한 번.
         </li>
       </ul>
 
-      <p className="foot">지금까지 {runs.toLocaleString("ko-KR")}번의 도전이 있었습니다.</p>
+      <p className="foot">
+        지금까지 {view.runs.toLocaleString("ko-KR")}번의 도전이 있었습니다.
+      </p>
     </main>
   );
 }

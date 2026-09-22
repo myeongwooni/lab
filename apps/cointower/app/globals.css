@@ -159,25 +159,66 @@ h1 {
   text-transform: uppercase;
 }
 
-.stack {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 3px;
+/* 동전이 아래에서부터 쌓여 올라가므로 새 칩은 목록 끝에 붙고 화면에서는
+   위로 올라갑니다. */
+.tower {
+  height: 136px;
+  width: 100%;
+  max-width: 200px;
   margin-top: 14px;
-  min-height: 8px;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2px;
+  overflow: hidden;
+  transform-origin: bottom center;
+  /* 5층마다 한 줄 — 빈 자리가 앞으로 쌓일 높이를 가늠하는 눈금이 됩니다. */
+  background: repeating-linear-gradient(
+    to top,
+    transparent 0 39px,
+    var(--edge) 39px 40px
+  );
+  border-bottom: 2px solid var(--brass);
 }
 
-.brick {
-  width: 16px;
+.chip {
+  flex: none;
+  width: 62px;
   height: 6px;
-  border-radius: 1px;
+  border-radius: 50%;
   background: var(--brass);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+  animation: drop 0.3s cubic-bezier(0.3, 1.5, 0.5, 1) backwards;
 }
 
-.stage.fell .brick {
+@keyframes drop {
+  from {
+    transform: translateY(-46px) scaleX(0.82);
+    opacity: 0;
+  }
+}
+
+.stage.fell .tower {
+  animation: topple 0.7s cubic-bezier(0.4, 0, 0.6, 1) forwards;
+}
+
+@keyframes topple {
+  40% {
+    transform: rotate(-4deg);
+  }
+  100% {
+    transform: rotate(16deg) translate(18px, 26px);
+    opacity: 0.25;
+  }
+}
+
+.stage.fell .tower {
+  border-bottom-color: var(--break);
+}
+
+.stage.fell .chip {
   background: var(--break);
-  opacity: 0.45;
 }
 
 .verdict {
@@ -240,15 +281,113 @@ h1 {
   opacity: 0.75;
 }
 
+.chance {
+  margin: 6px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.chance b {
+  color: var(--brass);
+  font-weight: 700;
+}
+
+.stage.fell .chance b {
+  color: var(--break);
+}
+
+.chance .sep {
+  margin-inline: 8px;
+  opacity: 0.5;
+}
+
 .who {
   margin: 0;
   font-size: 12px;
   color: var(--ink-faint);
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.who.warn {
+  color: var(--break);
 }
 
 .who b {
   color: var(--ink-soft);
   font-weight: 700;
+}
+
+.linky {
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--brass);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.linky:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
+}
+
+.rename {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.rename input {
+  flex: 1 1 180px;
+  min-width: 0;
+  height: 38px;
+  padding-inline: 12px;
+  border: 1px solid var(--edge);
+  border-radius: 2px;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 14px;
+}
+
+.rename input:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 1px;
+}
+
+.ghost {
+  height: 38px;
+  padding-inline: 14px;
+  border: 1px solid var(--brass);
+  border-radius: 2px;
+  background: none;
+  color: var(--brass);
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ghost.quiet {
+  border-color: var(--edge);
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+.ghost:focus-visible {
+  outline: 2px solid var(--brass);
+  outline-offset: 2px;
 }
 
 /* --- 수치 --- */
@@ -389,7 +528,9 @@ h2 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .coin {
+  .coin,
+  .chip,
+  .stage.fell .tower {
     animation: none;
   }
 }

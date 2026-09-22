@@ -1,15 +1,9 @@
-import { board } from "@/lib/store";
-import { nicknameFor } from "@/lib/identity";
+import { NAME_MAX } from "@/lib/identity";
+import { viewFor } from "@/lib/view";
 import CoinTower from "./CoinTower";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const state = await board();
-  return (
-    <CoinTower
-      initial={state}
-      initialTop={state.top.map((e) => ({ ...e, name: nicknameFor(e.id) }))}
-    />
-  );
+  return <CoinTower initial={await viewFor(null)} nameMax={NAME_MAX} />;
 }
