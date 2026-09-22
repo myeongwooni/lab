@@ -82,6 +82,17 @@ h1 {
   letter-spacing: 0.04em;
 }
 
+.alarm {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--break);
+  border-left-width: 3px;
+  background: var(--break-wash);
+  color: var(--break);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 /* --- 무대 --- */
 .stage {
   background: var(--panel);

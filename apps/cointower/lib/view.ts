@@ -1,4 +1,4 @@
-import { board, chosenNames, personalBest } from "./store";
+import { board, chosenNames, durable, personalBest } from "./store";
 import { nicknameFor } from "./identity";
 
 /** The payload every route returns: the board with names already resolved,
@@ -16,6 +16,7 @@ export async function viewFor(me: string | null) {
 
   return {
     ...state,
+    durable,
     top: state.top.map((e) => ({
       ...e,
       name: chosen[e.id] ?? nicknameFor(e.id),

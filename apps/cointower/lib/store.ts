@@ -10,10 +10,39 @@ export const SPAM_FLOOR_SEC = 1;
 
 export type Entry = { id: string; best: number; at: number };
 
-const REST_URL = process.env.UPSTASH_REDIS_REST_URL;
-const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// The Upstash integration injects its REST credentials under KV_* names,
+// while a store wired up by hand usually carries UPSTASH_*. Both can be
+// present at once and point at different stores, so take a matched pair
+// rather than each half separately — a url from one store with a token
+// from another authenticates against neither. A variable that exists but
+// is blank counts as absent.
+// Integration-managed credentials come first: they are provisioned and
+// rotated with the store, so they win over a hand-entered pair that may
+// be stale or point somewhere else.
+const CREDENTIAL_PAIRS = [
+  ["KV_REST_API_URL", "KV_REST_API_TOKEN"],
+  ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+] as const;
 
-export const usingRedis = Boolean(REST_URL && REST_TOKEN);
+function credentials(): { url: string; token: string } | null {
+  for (const [urlName, tokenName] of CREDENTIAL_PAIRS) {
+    const url = process.env[urlName]?.trim();
+    const token = process.env[tokenName]?.trim();
+    if (url && token) return { url, token };
+  }
+  return null;
+}
+
+const CREDS = credentials();
+const REST_URL = CREDS?.url;
+const REST_TOKEN = CREDS?.token;
+
+export const usingRedis = Boolean(CREDS);
+
+/** Without Redis each serverless instance keeps its own records, so viewers
+ *  see different boards and every cold start wipes them. Fine locally,
+ *  never in production — say so on the page rather than losing data quietly. */
+export const durable = usingRedis || process.env.NODE_ENV !== "production";
 
 const BOARD = "tower:board";
 const WHEN = "tower:when";
