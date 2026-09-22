@@ -29,12 +29,15 @@ function dayLabel(ms: number): string {
 export default function Wongoji({
   initialCells,
   initialTotal,
+  durable: initialDurable,
 }: {
   initialCells: Cell[];
   initialTotal: number;
+  durable: boolean;
 }) {
   const [cells, setCells] = useState(initialCells);
   const [total, setTotal] = useState(initialTotal);
+  const [durable, setDurable] = useState(initialDurable);
   const [me, setMe] = useState<string | null>(null);
   const [nickname, setNickname] = useState("");
   const [usedToday, setUsedToday] = useState(false);
@@ -57,6 +60,7 @@ export default function Wongoji({
     nickname: string | null;
     usedToday: boolean;
     resetInSec: number;
+    durable?: boolean;
   }) => {
     justIndex.current = data.total > knownTotal.current ? data.cells.length - 1 : -1;
     knownTotal.current = data.total;
@@ -66,6 +70,7 @@ export default function Wongoji({
     setNickname(data.nickname ?? "");
     setUsedToday(data.usedToday);
     setResetIn(data.resetInSec);
+    if (typeof data.durable === "boolean") setDurable(data.durable);
   }, []);
 
   useEffect(() => {
@@ -144,6 +149,13 @@ export default function Wongoji({
           글자는 지워지지 않아요. 하루가 지나면 차례가 한 번 더 돌아옵니다.
         </p>
       </header>
+
+      {!durable && (
+        <p className="alarm" role="status">
+          원고지 보관소에 닿지 못했습니다. 지금 보이는 글자는 실제 기록이 아니며, 지금
+          쓰는 한 글자도 남지 않을 수 있습니다.
+        </p>
+      )}
 
       <dl className="stats">
         <div className="stat">

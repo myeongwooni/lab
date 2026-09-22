@@ -11,10 +11,36 @@ export type Cell = {
   t: number;
 };
 
-const REST_URL = process.env.UPSTASH_REDIS_REST_URL;
-const REST_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+// A store provisioned through the Vercel Marketplace arrives as KV_*
+// (legacy Vercel KV naming, kept through the migration to Upstash); one
+// wired up by hand usually carries UPSTASH_*. Integration-managed first,
+// since those are provisioned and rotated with the store. Read as pairs:
+// a url from one store with a token from another authenticates against
+// neither. A variable that exists but is blank counts as absent.
+const CREDENTIAL_PAIRS = [
+  ["KV_REST_API_URL", "KV_REST_API_TOKEN"],
+  ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"],
+] as const;
 
-export const usingRedis = Boolean(REST_URL && REST_TOKEN);
+function credentials(): { url: string; token: string } | null {
+  for (const [urlName, tokenName] of CREDENTIAL_PAIRS) {
+    const url = process.env[urlName]?.trim();
+    const token = process.env[tokenName]?.trim();
+    if (url && token) return { url, token };
+  }
+  return null;
+}
+
+const CREDS = credentials();
+const REST_URL = CREDS?.url;
+const REST_TOKEN = CREDS?.token;
+
+export const usingRedis = Boolean(CREDS);
+
+/** Without Redis each serverless instance keeps its own sheet, so viewers
+ *  see different sentences and every cold start wipes them. Fine locally,
+ *  never in production — say so on the page rather than losing writing. */
+export const durable = usingRedis || process.env.NODE_ENV !== "production";
 
 const CELLS_KEY = "wongoji:cells";
 const turnKey = (id: string, day: string) => `wongoji:turn:${day}:${id}`;

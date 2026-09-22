@@ -87,6 +87,17 @@ h1 {
   max-width: 34em;
 }
 
+.alarm {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-left-width: 3px;
+  background: var(--sheet);
+  color: var(--rule);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .stats {
   display: flex;
   flex-wrap: wrap;

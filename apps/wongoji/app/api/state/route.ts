@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { countCells, readCells, turnTaken } from "@/lib/store";
+import { turnTaken } from "@/lib/store";
+import { sheet } from "@/lib/view";
 import { kstDayKey, secondsUntilKstMidnight } from "@/lib/day";
 import { VISITOR_COOKIE, nicknameFor, publicId } from "@/lib/identity";
 
@@ -15,15 +16,13 @@ export async function GET() {
   const me = visitor ? publicId(visitor) : null;
   const day = kstDayKey();
 
-  const [cells, total, taken] = await Promise.all([
-    readCells(),
-    countCells(),
-    me ? turnTaken(me, day) : Promise.resolve(false),
-  ]);
+  const view = await sheet();
+  const taken = me
+    ? await turnTaken(me, day).catch(() => false)
+    : false;
 
   return NextResponse.json({
-    cells,
-    total,
+    ...view,
     me,
     nickname: me ? nicknameFor(me) : null,
     usedToday: taken,
