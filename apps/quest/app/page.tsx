@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 
 const DEFAULT_NAMES = "김민수\n이영희\n박철수\n최수진";
 const DEFAULT_QUEST = "점심 메뉴를 결정하라";
@@ -15,7 +15,8 @@ const QUESTS = [
   "설거지 왕국을 구하라",
 ];
 
-const AVATARS = ["🧙", "🧝", "🧛", "🧚", "🥷", "🧑‍🚀", "🦸", "🧑‍🎤"];
+const AVATAR_COUNT = 8;
+const PARTICLE_COUNT = 16;
 
 function parseNames(value: string) {
   return [...new Set(value.split(/[\n,]/).map((name) => name.trim()).filter(Boolean))];
@@ -41,6 +42,7 @@ export default function Home() {
   const [result, setResult] = useState<string | null>(null);
   const [highlighted, setHighlighted] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const timers = useRef<number[]>([]);
@@ -72,7 +74,9 @@ export default function Home() {
     timers.current.forEach(window.clearTimeout);
     timers.current = [];
     setResult(null);
+    setHighlighted(null);
     setCopied(false);
+    setCountdown(null);
     setIsDrawing(true);
 
     const winner = names[randomIndex(names.length)];
@@ -85,18 +89,48 @@ export default function Home() {
       return;
     }
 
-    const steps = 17;
-    for (let step = 0; step < steps; step += 1) {
-      const timeout = window.setTimeout(() => {
-        setHighlighted(step === steps - 1 ? winner : names[randomIndex(names.length)]);
+    const steps = 24;
+    let elapsed = 120;
+    let previousIndex = -1;
 
-        if (step === steps - 1) {
-          setResult(winner);
-          setIsDrawing(false);
-        }
-      }, step * 95 + step * step * 4);
+    for (let step = 0; step < steps; step += 1) {
+      let nextIndex = randomIndex(names.length);
+      while (nextIndex === previousIndex && names.length > 1) {
+        nextIndex = randomIndex(names.length);
+      }
+      previousIndex = nextIndex;
+      const candidate = names[nextIndex];
+      const progress = step / (steps - 1);
+      elapsed += 55 + Math.round(180 * progress * progress);
+
+      const timeout = window.setTimeout(() => {
+        setHighlighted(candidate);
+      }, elapsed);
       timers.current.push(timeout);
     }
+
+    const lockAt = elapsed + 260;
+    const countdowns = [
+      { value: 3, delay: lockAt },
+      { value: 2, delay: lockAt + 520 },
+      { value: 1, delay: lockAt + 1040 },
+    ];
+
+    countdowns.forEach(({ value, delay }) => {
+      const timeout = window.setTimeout(() => {
+        setHighlighted(null);
+        setCountdown(value);
+      }, delay);
+      timers.current.push(timeout);
+    });
+
+    const revealTimeout = window.setTimeout(() => {
+      setCountdown(null);
+      setHighlighted(winner);
+      setResult(winner);
+      setIsDrawing(false);
+    }, lockAt + 1720);
+    timers.current.push(revealTimeout);
   }
 
   function removeWinner() {
@@ -105,6 +139,7 @@ export default function Home() {
     setNamesText(remaining.join("\n"));
     setResult(null);
     setHighlighted(null);
+    setCountdown(null);
   }
 
   async function shareResult() {
@@ -126,24 +161,28 @@ export default function Home() {
   const canDraw = names.length >= 2 && quest.trim().length > 0 && !isDrawing;
 
   return (
-    <main>
-      <div className="mist mist-one" />
-      <div className="mist mist-two" />
+    <main className={`${isDrawing ? "is-drawing" : ""} ${result ? "has-winner" : ""}`}>
+      <div className="pixel-cloud cloud-one" aria-hidden="true" />
+      <div className="pixel-cloud cloud-two" aria-hidden="true" />
+      {result && <div className="screen-flash" aria-hidden="true" />}
 
       <header className="hero">
-        <span className="eyebrow">DAILY PARTY MISSION</span>
+        <span className="eyebrow">★ DAILY PARTY MISSION ★</span>
         <h1>오늘의 퀘스트</h1>
-        <p>운명은 공평하고, 임무는 피할 수 없습니다.</p>
+        <p><span>NEW!</span> 운명은 공평하고, 임무는 피할 수 없습니다.</p>
       </header>
 
-      <section className="quest-board" aria-label="퀘스트 추첨기">
+      <section className={`quest-board ${countdown ? "is-counting" : ""}`} aria-label="퀘스트 추첨기">
+        <div className="board-tape tape-left" aria-hidden="true" />
+        <div className="board-tape tape-right" aria-hidden="true" />
         <div className="setup-panel">
           <label htmlFor="quest">오늘의 임무</label>
           <div className="quest-input-wrap">
-            <span aria-hidden="true">⚔️</span>
+            <span className="pixel-icon" aria-hidden="true">!</span>
             <input
               id="quest"
               value={quest}
+              disabled={isDrawing}
               onChange={(event) => {
                 setQuest(event.target.value);
                 setResult(null);
@@ -156,7 +195,7 @@ export default function Home() {
 
           <div className="quest-chips" aria-label="추천 퀘스트">
             {QUESTS.slice(0, 3).map((item) => (
-              <button key={item} type="button" onClick={() => { setQuest(item); setResult(null); setHighlighted(null); }}>
+              <button key={item} type="button" disabled={isDrawing} onClick={() => { setQuest(item); setResult(null); setHighlighted(null); }}>
                 {item}
               </button>
             ))}
@@ -169,6 +208,7 @@ export default function Home() {
           <textarea
             id="names"
             value={namesText}
+            disabled={isDrawing}
             onChange={(event) => {
               setNamesText(event.target.value);
               setResult(null);
@@ -199,7 +239,12 @@ export default function Home() {
                 className={`party-member ${highlighted === name ? "is-highlighted" : ""} ${result === name ? "is-winner" : ""}`}
                 key={name}
               >
-                <span className="avatar" aria-hidden="true">{AVATARS[index % AVATARS.length]}</span>
+                <span className={`avatar avatar-${index % AVATAR_COUNT}`} aria-hidden="true">
+                  <i className="pixel-hair" />
+                  <i className="pixel-face" />
+                  <i className="pixel-body" />
+                  <i className="pixel-feet" />
+                </span>
                 <span className="member-name">{name}</span>
                 <span className="member-level">LV.{String((index * 7 + 12) % 87 + 1).padStart(2, "0")}</span>
               </div>
@@ -210,8 +255,13 @@ export default function Home() {
 
           {result ? (
             <div className="result-card">
-              <span className="result-kicker">QUEST ACCEPTED</span>
-              <div className="result-crown" aria-hidden="true">♛</div>
+              <div className="winner-burst" aria-hidden="true">
+                {Array.from({ length: PARTICLE_COUNT }, (_, index) => (
+                  <i key={index} style={{ "--particle": index } as CSSProperties} />
+                ))}
+              </div>
+              <span className="result-kicker">★ QUEST HERO ★</span>
+              <div className="result-crown" aria-hidden="true">WIN!</div>
               <p className="winner-name">{result}</p>
               <p className="winner-quest">“{quest.trim()}”</p>
               <div className="result-actions">
@@ -221,9 +271,12 @@ export default function Home() {
               </div>
             </div>
           ) : (
-            <div className={`summoning-circle ${isDrawing ? "is-active" : ""}`} aria-hidden="true">
-              <div className="circle-rune">✦</div>
-              <p>{isDrawing ? "소환진 가동 중" : "용사를 기다리는 중"}</p>
+            <div className={`summoning-circle ${isDrawing ? "is-active" : ""} ${countdown ? "is-countdown" : ""}`} aria-hidden="true">
+              <div className="scan-lines" />
+              <span className="roulette-label">{countdown ? "WHO IS THE HERO?" : isDrawing ? "SCANNING PARTY..." : "PRESS START"}</span>
+              <div className="roulette-name">{countdown ?? highlighted ?? "?"}</div>
+              <div className="loading-blocks"><i /><i /><i /><i /><i /><i /><i /><i /></div>
+              <p>{countdown ? "두근두근..." : isDrawing ? "운명의 신호를 수신 중" : "용사를 기다리는 중"}</p>
             </div>
           )}
         </div>
