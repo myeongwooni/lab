@@ -8,14 +8,18 @@
 ```
 apps/
   wongoji/     이어달리기 원고지 — 한 사람이 하루에 한 글자씩 이어 쓰는 공용 원고지
+  coinchain/   동전 체인 — 모두가 이어 온 연속 기록, 끊은 사람의 이름이 남는 곳
 ```
 
 npm workspaces를 씁니다. 루트에서 한 번만 설치하면 모든 앱의 의존성이 함께 설치됩니다.
 
 ```bash
 npm install
-npm run wongoji      # apps/wongoji 개발 서버
+npm run wongoji      # apps/wongoji 개발 서버 (:3000)
+npm run coinchain    # apps/coinchain 개발 서버 (:3001)
 ```
+
+앱마다 포트를 다르게 고정해 두었으므로 동시에 띄워도 부딪히지 않습니다.
 
 ## 새 서비스 추가하기
 
@@ -33,6 +37,10 @@ npm run wongoji      # apps/wongoji 개발 서버
 | 앱 | Root Directory | 필요한 환경변수 |
 | --- | --- | --- |
 | wongoji | `apps/wongoji` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+| coinchain | `apps/coinchain` | `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` |
+
+키에 앱별 접두어(`wongoji:`, `coin:`)를 붙이므로 하나의 Upstash 인스턴스를 공유해도
+서로 침범하지 않습니다.
 
 Root Directory를 지정하면 Vercel이 해당 경로 변경분만 보고 빌드하므로,
 한 앱을 고쳐도 다른 앱이 다시 배포되지 않습니다.

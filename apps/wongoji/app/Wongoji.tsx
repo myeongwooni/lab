@@ -53,8 +53,8 @@ export default function Wongoji({
   const apply = useCallback((data: {
     cells: Cell[];
     total: number;
-    me: string;
-    nickname: string;
+    me: string | null;
+    nickname: string | null;
     usedToday: boolean;
     resetInSec: number;
   }) => {
@@ -63,7 +63,7 @@ export default function Wongoji({
     setCells(data.cells);
     setTotal(data.total);
     setMe(data.me);
-    setNickname(data.nickname);
+    setNickname(data.nickname ?? "");
     setUsedToday(data.usedToday);
     setResetIn(data.resetInSec);
   }, []);
@@ -96,8 +96,8 @@ export default function Wongoji({
   useEffect(() => {
     if (busy) return;
     if (usedToday) setNote({ text: "", warn: true });
-    else if (me) setNote({ text: "한 글자를 고르세요. 오늘 단 한 번, 되돌릴 수 없어요.", warn: false });
-  }, [usedToday, me, busy]);
+    else setNote({ text: "한 글자를 고르세요. 오늘 단 한 번, 되돌릴 수 없어요.", warn: false });
+  }, [usedToday, busy]);
 
   const submit = async () => {
     const ch = Array.from(value)[0];
@@ -132,7 +132,7 @@ export default function Wongoji({
 
   const sheets = chunk(cells);
   const people = new Set(cells.map((c) => c.a)).size;
-  const locked = usedToday || busy || !me;
+  const locked = usedToday || busy;
 
   return (
     <main className="wrap">
