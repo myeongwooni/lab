@@ -49,8 +49,9 @@ npm run omikuji      # apps/omikuji 개발 서버 (:3003)
 
 Root Directory만 지정해서는 푸시마다 모든 앱이 다시 빌드됩니다. 그래서 프로젝트마다
 **변경 없는 커밋은 배포 건너뛰기**(Settings → Build and Deployment → Root Directory 아래)를
-켜 둡니다. 아래 워크플로가 모든 프로젝트에 알아서 켜므로, 한 앱을 고치면 그 앱만 배포되고
-`apps/` 밖만 바꾼 PR에는 배포가 붙지 않습니다.
+켜 둡니다. 아래 워크플로가 모든 프로젝트에 알아서 켜므로, `apps/<이름>/` 안만 고치면 그 앱만
+배포됩니다. 단, 어느 앱에도 속하지 않은 루트 파일(README, `package-lock.json`, `.github/`,
+`scripts/` 등)이 바뀌면 Vercel은 모든 앱이 영향을 받는다고 보고 전부 배포합니다.
 
 ### 배포 자동화
 
