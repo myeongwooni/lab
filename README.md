@@ -10,6 +10,7 @@
 | [wongoji](apps/wongoji) | [wongoji-write.vercel.app](https://wongoji-write.vercel.app/) | 이어달리기 원고지 — 한 사람이 하루에 한 글자씩 이어 쓰는 공용 원고지 |
 | [cointower](apps/cointower) | [cointower-luck.vercel.app](https://cointower-luck.vercel.app/) | 동전탑 — 앞면만으로 몇 층까지 쌓는지 겨루는 기록판 |
 | [quest](apps/quest) | [quest-guild.vercel.app](https://quest-guild.vercel.app/) | 오늘의 퀘스트 — 파티원 중 오늘의 용사를 소환하는 랜덤 추첨기 |
+| [omikuji](apps/omikuji) | 아직 없음 | 오늘의 냥쿠지 — 도트 고양이가 흔들어 주는 하루 한 번의 운세 뽑기 |
 
 ## 개발
 
@@ -20,6 +21,7 @@ npm install
 npm run wongoji      # apps/wongoji 개발 서버 (:3000)
 npm run cointower    # apps/cointower 개발 서버 (:3001)
 npm run quest        # apps/quest 개발 서버 (:3002)
+npm run omikuji      # apps/omikuji 개발 서버 (:3003)
 ```
 
 앱마다 포트를 다르게 고정해 두었으므로 동시에 띄워도 부딪히지 않습니다.
@@ -43,6 +45,7 @@ npm run quest        # apps/quest 개발 서버 (:3002)
 | wongoji | `apps/wongoji` | Upstash Redis |
 | cointower | `apps/cointower` | Upstash Redis |
 | quest | `apps/quest` | 없음 |
+| omikuji | `apps/omikuji` | 없음 |
 
 Root Directory를 지정하면 Vercel이 해당 경로 변경분만 보고 빌드하므로,
 한 앱을 고쳐도 다른 앱이 다시 배포되지 않습니다.
