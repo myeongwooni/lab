@@ -47,16 +47,20 @@ npm run omikuji      # apps/omikuji 개발 서버 (:3003)
 | quest | `apps/quest` | 없음 |
 | omikuji | `apps/omikuji` | 없음 |
 
-Root Directory를 지정하면 Vercel이 해당 경로 변경분만 보고 빌드하므로,
-한 앱을 고쳐도 다른 앱이 다시 배포되지 않습니다.
+Root Directory만 지정해서는 푸시마다 모든 앱이 다시 빌드됩니다. 그래서 프로젝트마다
+**변경 없는 커밋은 배포 건너뛰기**(Settings → Build and Deployment → Root Directory 아래)를
+켜 둡니다. 아래 워크플로가 모든 프로젝트에 알아서 켜므로, 한 앱을 고치면 그 앱만 배포되고
+`apps/` 밖만 바꾼 PR에는 배포가 붙지 않습니다.
 
 ### 배포 자동화
 
 - **기존 앱**: Vercel Git 연동이 알아서 배포합니다. PR에는 미리보기가, `main`에는 프로덕션이 올라갑니다.
 - **새 앱**: `apps/<이름>/`이 `main`에 들어오면 [`Vercel projects`](.github/workflows/vercel-projects.yml)
   워크플로가 Root Directory가 `apps/<이름>`인 Vercel 프로젝트 `<이름>`을 만들고 첫 프로덕션 배포를 띄웁니다.
-  같은 Root Directory로 이 저장소에 연결된 프로젝트가 이미 있으면 이름이 달라도 건너뜁니다.
-  Actions 탭에서 수동으로 돌릴 수도 있습니다.
+  같은 Root Directory로 이 저장소에 연결된 프로젝트가 이미 있으면 이름이 달라도 새로 만들지 않습니다.
+- **모든 프로젝트**: 같은 워크플로가 "변경 없는 커밋은 배포 건너뛰기"가 꺼져 있으면 켭니다. 그 밖의 설정은 건드리지 않습니다.
+
+워크플로는 `apps/**`나 워크플로 자체가 바뀐 채 `main`에 푸시될 때 돌고, Actions 탭에서 수동으로 돌릴 수도 있습니다.
 
 처음 한 번만 설정합니다.
 
