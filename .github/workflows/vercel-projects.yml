@@ -1,0 +1,31 @@
+name: Vercel projects
+
+# main에 새 앱이 들어오면 Vercel 프로젝트를 만들고 첫 배포를 띄웁니다.
+on:
+  push:
+    branches: [main]
+    paths: ["apps/**"]
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-projects
+  cancel-in-progress: false
+
+jobs:
+  ensure:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create missing projects
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID || 'team_JYToPdMQzhLoonhGEMpMXWWz' }}
+          GITHUB_REPO: ${{ github.repository }}
+          GITHUB_REPO_ID: ${{ github.repository_id }}
+          DEPLOY_REF: ${{ github.ref_name }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::warning::VERCEL_TOKEN 시크릿이 없어 건너뜁니다. README의 배포 자동화 절을 참고하세요."
+            exit 0
+          fi
+          scripts/vercel-ensure-projects.sh

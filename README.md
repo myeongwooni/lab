@@ -50,6 +50,24 @@ npm run omikuji      # apps/omikuji 개발 서버 (:3003)
 Root Directory를 지정하면 Vercel이 해당 경로 변경분만 보고 빌드하므로,
 한 앱을 고쳐도 다른 앱이 다시 배포되지 않습니다.
 
+### 배포 자동화
+
+- **기존 앱**: Vercel Git 연동이 알아서 배포합니다. PR에는 미리보기가, `main`에는 프로덕션이 올라갑니다.
+- **새 앱**: `apps/<이름>/`이 `main`에 들어오면 [`Vercel projects`](.github/workflows/vercel-projects.yml)
+  워크플로가 Root Directory가 `apps/<이름>`인 Vercel 프로젝트 `<이름>`을 만들고 첫 프로덕션 배포를 띄웁니다.
+  같은 Root Directory로 이 저장소에 연결된 프로젝트가 이미 있으면 이름이 달라도 건너뜁니다.
+  Actions 탭에서 수동으로 돌릴 수도 있습니다.
+
+처음 한 번만 설정합니다.
+
+1. [Vercel → Account Settings → Tokens](https://vercel.com/account/tokens)에서 토큰을 만듭니다. Scope는 프로젝트가 있는 팀으로 둡니다.
+2. GitHub 저장소 **Settings → Secrets and variables → Actions**에 `VERCEL_TOKEN` 시크릿으로 넣습니다.
+3. 팀이 바뀌면 같은 화면의 Variables에 `VERCEL_TEAM_ID`를 넣습니다. 없으면 현재 팀 ID를 씁니다.
+
+시크릿이 없으면 워크플로는 경고만 남기고 건너뜁니다. 자동으로 만든 프로젝트의 주소는
+`<이름>.vercel.app`이고, 이미 쓰인 이름이면 Vercel이 다른 주소를 붙입니다. `*-luck` 같은 별칭 도메인과
+Upstash 연결은 여전히 Vercel에서 직접 합니다.
+
 ### 저장소 연결
 
 Storage 탭에서 Upstash Redis를 연결하면 자격증명이 자동으로 주입됩니다. 변수 이름은
