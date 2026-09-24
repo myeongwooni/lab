@@ -10,7 +10,7 @@
 | [wongoji](apps/wongoji) | [wongoji-write.vercel.app](https://wongoji-write.vercel.app/) | 이어달리기 원고지 — 한 사람이 하루에 한 글자씩 이어 쓰는 공용 원고지 |
 | [cointower](apps/cointower) | [cointower-luck.vercel.app](https://cointower-luck.vercel.app/) | 동전탑 — 앞면만으로 몇 층까지 쌓는지 겨루는 기록판 |
 | [quest](apps/quest) | [quest-guild.vercel.app](https://quest-guild.vercel.app/) | 오늘의 퀘스트 — 파티원 중 오늘의 용사를 소환하는 랜덤 추첨기 |
-| [omikuji](apps/omikuji) | 아직 없음 | 오늘의 냥쿠지 — 도트 고양이가 흔들어 주는 하루 한 번의 운세 뽑기 |
+| [omikuji](apps/omikuji) | [lab-omikuji.vercel.app](https://lab-omikuji.vercel.app/) | 오늘의 냥쿠지 — 도트 고양이가 흔들어 주는 하루 한 번의 운세 뽑기 |
 
 ## 개발
 
