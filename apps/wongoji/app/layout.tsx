@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  // 공유 이미지 주소를 절대 경로로 만들 때 씁니다.
+  metadataBase: new URL("https://wongoji-write.vercel.app"),
   title: "이어달리기 원고지",
   description:
     "한 사람이 하루에 한 글자씩, 모두가 이어 쓰는 원고지. 다음 글자가 무엇이 될지는 누구도 정할 수 없습니다.",
@@ -9,6 +11,12 @@ export const metadata: Metadata = {
     title: "이어달리기 원고지",
     description: "한 사람이 하루에 한 글자. 당신의 차례는 오늘 한 번뿐입니다.",
     type: "website",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "이어달리기 원고지",
+    description: "한 사람이 하루에 한 글자. 당신의 차례는 오늘 한 번뿐입니다.",
   },
 };
 
