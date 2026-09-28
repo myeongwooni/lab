@@ -1,5 +1,7 @@
 // 자모를 합치고 풀고, 판 위에서 단어를 찾는 규칙을 모아 둡니다.
 
+import { DICTIONARY } from "./dictionary";
+
 const CHO = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
 const JUNG = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
 const JONG = ["", ..."ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ"];
@@ -68,7 +70,7 @@ function dropOrder(syllable: string): string[] | null {
   return [cho, ...vowels, ...(jong ? [jong] : [])];
 }
 
-// 두세 글자 낱말 위주로 고릅니다. 조각으로 못 만드는 단어는 아래에서 걸러집니다.
+// 떨어뜨릴 단어는 누구나 아는 두세 글자 낱말에서 고릅니다. 조각으로 못 만드는 단어는 아래에서 걸러집니다.
 const RAW_WORDS = `
 나무 바다 하늘 구름 바람 노을 이슬 소나기 무지개 별빛 달빛 햇빛 새벽 아침 저녁 오후 여름 가을 겨울 봄비
 사자 호랑이 고양이 강아지 토끼 여우 늑대 사슴 너구리 다람쥐 코끼리 기린 하마 오리 거위 참새 제비 부엉이 고래 상어
@@ -95,11 +97,12 @@ const RAW_WORDS = `
 전화 정원 종이 주전자 줄 지갑 창문 천둥 촛불 침 컵 탑 태양 통 파랑 풍선 하품 한글 할일 햄버거
 `;
 
-export const WORDS = new Set(
-  RAW_WORDS.split(/\s+/).filter((word) => word.length >= 2 && [...word].every((syllable) => dropOrder(syllable))),
+const WORD_LIST = RAW_WORDS.split(/\s+/).filter(
+  (word) => word.length >= 2 && [...word].every((syllable) => dropOrder(syllable)),
 );
 
-const WORD_LIST = [...WORDS];
+// 판 위에서 알아보는 단어는 큰 명사 사전까지 넓혀, 떨어뜨리지 않은 단어도 만들면 터집니다.
+export const WORDS = new Set([...WORD_LIST, ...DICTIONARY.split(" ")]);
 
 /** 다음에 떨어질 자모 묶음. 단어 하나를 순서대로 풀어 주고, 가끔 아무 자모를 하나 섞습니다. */
 export function nextBatch(random: () => number = Math.random): string[] {
