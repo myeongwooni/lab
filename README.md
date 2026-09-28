@@ -11,6 +11,7 @@
 | [cointower](apps/cointower) | [cointower-luck.vercel.app](https://cointower-luck.vercel.app/) | 동전탑 — 앞면만으로 몇 층까지 쌓는지 겨루는 기록판 |
 | [quest](apps/quest) | [quest-guild.vercel.app](https://quest-guild.vercel.app/) | 오늘의 퀘스트 — 파티원 중 오늘의 용사를 소환하는 랜덤 추첨기 |
 | [omikuji](apps/omikuji) | [lab-omikuji.vercel.app](https://lab-omikuji.vercel.app/) | 오늘의 냥쿠지 — 도트 고양이가 흔들어 주는 하루 한 번의 운세 뽑기 |
+| [dicetale](apps/dicetale) | 첫 배포 뒤 추가 | 다이스테일 — d20을 굴려 새끼 용이 훔쳐 간 등불을 되찾는 도트 TRPG |
 | [jamotris](apps/jamotris) | [jamotris.vercel.app](https://jamotris.vercel.app/) | 자모트리스 — 떨어지는 자모를 쌓아 글자를, 글자를 이어 단어를 만드는 한글 테트리스 |
 
 ## 개발
@@ -23,7 +24,8 @@ npm run wongoji      # apps/wongoji 개발 서버 (:3000)
 npm run cointower    # apps/cointower 개발 서버 (:3001)
 npm run quest        # apps/quest 개발 서버 (:3002)
 npm run omikuji      # apps/omikuji 개발 서버 (:3003)
-npm run jamotris     # apps/jamotris 개발 서버 (:3004)
+npm run dicetale     # apps/dicetale 개발 서버 (:3004)
+npm run jamotris     # apps/jamotris 개발 서버 (:3005)
 ```
 
 앱마다 포트를 다르게 고정해 두었으므로 동시에 띄워도 부딪히지 않습니다.
@@ -48,6 +50,7 @@ npm run jamotris     # apps/jamotris 개발 서버 (:3004)
 | cointower | `apps/cointower` | Upstash Redis |
 | quest | `apps/quest` | 없음 |
 | omikuji | `apps/omikuji` | 없음 |
+| dicetale | `apps/dicetale` | 없음 |
 | jamotris | `apps/jamotris` | 없음 |
 
 Root Directory만 지정해서는 푸시마다 모든 앱이 다시 빌드됩니다. 그래서 프로젝트마다
