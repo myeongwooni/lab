@@ -19,8 +19,20 @@
 | 보관 | C, Shift | 바꾸기 |
 | 멈춤 | P, Esc | — |
 
-단어 목록은 `app/hangul.ts`의 `RAW_WORDS`에 있습니다. 된소리나 겹받침처럼 조각으로 만들 수 없는
-글자가 든 단어는 불러올 때 알아서 빠집니다.
+## 단어
+
+- 판에서 알아보는 단어는 [hunspell-dict-ko](https://github.com/spellcheck-ko/hunspell-dict-ko)에서 뽑은
+  두~다섯 글자 명사 약 3만 개입니다 (`app/dictionary.ts`, MPL-1.1). 된소리나 겹받침처럼 조각으로 만들 수
+  없는 글자가 든 단어는 뺐습니다
+- 떨어뜨릴 단어는 `app/hangul.ts`의 `RAW_WORDS`에 적어 둔 쉬운 낱말에서 고릅니다
+- 사전을 다시 만들려면
+
+```bash
+cd apps/jamotris
+npm pack dictionary-ko && tar xzf dictionary-ko-*.tgz
+python3 scripts/build-dictionary.py package/index.dic
+rm -rf package dictionary-ko-*.tgz
+```
 
 ## 로컬 실행
 
