@@ -239,11 +239,16 @@ const HAIR_M =
 /** a lock of hair falling in front of the shoulder */
 const HAIR_LOCK = "M-4 6C6 40 12 80 8 120C6 138 12 152 20 160C8 161 -2 148 -4 130C-8 98 -16 60 -20 28Z";
 /** face details: eye (almond line) + glint + cheek light */
-function faceMarks(m: boolean, op = 1): string {
+function faceMarks(m: boolean, op = 1, smile = false, closed = false): string {
+  if (closed) {
+    return `<g opacity="${op}"><path d="M21 -8C25 -5 29 -5 33 -8" fill="none" stroke="#070a1c" stroke-width="2.4" stroke-linecap="round"/>` +
+      `<path d="M26 4C29 10 29 18 26 24" fill="none" stroke="#e8c8d0" stroke-width="1.6" stroke-linecap="round" opacity=".45"/></g>`;
+  }
+  const sm = smile ? `<path d="M35 23C33 26 30 27 27 26" fill="none" stroke="#070a1c" stroke-width="1.8" stroke-linecap="round"/>` : "";
   const eye = m ? "M21 -9C25 -12 29 -12 32 -9" : "M21 -8C25 -12 29 -12 33 -8L34 -10";
   return `<g opacity="${op}"><path d="${eye}" fill="none" stroke="#070a1c" stroke-width="2.4" stroke-linecap="round"/>` +
     `<circle cx="28.5" cy="-7.5" r="1.7" fill="#eef2ff"/>` +
-    `<path d="M26 4C29 10 29 18 26 24" fill="none" stroke="#b9c6f2" stroke-width="1.6" stroke-linecap="round" opacity=".45"/></g>`;
+    `<path d="M26 4C29 10 29 18 26 24" fill="none" stroke="#b9c6f2" stroke-width="1.6" stroke-linecap="round" opacity=".45"/>${sm}</g>`;
 }
 function place(x: number, y: number, s: number, rot: number, flip: boolean, inner: string): string {
   return `<g transform="translate(${n1(x)} ${n1(y)}) rotate(${rot}) scale(${flip ? -s : s} ${s})">${inner}</g>`;
@@ -631,7 +636,7 @@ function cgLantern(): string {
     glowGrad(`${p}-big`, "#f0b86a", 0.5, 0.15) +
     glowGrad(`${p}-ink`, "#8fb8ff", 0.95, 0.3) +
     lg(`${p}-water`, 0, 0, 0, 1, [
-      [0, "#3a3666"],
+      [0, "#2a2a58"],
       [1, "#0b0e26"],
     ]) +
     lg(`${p}-fg`, 0, 0, 0, 1, [
@@ -863,9 +868,262 @@ function cgConfession(): string {
   return svg(p, defs + rg(`${p}-vg`, [[0, "#000", 0], [0.65, "#000", 0.15], [1, "#02030a", 0.9]], 0.5, 0.45, 0.72), b);
 }
 
+// standing bodies in head-local units (head height 100, facing +x)
+const F_BODY = "M-16 68C-34 78 -46 96 -48 122C-50 162 -44 210 -44 262C-46 332 -54 402 -62 480H62C56 402 48 334 44 272C42 230 46 190 42 160C38 130 32 110 24 96C18 86 14 78 12 68Z";
+const M_BODY = "M-22 70C-46 80 -64 100 -68 132C-72 182 -64 242 -60 302C-58 362 -62 422 -64 480H64C62 422 60 362 58 302C56 242 62 182 52 132C48 106 32 88 12 72Z";
+
+/** world position of a head-local point */
+function wpt(lx: number, ly: number, x: number, y: number, s: number, rot: number, flip: boolean): Pt {
+  const a = (rot * Math.PI) / 180;
+  const X = (flip ? -lx : lx) * s;
+  const Y = ly * s;
+  return [x + X * Math.cos(a) - Y * Math.sin(a), y + X * Math.sin(a) + Y * Math.cos(a)];
+}
+
+/** fir tree silhouette with snow ledges */
+function fir(x: number, base: number, h: number, w: number, fill: string, snow: string | null): string {
+  let d = `M${n1(x)} ${n1(base - h)}`;
+  const tiers = 5;
+  let sn = "";
+  for (let i = 1; i <= tiers; i++) {
+    const y = base - h + (h * 0.9 * i) / tiers;
+    const hw = (w / 2) * (0.35 + (0.65 * i) / tiers);
+    d += `L${n1(x + hw)} ${n1(y)}L${n1(x + hw * 0.45)} ${n1(y - h * 0.04)}`;
+    if (snow) sn += `M${n1(x + hw * 0.1)} ${n1(y - h * 0.1)}Q${n1(x + hw * 0.6)} ${n1(y - h * 0.06)} ${n1(x + hw)} ${n1(y)}`;
+  }
+  d += `L${n1(x + w * 0.06)} ${n1(base)}L${n1(x - w * 0.06)} ${n1(base)}`;
+  for (let i = tiers; i >= 1; i--) {
+    const y = base - h + (h * 0.9 * i) / tiers;
+    const hw = (w / 2) * (0.35 + (0.65 * i) / tiers);
+    d += `L${n1(x - hw * 0.45)} ${n1(y - h * 0.04)}L${n1(x - hw)} ${n1(y)}`;
+  }
+  return `<path d="${d}Z" fill="${fill}"/>` + (snow ? `<path d="${sn}" fill="none" stroke="${snow}" stroke-width="${n1(Math.max(1.5, w * 0.03))}" stroke-linecap="round"/>` : "");
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_snow_kiss — Cassian route: first kiss in the snowfield at blue dusk
+// ────────────────────────────────────────────────────────────────────────────
+function cgSnowKiss(): string {
+  const p = "cg_snow_kiss";
+  const r = rng(505);
+  const defs =
+    lg(`${p}-sky`, 0, 0, 0, 1, [
+      [0, "#141c48"],
+      [0.35, "#2e3c7c"],
+      [0.55, "#6a6aa6"],
+      [0.66, "#c8a0b8"],
+      [0.7, "#e8c0c0"],
+    ]) +
+    glowGrad(`${p}-glow`, "#ffe0e0", 0.8, 0.25) +
+    lg(`${p}-snow`, 0, 0, 0, 1, [
+      [0, "#c9d2ec"],
+      [0.3, "#8e9cc8"],
+      [1, "#3a4680"],
+    ]) +
+    lg(`${p}-bank`, 0, 0, 0, 1, [
+      [0, "#aebbd6"],
+      [0.4, "#6a78ac"],
+      [1, "#2a3468"],
+    ]) +
+    lg(`${p}-fig`, 0, 0, 0, 1, [
+      [0, "#232a58"],
+      [0.6, "#161b40"],
+      [1, "#0e1230"],
+    ]) +
+    lg(`${p}-cloak`, 0, 0, 1, 1, [
+      [0, "#262c5c"],
+      [1, "#0c0f2a"],
+    ]) +
+    blurFilter(`${p}-b`, 7);
+
+  let b = `<rect width="1600" height="900" fill="url(#${p}-sky)"/>`;
+  b += starField(r, 120, 0, 0, 1600, 320, "#e6ecff", 1.5, 0.8);
+  b += starRing(p, { cx: 800, cy: 1400, rx: 1600, ry: 1300, rot: -6, t0: 205, t1: 335, n: 360, spread: 22, seed: 55, filter: `${p}-b`, op: 0.45, sparkles: 5 }, 3);
+  b += `<ellipse cx="800" cy="480" rx="700" ry="260" fill="url(#${p}-glow)" opacity=".7"/>`;
+  // distant hills + far fir lines
+  b += `<path d="M0 470Q200 420 420 452T820 440T1240 446T1600 430V620H0Z" fill="#7d86bc" opacity=".7"/>`;
+  let far = "";
+  for (let x = -20; x < 1620; x += 16 + r() * 18) {
+    if (x > 560 && x < 1040 && r() < 0.8) continue;
+    far += fir(x, 500 + r() * 14, 40 + r() * 50, 18 + r() * 10, "#4c5690", null);
+  }
+  b += far;
+  b += `<path d="M0 510Q400 486 800 500T1600 496V900H0Z" fill="url(#${p}-snow)"/>`;
+  // mid firs (left/right framing, snow-laden)
+  let mid = "";
+  const mids: [number, number, number, number][] = [[120, 560, 300, 130], [250, 540, 230, 100], [40, 600, 380, 160], [370, 530, 160, 70], [1480, 570, 320, 140], [1340, 540, 240, 100], [1580, 610, 400, 170], [1230, 530, 170, 72], [470, 520, 110, 50], [1130, 520, 120, 52]];
+  for (const [x, base, h, w] of mids) mid += fir(x, base, h, w, "#1a2254", "#c9d4f0");
+  b += mid;
+  // footprints trail
+  let fp = "";
+  for (let i = 0; i < 9; i++) fp += `<ellipse cx="${n1(540 - i * 46 + (i % 2) * 10)}" cy="${n1(600 + i * 16)}" rx="${n1(6 + i * 0.8)}" ry="${n1(2.4 + i * 0.3)}" fill="#5a66a0" opacity=".6"/>`;
+  b += fp;
+
+  // ── the couple, profiles meeting ──
+  const cx = 852, cyy = 296, cs = 1.02, crot = -16; // Cassian, facing left
+  const lip = wpt(38, 26, cx, cyy, cs, crot, true);
+  const es = 0.9, erot = -20;
+  const el = wpt(37, 24, 0, 0, es, erot, false);
+  const ex = lip[0] - el[0] + 3, ey = lip[1] - el[1] + 1;
+  const rimC = "#ffe8ec";
+  let fg = `<circle cx="${n1(lip[0])}" cy="${n1(lip[1])}" r="230" fill="url(#${p}-glow)" opacity=".75"/>`;
+  const cloak = `M${n1(cx + 40)} ${n1(cyy + 70)}C${n1(cx + 110)} ${n1(cyy + 90)} ${n1(cx + 140)} ${n1(cyy + 200)} ${n1(cx + 150)} ${n1(cyy + 400)}L${n1(ex - 110)} ${n1(cyy + 400)}C${n1(ex - 100)} ${n1(cyy + 300)} ${n1(ex - 70)} ${n1(cyy + 180)} ${n1(ex - 40)} ${n1(cyy + 150)}C${n1(ex - 10)} ${n1(cyy + 120)} ${n1(ex + 20)} ${n1(cyy + 118)} ${n1(ex + 40)} ${n1(cyy + 128)}C${n1(cx - 30)} ${n1(cyy + 110)} ${n1(cx - 10)} ${n1(cyy + 74)} ${n1(cx + 40)} ${n1(cyy + 70)}Z`;
+  fg += `<g opacity=".5" filter="url(#${p}-b)"><path d="${cloak}" fill="none" stroke="#ffe0e8" stroke-width="10"/></g>`;
+  // Estelle body + hair (behind cloak)
+  fg += place(ex, ey, es, erot * 0.3, false, rim(F_BODY, `url(#${p}-fig)`, rimC, -2.4, 1));
+  fg += place(ex, ey, es, erot, false, rim(HAIR_MID, "#1c1830", rimC, -2.4, 1.2));
+  // Cassian body
+  fg += place(cx, cyy, cs, crot * 0.25, true, rim(M_BODY, `url(#${p}-fig)`, rimC, -2.4, 1));
+  // heads
+  fg += place(ex, ey, es, erot, false, rim(HEAD_F, "#1a1d44", rimC, -2.4, 0.8) + rim(BANGS_F, "#1a1428", rimC, -1.6, 1) + faceMarks(false, 1, false, true));
+  fg += place(cx, cyy, cs, crot, true, rim(HEAD_M, "#161a3e", rimC, -2.4, 0.8) + rim(HAIR_M, "#0b0d24", rimC, -1.6, 1.4) + faceMarks(true, 1, false, true));
+  // his cloak wrapping around her
+  fg += rim(cloak, `url(#${p}-cloak)`, "#c8c8ec", 1.6, 1.8);
+  fg += `<path d="M${n1(cx + 60)} ${n1(cyy + 110)}C${n1(cx + 80)} ${n1(cyy + 200)} ${n1(cx + 90)} ${n1(cyy + 300)} ${n1(cx + 96)} ${n1(cyy + 400)}M${n1(ex - 20)} ${n1(cyy + 170)}C${n1(ex - 40)} ${n1(cyy + 240)} ${n1(ex - 50)} ${n1(cyy + 320)} ${n1(ex - 56)} ${n1(cyy + 400)}" fill="none" stroke="#3a4278" stroke-width="3"/>`;
+  // his hand on her back, fur trim
+  fg += `<path d="M${n1(ex - 30)} ${n1(cyy + 150)}C${n1(ex - 20)} ${n1(cyy + 130)} ${n1(ex + 10)} ${n1(cyy + 124)} ${n1(ex + 40)} ${n1(cyy + 130)}" fill="none" stroke="#dcd6e8" stroke-width="7" stroke-linecap="round" opacity=".85"/>`;
+  // her hair tips lit
+  fg += place(ex, ey, es, erot, false, `<path d="M-60 90C-62 104 -58 116 -52 124M-40 100C-38 112 -32 122 -26 128" fill="none" stroke="#e8d8e8" stroke-width="2" opacity=".6"/>`);
+  b += `<g mask="url(#${p}-m)">${fg}</g>`;
+  // foreground snowbank
+  b += `<path d="M-20 700Q300 620 620 668T1000 650T1620 690V900H-20Z" fill="url(#${p}-bank)"/>`;
+  b += `<path d="M-20 700Q300 620 620 668T1000 650T1620 690" fill="none" stroke="#e9eef8" stroke-width="3" opacity=".7"/>`;
+  b += fir(-30, 900, 620, 260, "#0e1336", "#aebbd6") + fir(1640, 900, 660, 280, "#0e1336", "#aebbd6");
+  // falling snow: static + drifting
+  b += starField(r, 220, 0, 0, 1600, 900, "#f4f7ff", 1, 0.8);
+  for (let i = 0; i < 30; i++) b += `<circle cx="${n1(r() * 1600)}" cy="${n1(r() * 800)}" r="${n1(1.6 + r() * 2.6)}" fill="#fff" opacity=".85" ${A(p, i % 2 ? "sw" : "up", r() * 7, 6 + r() * 6)}/>`;
+  const defs2 = defs + lg(`${p}-mg`, 0, 0, 0, 1, [[0, "#fff"], [0.7, "#fff"], [1, "#fff", 0]]) +
+    `<mask id="${p}-m" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900"><rect x="0" y="0" width="1600" height="720" fill="url(#${p}-mg)"/></mask>`;
+  return svg(p, defs2, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_true — True ending: dawn, the old ring dissolving, a sky of new stars
+// ────────────────────────────────────────────────────────────────────────────
+function cgTrue(): string {
+  const p = "cg_true";
+  const r = rng(606);
+  const defs =
+    lg(`${p}-sky`, 0, 0, 0, 1, [
+      [0, "#141a4a"],
+      [0.3, "#3a3a82"],
+      [0.46, "#8a6aa0"],
+      [0.56, "#e0a0a4"],
+      [0.62, "#f6d48f"],
+    ]) +
+    glowGrad(`${p}-sun`, "#fff0c8", 1, 0.4) +
+    glowGrad(`${p}-sunH`, "#f6c88a", 0.7, 0.2) +
+    lg(`${p}-city`, 0, 0, 0, 1, [
+      [0, "#8a7aa8"],
+      [1, "#4a4a80"],
+    ]) +
+    lg(`${p}-roof`, 0, 0, 0, 1, [
+      [0, "#dcd6e6"],
+      [0.25, "#a8a4c8"],
+      [1, "#3a3a6a"],
+    ]) +
+    lg(`${p}-fig`, 0, 0, 0, 1, [
+      [0, "#3a2e52"],
+      [0.6, "#241e3e"],
+      [1, "#16142c"],
+    ]) +
+    lg(`${p}-robe`, 0, 0, 0, 1, [
+      [0, "#8a7ea8"],
+      [0.4, "#51466e"],
+      [1, "#2a2448"],
+    ]) +
+    `<path id="${p}-pt" d="M0 -7C4 -4 4 4 0 7C-4 4 -4 -4 0 -7Z" fill="#fbf6ee"/>` +
+    blurFilter(`${p}-b`, 6);
+
+  let b = `<rect width="1600" height="900" fill="url(#${p}-sky)"/>`;
+  // thousands of new stars (white + warm), strongest high up
+  b += starField(r, 700, 0, 0, 1600, 470, "#f4f6ff", 1.4, 1);
+  b += starField(r, 260, 0, 0, 1600, 420, "#ffe2b0", 1.2, 0.9);
+  // dissolving old ring: broken segments drifting apart
+  const segs: [number, number][] = [[200, 224], [232, 250], [262, 274], [290, 300], [312, 330]];
+  let ring = "";
+  segs.forEach(([t0, t1], i) => {
+    ring += starRing(p, { cx: 800, cy: 1500, rx: 1650, ry: 1340, rot: -8, t0, t1, n: 90, spread: 22, seed: 60 + i, op: 0.45, sparkles: 1 }, 1);
+  });
+  b += ring;
+  // new stars igniting (sparkles, animated)
+  for (let i = 0; i < 22; i++) {
+    const x = r() * 1600;
+    const y = 20 + Math.pow(r(), 1.3) * 400;
+    b += `<path d="${sparkle(x, y, 5 + r() * 9)}" fill="${r() < 0.4 ? "#ffe8c0" : "#ffffff"}" ${A(p, "tw", r() * 4, 3 + r() * 3)}/>`;
+  }
+  // dawn sun at horizon, center
+  b += `<ellipse cx="800" cy="540" rx="900" ry="300" fill="url(#${p}-sunH)" opacity=".8"/>`;
+  b += `<circle cx="800" cy="545" r="150" fill="url(#${p}-sun)"/>`;
+  // light rays
+  let rays = "";
+  for (let i = 0; i < 9; i++) {
+    const a = Math.PI + (i + 0.5) * (Math.PI / 9);
+    rays += `M800 545L${n1(800 + Math.cos(a - 0.03) * 1200)} ${n1(545 + Math.sin(a - 0.03) * 1200)}L${n1(800 + Math.cos(a + 0.03) * 1200)} ${n1(545 + Math.sin(a + 0.03) * 1200)}Z`;
+  }
+  b += `<path d="${rays}" fill="#fff0d0" opacity=".07"/>`;
+  // capital skyline at horizon
+  const t = rng(9);
+  let city = "M0 600V560";
+  let win = "";
+  for (let x = 0; x < 1600; ) {
+    const w = 18 + t() * 34;
+    const h = 20 + t() * 50 * (1 - Math.abs(x - 800) / 1400);
+    city += `V${n1(560 - h)}L${n1(x + w / 2)} ${n1(546 - h - t() * 16)}L${n1(x + w)} ${n1(560 - h)}`;
+    if (t() < 0.12) city += `L${n1(x + w * 0.5)} ${n1(500 - h - t() * 60)}L${n1(x + w * 0.6)} ${n1(556 - h)}`;
+    if (t() < 0.5) win += `M${Math.round(x + w / 2)} ${Math.round(566 - h * 0.4)}h0`;
+    x += w;
+    city += `L${n1(x)} ${n1(560 - h)}`;
+  }
+  b += `<path d="${city}V600H0Z" fill="url(#${p}-city)" opacity=".85"/><path d="${win}" stroke="#ffe2a0" stroke-width="3" stroke-linecap="round"/>`;
+  // archive rooftop terrace
+  b += `<path d="M0 640L1600 640V900H0Z" fill="url(#${p}-roof)"/>`;
+  let bal = "";
+  for (let x = 8; x < 1600; x += 38) bal += `M${x} 606h18v36h-18z`;
+  b += `<path d="M0 596H1600V608H0Z${bal}" fill="#b8b0d0"/><path d="M0 596H1600" stroke="#fff0d0" stroke-width="2"/>`;
+  b += `<path d="M0 700H1600M0 780H1600M300 640L120 900M620 640L560 900M980 640L1040 900M1300 640L1480 900" stroke="#6a668e" stroke-width="2" opacity=".5"/>`;
+  // spires framing left/right
+  b += `<path d="M60 900V340L110 180L160 340V900ZM1440 900V300L1500 120L1560 300V900Z" fill="#3a3662"/><path d="M110 180L160 340V900M1500 120L1560 300V900" fill="none" stroke="#f6d48f" stroke-width="3" opacity=".6"/>`;
+
+  // ── figures: Cassian (left) calling; Estelle (right) turning with a smile ──
+  const rimC = "#ffe0a8";
+  const kx = 660, ky = 330, ks = 0.6; // Cassian facing right
+  const ex = 930, ey = 356, es = 0.54; // Estelle facing left (turned back)
+  let fg = `<g filter="url(#${p}-b)" opacity=".6">` +
+    place(kx, ky, ks, 3, false, `<path d="${M_BODY}${HEAD_M}" fill="none" stroke="#fff0c8" stroke-width="14"/>`) +
+    place(ex, ey, es, 0, true, `<path d="${F_BODY}${HEAD_F}" fill="none" stroke="#fff0c8" stroke-width="14"/>`) + `</g>`;
+  // Cassian cloak blowing to the left
+  const kCloak = "M-30 70C-80 90 -130 150 -170 240C-200 310 -230 380 -260 470H40C20 380 0 260 -30 70Z";
+  fg += place(kx, ky, ks, 3, false, rim(kCloak, `url(#${p}-fig)`, rimC, -2, 1) + rim(M_BODY, `url(#${p}-fig)`, rimC, -3, 1));
+  // his arm half-raised toward her
+  fg += place(kx, ky, ks, 3, false, rim("M30 110C60 130 90 150 120 150C140 150 150 140 158 132C164 128 170 134 166 140C156 156 140 170 118 170C88 170 56 156 20 140Z", `url(#${p}-fig)`, rimC, -2, 1.4));
+  fg += place(kx, ky, ks, -6, false, rim(HEAD_M, `url(#${p}-fig)`, "#fff0c8", -3, 0.6) + rim(HAIR_M, "#140f22", rimC, -2, 1.4) + faceMarks(true, 1) +
+    `<path d="M36 22C34 26 34 28 36 30" fill="none" stroke="#070a1c" stroke-width="2.4" stroke-linecap="round"/>`);
+  // Estelle: robe flowing right (wind), hair streaming
+  const eRobe = "M-40 80C-60 140 -70 260 -60 480H140C170 420 200 360 240 330C200 330 150 320 110 280C70 240 50 160 30 80Z";
+  const eHairFly = "M20 -40C0 -60 -40 -58 -56 -30C-64 -10 -62 20 -56 50C-50 80 -40 110 -30 130C-10 120 20 110 60 116C100 122 140 110 170 86C130 90 100 80 70 60C50 46 40 20 30 0Z";
+  fg += place(ex, ey, es, 0, true, rim(eHairFly, "#2a1e30", rimC, -2, 1));
+  fg += place(ex, ey, es, 0, true, rim(eRobe, `url(#${p}-robe)`, "#fff4dc", -3, 1));
+  fg += place(ex, ey, es, 0, true, `<path d="M-10 120C0 220 10 340 0 480M40 130C70 220 100 300 150 350" fill="none" stroke="#a89ac0" stroke-width="3" opacity=".6"/>`);
+  fg += place(ex, ey, es, -4, true, rim(HEAD_F, `url(#${p}-fig)`, "#fff0c8", -3, 0.6) + rim(BANGS_F, "#2a1e30", rimC, -2, 1) + faceMarks(false, 1, true) +
+    `<path d="M20 4C24 8 28 8 32 6" fill="none" stroke="#f0a0a0" stroke-width="4" stroke-linecap="round" opacity=".35"/>`);
+  fg += place(ex, ey, es, 0, true, `<path d="M40 70C80 90 120 90 160 80M50 50C90 70 130 70 160 60" fill="none" stroke="#e8d0d8" stroke-width="3" opacity=".6"/>`);
+  b += `<g mask="url(#${p}-m)">${fg}</g>`;
+  // petals (static + drifting)
+  let pet = "";
+  for (let i = 0; i < 34; i++) pet += `<use href="#${p}-pt" transform="translate(${n1(r() * 1600)} ${n1(120 + r() * 700)}) rotate(${Math.round(r() * 180)}) scale(${Math.round((0.6 + r()) * 100) / 100})" opacity="${n1(0.5 + r() * 0.5)}"/>`;
+  b += pet;
+  for (let i = 0; i < 14; i++) b += `<g ${A(p, i % 2 ? "sw" : "up", r() * 7, 6 + r() * 5)}><use href="#${p}-pt" transform="translate(${n1(520 + r() * 560)} ${n1(200 + r() * 420)}) rotate(${Math.round(r() * 180)}) scale(${Math.round((0.8 + r()) * 100) / 100})"/></g>`;
+  const defs2 = defs + lg(`${p}-mg`, 0, 0, 0, 1, [[0, "#fff"], [0.82, "#fff"], [1, "#fff", 0]]) +
+    `<mask id="${p}-m" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900"><rect x="0" y="0" width="1600" height="700" fill="url(#${p}-mg)"/></mask>`;
+  return svg(p, defs2, b);
+}
+
 export const CGS: Record<string, string> = {
   cg_oath: cgOath(),
   cg_meet: cgMeet(),
   cg_lantern: cgLantern(),
   cg_confession: cgConfession(),
+  cg_snow_kiss: cgSnowKiss(),
+  cg_true: cgTrue(),
 };

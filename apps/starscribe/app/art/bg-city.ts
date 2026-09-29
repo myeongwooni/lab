@@ -456,7 +456,7 @@ function archive(night: boolean): string {
   for (let i = 0; i < (night ? 36 : 110); i++) dust.push([640 + gauss(r) * 260, 180 + r() * 480]);
   A.add(dots(dust, C.lightCore, 1.6, night ? 0.35 : 0.6));
   const dg = A.glowG("dust", C.lightCore, "#ffffff");
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < (night ? 8 : 14); i++) {
     const x = 600 + gauss(r) * 260, y = 200 + r() * 380, rr = 3 + r() * 4;
     A.add(A.ell(x, y, rr, rr, dg, 1, A.a(i % 3 ? "tw" : "dr", r() * 12, i % 3 ? 3 + r() * 4 : 16 + r() * 8)));
   }
