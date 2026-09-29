@@ -167,6 +167,9 @@ function starField(r: Rnd, n: number, x0: number, y0: number, x1: number, y1: nu
 interface RingOpt {
   cx: number; cy: number; R: number; a0: number; a1: number; w: number; n: number; op?: number; twinkle?: number; seed?: number; box?: [number, number, number, number]; dense?: number;
 }
+/** 원 중심 cx, 반지름 R인 호의 윗부분에서 화면 x에 해당하는 각 */
+const arcA = (cx: number, R: number, x: number) => -Math.acos(Math.max(-1, Math.min(1, (x - cx) / R)));
+
 /** 천환: 비스듬한 은빛 별의 띠 (원호) */
 function ring(A: Art, o: RingOpt, blurUrl: string) {
   const r = mulberry32(o.seed ?? 77);
@@ -591,7 +594,7 @@ function capitalNight(): string {
   A.add(A.ell(300, 150, 260, 260, mg, 0.45), `<circle cx="300" cy="150" r="34" fill="#f4f6ff"/>`, `<circle cx="292" cy="158" r="9" fill="#c9d3f0" opacity=".5"/><circle cx="312" cy="138" r="6" fill="#c9d3f0" opacity=".4"/>`);
   // 천환
   const cx = 1900, cy = 1500, R = 1650;
-  A.add(ring(A, { cx, cy, R, a0: -Math.acos((330 - cx) / R), a1: -Math.acos((1760 - cx) / R), w: 150, n: 120, twinkle: 8, seed: 31 }, blur));
+  A.add(ring(A, { cx, cy, R, a0: arcA(cx, R, 330), a1: arcA(cx, R, 1760), w: 150, n: 120, twinkle: 8, seed: 31 }, blur));
   // 지평선 도시 불빛 안개
   const hg = A.glowG("haze", "#e8a0a0");
   A.add(A.ell(800, 560, 1000, 150, hg, 0.25));
@@ -675,8 +678,8 @@ function bridge(): string {
   const WL = 585;
   let up = A.rect(0, 0, 1600, WL, A.lin("sky", 0, 0, 0, 1, [[0, "#060a20"], [0.35, "#141c4c"], [0.7, "#3a2f66"], [0.9, "#7a4a6a"], [1, "#9a5a60"]]));
   up += starField(r, 110, 0, 0, 1600, 420, "#dfe6ff", 0.8);
-  const cx = -300, cy = 1500, R = 1750;
-  up += ring(A, { cx, cy, R, a0: -Math.acos((-120 - cx) / R) - 0.05, a1: -Math.acos((1720 - cx) / R) + 0.02, w: 130, n: 120, twinkle: 7, seed: 51 }, blur);
+  const cx = 500, cy = 1600, R = 1550;
+  up += ring(A, { cx, cy, R, a0: arcA(cx, R, -150), a1: arcA(cx, R, 1750), w: 130, n: 120, twinkle: 7, seed: 51 }, blur);
   // 먼 강둑 도시
   up += A.ell(800, WL - 40, 900, 110, A.glowG("hglow", "#f0a060"), 0.45);
   up += cityRow(A, { name: "far", seed: 7, x0: -20, x1: 1620, base: () => WL - 4, hMin: 16, hMax: 44, wMin: 22, wMax: 40, top: "#2a2656", bottom: "#4a3160", win: 0.3, ws: 2, spire: 0.12, rim: "#e0a0a0", rimOp: 0.35 });
@@ -839,7 +842,7 @@ function tower(): string {
   const blur = A.blur("soft", 16);
   A.add(A.rect(0, 0, 1600, 900, A.lin("sky", 0, 0, 0, 1, [[0, "#04061a"], [0.4, "#0e1640"], [0.75, "#23306b"], [1, "#101630"]])));
   A.add(starField(r, 160, 0, 0, 1600, 600, "#dfe6ff", 0.9));
-  A.add(ring(A, { cx: 1850, cy: 1350, R: 1500, a0: -Math.acos((250 - 1850) / 1500) + 0.05, a1: -Math.acos((1700 - 1850) / 1500), w: 120, n: 120, twinkle: 7, seed: 71 }, blur));
+  A.add(ring(A, { cx: 1850, cy: 1350, R: 1500, a0: arcA(1850, 1500, 250) + 0.08, a1: arcA(1850, 1500, 1700), w: 120, n: 120, twinkle: 7, seed: 71 }, blur));
   // 큰 달 (탑 뒤 왼쪽)
   const mg = A.glowG("moon", "#c9d6ff", "#ffffff");
   A.add(A.ell(640, 250, 380, 380, mg, 0.5), `<circle cx="640" cy="250" r="92" fill="#eef2ff"/>`, `<circle cx="615" cy="232" r="22" fill="#cfd8f2" opacity=".6"/><circle cx="668" cy="282" r="14" fill="#cfd8f2" opacity=".5"/><circle cx="660" cy="215" r="9" fill="#cfd8f2" opacity=".5"/>`);
