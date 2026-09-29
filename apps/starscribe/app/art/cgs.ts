@@ -195,6 +195,25 @@ function glyphD(r: () => number, x: number, y: number, s: number): string {
   return d;
 }
 
+/** letter-like rune: 2–4 short strokes (jamo / ancient script feel) */
+function runeD(r: () => number, x: number, y: number, s: number): string {
+  let d = "";
+  let cx = x;
+  const n = 2 + Math.floor(r() * 3);
+  for (let i = 0; i < n; i++) {
+    const k = Math.floor(r() * 6);
+    const X = n1(cx), Y = n1(y + (r() - 0.5) * s * 0.3);
+    if (k === 0) d += `M${X} ${n1(y - s * 0.5)}v${n1(s)}`;
+    else if (k === 1) d += `M${n1(cx - s * 0.3)} ${Y}h${n1(s * 0.7)}`;
+    else if (k === 2) d += `M${n1(cx - s * 0.3)} ${n1(y - s * 0.4)}h${n1(s * 0.6)}v${n1(s * 0.8)}`;
+    else if (k === 3) d += `M${X} ${Y}m-${n1(s * 0.3)} 0a${n1(s * 0.3)} ${n1(s * 0.3)} 0 1 0 ${n1(s * 0.6)} 0a${n1(s * 0.3)} ${n1(s * 0.3)} 0 1 0 -${n1(s * 0.6)} 0`;
+    else if (k === 4) d += `M${n1(cx - s * 0.3)} ${n1(y + s * 0.4)}q${n1(s * 0.3)} -${n1(s * 0.9)} ${n1(s * 0.6)} 0`;
+    else d += `M${n1(cx - s * 0.3)} ${n1(y - s * 0.4)}l${n1(s * 0.6)} ${n1(s * 0.8)}`;
+    cx += s * (0.35 + r() * 0.4);
+  }
+  return d;
+}
+
 /** Moonflower symbol (six petals). Place with <use>. */
 function flowerSym(id: string, petal: string, center: string, edge = "#ffffff"): string {
   let s = `<g id="${id}">`;
@@ -1126,11 +1145,580 @@ function cgTrue(): string {
   return svg(p, defs2, b);
 }
 
+/** rows of glowing handwriting strokes in a quad (tl, tr, br, bl) */
+function scriptRows(r: () => number, q: [Pt, Pt, Pt, Pt], rows: number, size: number, fill = 0.9): string {
+  let d = "";
+  const lerp = (a: Pt, b2: Pt, t: number): Pt => [a[0] + (b2[0] - a[0]) * t, a[1] + (b2[1] - a[1]) * t];
+  for (let i = 0; i < rows; i++) {
+    const v = (i + 0.7) / (rows + 0.4);
+    const L = lerp(q[0], q[3], v);
+    const R = lerp(q[1], q[2], v);
+    let u = 0.04;
+    const end = 0.5 + r() * (fill - 0.5) + (i < rows - 1 ? 0.4 : 0);
+    while (u < Math.min(0.96, end)) {
+      const [x, y] = lerp(L, R, u);
+      d += glyphD(r, x, y, size * (0.7 + r() * 0.5));
+      u += (size * (1.8 + r() * 1.6)) / Math.hypot(R[0] - L[0], R[1] - L[1]);
+    }
+  }
+  return d;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_newborn — Ch1: writing a baby's name; a new star ignites through the dome
+// ────────────────────────────────────────────────────────────────────────────
+function cgNewborn(): string {
+  const p = "cg_newborn";
+  const r = rng(707);
+  const defs =
+    rg(`${p}-room`, [
+      [0, "#2c3a80"],
+      [0.5, "#141b46"],
+      [1, "#060918"],
+    ], 0.5, 0.2, 0.9) +
+    lg(`${p}-page`, 0, 0, 0, 1, [
+      [0, "#ffffff"],
+      [0.5, "#e6ecff"],
+      [1, "#aebde8"],
+    ]) +
+    glowGrad(`${p}-g`, "#bcd4ff", 0.9, 0.3) +
+    glowGrad(`${p}-star`, "#ffffff", 1, 0.4) +
+    lg(`${p}-hand`, 0, 0, 1, 1, [
+      [0, "#e8dcec"],
+      [0.4, "#9a94c0"],
+      [1, "#34366a"],
+    ]) +
+    lg(`${p}-sleeve`, 0, 0, 1, 1, [
+      [0, "#eef0fa"],
+      [0.5, "#9aa4d0"],
+      [1, "#3a4478"],
+    ]) +
+    lg(`${p}-beam`, 0, 0, 0, 1, [
+      [0, "#dfe8ff", 0.3],
+      [1, "#dfe8ff", 0],
+    ]) +
+    blurFilter(`${p}-b`, 5);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-room)"/>`;
+  // dome: coffered rings converging to the oculus
+  const ox = 800, oy = 130;
+  let ribs = "";
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2;
+    ribs += `M${n1(ox + Math.cos(a) * 170)} ${n1(oy + Math.sin(a) * 60)}L${n1(ox + Math.cos(a) * 1500)} ${n1(oy + Math.sin(a) * 900)}`;
+  }
+  let rings = "";
+  for (const k of [1.5, 2.3, 3.4, 5]) rings += `<ellipse cx="${ox}" cy="${oy + 20 * k}" rx="${170 * k}" ry="${60 * k}" fill="none" stroke="#3a4a90" stroke-width="${2 + k}" opacity=".6"/>`;
+  b += `<path d="${ribs}" stroke="#2c3a7a" stroke-width="4" opacity=".8"/>` + rings;
+  // oculus with the star ring visible through it
+  b += `<ellipse cx="${ox}" cy="${oy}" rx="190" ry="72" fill="#dfe6ff" opacity=".35"/>`;
+  b += `<clipPath id="${p}-oc"><ellipse cx="${ox}" cy="${oy}" rx="172" ry="62"/></clipPath>`;
+  b += `<g clip-path="url(#${p}-oc)"><rect x="600" y="60" width="400" height="140" fill="#0a0f2e"/>` +
+    starField(r, 80, 620, 60, 980, 200, "#dfe6ff", 1, 1) +
+    starRing(p, { cx: 800, cy: 700, rx: 700, ry: 600, rot: -12, t0: 240, t1: 300, n: 260, spread: 16, seed: 71, sparkles: 3 }, 2) + `</g>`;
+  b += `<ellipse cx="${ox}" cy="${oy}" rx="172" ry="62" fill="none" stroke="#b9c6f2" stroke-width="3"/>`;
+  // the new star igniting
+  b += `<circle cx="826" cy="118" r="70" fill="url(#${p}-star)" opacity=".6" ${A(p, "pu", 0, 3)}/>`;
+  b += `<g ${A(p, "tw", 0.5, 3)}><path d="${sparkle(826, 118, 26)}" fill="#fff"/></g><path d="${sparkle(826, 118, 12)}" fill="#fff"/>`;
+  b += `<ellipse cx="826" cy="118" rx="30" ry="30" fill="none" stroke="#fff" stroke-width="1.2" opacity=".6" ${A(p, "pu", 1, 3)}/>`;
+  // shaft of starlight down to the Register
+  b += `<path d="M700 150L900 150L1060 620L560 620Z" fill="url(#${p}-beam)"/>`;
+  // shelves on side walls
+  let sh = "";
+  for (let y = 300; y < 700; y += 64) {
+    sh += `M0 ${y}H${n1(360 - (y - 300) * 0.2)}M${n1(1240 + (y - 300) * 0.2)} ${y}H1600`;
+  }
+  let books = "";
+  for (let i = 0; i < 90; i++) {
+    const left = r() < 0.5;
+    const row = Math.floor(r() * 6);
+    const y = 300 + row * 64;
+    const x = left ? r() * 320 : 1280 + r() * 320;
+    books += `M${Math.round(x)} ${y - 4}v${-Math.round(30 + r() * 20)}`;
+  }
+  b += `<path d="${books}" stroke="#34448a" stroke-width="9" opacity=".7"/><path d="${sh}" stroke="#0a0d24" stroke-width="6"/>`;
+  // lectern + the Register (giant open book)
+  b += `<path d="M640 900L700 640H900L960 900Z" fill="#141a40"/><path d="M700 640H900" stroke="#6a7ac0" stroke-width="3"/>`;
+  b += `<ellipse cx="800" cy="545" rx="420" ry="150" fill="url(#${p}-g)" opacity=".7"/>`;
+  const lp = "M800 468C720 444 600 446 480 462L440 640C560 626 690 630 800 656Z";
+  const rpg = "M800 468C880 444 1000 446 1120 462L1160 640C1040 626 910 630 800 656Z";
+  b += `<path d="M430 650C560 636 700 642 800 668C900 642 1040 636 1170 650L1164 634C1040 622 900 628 800 650C700 628 560 622 436 634Z" fill="#c9cfe8"/>`;
+  b += `<path d="${lp}" fill="url(#${p}-page)"/><path d="${rpg}" fill="url(#${p}-page)"/>`;
+  b += `<path d="M800 468V656" stroke="#8a98c8" stroke-width="3"/>`;
+  // names already written (glowing blue ink)
+  const wr = scriptRows(r, [[500, 478], [780, 480], [790, 640], [470, 626]], 7, 8);
+  const wr2 = scriptRows(r, [[820, 480], [1100, 478], [1130, 626], [812, 632]], 4, 8, 0.6);
+  b += `<path d="${wr}${wr2}" fill="none" stroke="#5e8fe8" stroke-width="1.8" stroke-linecap="round" opacity=".85"/>`;
+  // the name being written right now (bright)
+  const fresh = glyphD(r, 850, 574, 11) + glyphD(r, 872, 572, 10) + glyphD(r, 893, 574, 11);
+  b += `<g filter="url(#${p}-b)"><path d="${fresh}" fill="none" stroke="#8fb8ff" stroke-width="6" stroke-linecap="round"/></g>`;
+  b += `<path d="${fresh}" fill="none" stroke="#eef4ff" stroke-width="2" stroke-linecap="round"/>`;
+  b += `<circle cx="918" cy="574" r="36" fill="url(#${p}-g)" ${A(p, "pu", 0, 2.4)}/>`;
+  // thread of light from the pen up to the new star
+  b += `<path d="M918 574C900 420 860 260 826 130" fill="none" stroke="#dfe8ff" stroke-width="1.4" stroke-dasharray="2 10" stroke-linecap="round" opacity=".6"/>`;
+  // Estelle's hand with the pen (from lower right), ink-stained
+  const sleeve = "M1150 900C1120 820 1090 740 1050 676C1080 640 1140 610 1200 600C1240 660 1300 760 1360 900Z";
+  const hand = "M1090 688C1064 662 1034 638 1002 620C984 610 966 602 948 596C936 592 926 592 926 598C928 604 940 606 952 610C944 614 938 620 940 626C944 632 956 630 966 628C966 636 972 644 982 646C986 654 996 658 1008 660C1030 668 1050 684 1068 700Z";
+  const pen = "M916 580L1040 430L1046 434L924 586Z";
+  b += `<path d="${pen}" fill="#2c3464"/><path d="M1040 430C1060 400 1090 380 1120 376C1100 400 1080 420 1046 434Z" fill="#dfe6ff" opacity=".85"/>`;
+  b += `<path d="M916 580L924 586L918 576Z" fill="#8fb8ff"/>`;
+  b += rim(hand, `url(#${p}-hand)`, "#eef3ff", 1.5, 2) + rim(sleeve, `url(#${p}-sleeve)`, "#ffffff", 1.5, 2);
+  b += `<path d="M1050 676C1090 650 1140 626 1200 600M1110 700C1140 760 1170 820 1190 900M1220 680C1250 740 1280 820 1300 900" fill="none" stroke="#6a74a8" stroke-width="3" opacity=".7"/><path d="M952 610C962 614 972 618 980 624M966 628C974 632 980 638 984 646" fill="none" stroke="#3a4274" stroke-width="1.8" stroke-linecap="round"/>`;
+  b += `<g fill="#34489a" opacity=".85"><ellipse cx="934" cy="596" rx="5" ry="2.5"/><ellipse cx="940" cy="640" rx="4" ry="2"/><ellipse cx="966" cy="606" rx="3" ry="1.6"/></g>`;
+  // drifting motes in the shaft
+  for (let i = 0; i < 18; i++) b += `<circle cx="${n1(640 + r() * 320)}" cy="${n1(180 + r() * 400)}" r="${n1(1 + r() * 1.6)}" fill="#eef3ff" ${A(p, "up", r() * 8, 6 + r() * 4)}/>`;
+  b += `<rect width="1600" height="900" fill="url(#${p}-vg)"/>`;
+  return svg(p, defs + rg(`${p}-vg`, [[0, "#000", 0], [0.7, "#000", 0.1], [1, "#02030a", 0.8]], 0.5, 0.4, 0.75), b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_letter — Ch2: a letter burning in the candle flame
+// ────────────────────────────────────────────────────────────────────────────
+function cgLetter(): string {
+  const p = "cg_letter";
+  const r = rng(808);
+  const defs =
+    rg(`${p}-bg`, [
+      [0, "#3a2a2a"],
+      [0.4, "#1a1428"],
+      [1, "#06060f"],
+    ], 0.45, 0.5, 0.7) +
+    glowGrad(`${p}-fire`, "#ffb060", 0.9, 0.3) +
+    glowGrad(`${p}-warm`, "#f6c77a", 0.55, 0.15) +
+    lg(`${p}-flame`, 0, 1, 0, 0, [
+      [0, "#fff6dc"],
+      [0.35, "#f6d48f"],
+      [0.75, "#e5a654"],
+      [1, "#b8742e", 0],
+    ]) +
+    lg(`${p}-paper`, 0, 1, 1, 0, [
+      [0, "#f6d8a8"],
+      [0.4, "#efe4cf"],
+      [1, "#b8ae9c"],
+    ]) +
+    lg(`${p}-desk`, 0, 0, 0, 1, [
+      [0, "#3a2418"],
+      [1, "#120a08"],
+    ]) +
+    lg(`${p}-wax`, 0, 0, 1, 0, [
+      [0, "#e8dcc8"],
+      [0.4, "#fff4e0"],
+      [1, "#9a8a78"],
+    ]) +
+    blurFilter(`${p}-b`, 5);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  // stone wall hint + bokeh
+  for (let i = 0; i < 12; i++) b += `<circle cx="${n1(r() * 1600)}" cy="${n1(r() * 520)}" r="${n1(14 + r() * 40)}" fill="#f6c77a" opacity="${n1(0.03 + r() * 0.06)}"/>`;
+  b += `<circle cx="760" cy="440" r="620" fill="url(#${p}-warm)" opacity=".7"/>`;
+  // desk
+  b += `<path d="M0 620Q800 600 1600 620V900H0Z" fill="url(#${p}-desk)"/><path d="M0 620Q800 600 1600 620" stroke="#8a5a34" stroke-width="2" opacity=".6"/>`;
+  b += `<path d="M0 680Q800 664 1600 690M0 760Q800 744 1600 770" stroke="#241410" stroke-width="3" opacity=".6"/>`;
+  // candle
+  b += `<ellipse cx="700" cy="640" rx="80" ry="16" fill="#1a0f0a" opacity=".7"/>`;
+  b += `<path d="M660 520V630Q700 646 740 630V520Z" fill="url(#${p}-wax)"/><ellipse cx="700" cy="520" rx="40" ry="10" fill="#fff4e0"/><path d="M674 522Q672 560 678 574Q684 560 682 524Z" fill="#fff4e0"/>`;
+  b += `<path d="M640 630Q700 660 760 630L770 640Q700 672 630 640Z" fill="#6a4a2a"/>`;
+  b += `<path d="M700 520V500" stroke="#2a1a10" stroke-width="3"/>`;
+  // flame
+  b += `<circle cx="700" cy="470" r="200" fill="url(#${p}-fire)" opacity=".55"/>`;
+  b += `<g ${A(p, "fl", 0, 2.2)}><path d="M700 402C712 430 728 452 726 478C724 498 712 508 700 508C688 508 676 498 674 478C672 452 688 430 700 402Z" fill="url(#${p}-flame)"/>` +
+    `<path d="M700 450C706 464 712 476 710 488C708 498 704 502 700 502C696 502 692 498 690 488C688 476 694 464 700 450Z" fill="#fffaf0"/></g>`;
+  // the letter, lower-left corner burning into the flame
+  const T = "translate(548 250) rotate(-14)";
+  const paperD = "M60 0L420 20L400 300L200 290C180 270 190 250 160 240C140 230 150 210 120 200C100 190 110 160 80 150C60 140 70 120 48 110Z";
+  const charD = "M200 290C180 270 190 250 160 240C140 230 150 210 120 200C100 190 110 160 80 150C60 140 70 120 48 110L62 106C82 118 76 136 96 146C124 158 116 184 136 194C164 204 160 226 176 234C202 246 196 268 214 284Z";
+  b += `<g transform="${T}"><path d="M70 10L430 32L410 310L210 300Z" fill="#000" opacity=".25" transform="translate(12 16)"/>` +
+    `<path d="${paperD}" fill="url(#${p}-paper)"/>` +
+    `<path d="M400 20C412 120 408 220 400 300" fill="none" stroke="#8a7a68" stroke-width="3" opacity=".5"/>` +
+    `<path d="${charD}" fill="#1a0e0a"/>` +
+    `<g filter="url(#${p}-b)"><path d="M204 294C184 272 192 252 162 242C142 232 152 212 122 202C102 192 112 162 82 152C62 142 72 122 50 112" fill="none" stroke="#ff9a40" stroke-width="7"/></g>` +
+    `<path d="M204 294C184 272 192 252 162 242C142 232 152 212 122 202C102 192 112 162 82 152C62 142 72 122 50 112" fill="none" stroke="#ffe0a0" stroke-width="2"/>`;
+  // first line: glowing golden strokes (the title line); other lines ink
+  const first = scriptRows(r, [[110, 40], [360, 52], [360, 82], [110, 70]], 1, 13, 0.95);
+  const rest = scriptRows(r, [[150, 90], [390, 104], [380, 290], [210, 280]], 7, 7, 0.9);
+  b += `<path d="${first}" fill="none" stroke="#e5a654" stroke-width="5" stroke-linecap="round" opacity=".5"/><path d="${first}" fill="none" stroke="#fff0c8" stroke-width="2" stroke-linecap="round"/>`;
+  b += `<path d="${rest}" fill="none" stroke="#3a2a30" stroke-width="1.6" stroke-linecap="round" opacity=".75"/>` +
+    // curling top-right corner
+    `<path d="M360 16L420 20L416 78C400 60 380 40 360 16Z" fill="#8a7a64"/><path d="M360 16C384 30 400 52 416 78C396 70 372 50 360 16Z" fill="#d8ccb4"/>` +
+    // flames licking along the burning edge
+    `<g ${A(p, "fl", 1, 1.8)}><path d="M90 150C70 120 84 90 76 60C100 86 104 110 118 130C124 110 120 96 128 80C146 110 140 150 132 176Z" fill="url(#${p}-flame)" opacity=".9"/></g>` +
+    `<g ${A(p, "fl", 0.4, 2.1)}><path d="M150 236C136 210 146 186 142 164C160 186 164 204 176 222C180 206 178 194 184 182C198 208 194 236 186 256Z" fill="url(#${p}-flame)" opacity=".85"/></g></g>`;
+  // embers rising
+  for (let i = 0; i < 26; i++) {
+    const x = 640 + r() * 260;
+    const y = 120 + r() * 360;
+    b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.2 + r() * 2.2)}" fill="${r() < 0.5 ? "#ffcf80" : "#ff9a40"}" ${A(p, i % 3 ? "up" : "tw", r() * 8, 3 + r() * 4)}/>`;
+  }
+  // ash flakes
+  let ash = "";
+  for (let i = 0; i < 10; i++) ash += `M${n1(700 + r() * 200)} ${n1(200 + r() * 260)}l${n1(4 + r() * 6)} ${n1(-2 + r() * 4)}l-3 4z`;
+  b += `<path d="${ash}" fill="#2a1a14" opacity=".8"/>`;
+  // chains at the right edge of frame (on the desk, rising out of shot)
+  b += chain(1180, 900, 1240, 560, -40, "#1a1418", "#8a6a50", 14) + chain(1260, 610, 1600, 540, 60, "#1a1418", "#8a6a50", 14);
+  b += `<path d="M1150 600C1150 570 1190 556 1220 560C1250 564 1272 584 1270 610C1268 636 1230 646 1200 642C1170 638 1150 626 1150 600ZM1170 602C1172 620 1196 628 1214 626C1236 624 1250 612 1250 600C1248 584 1232 576 1212 576C1190 576 1168 586 1170 602Z" fill="#1c1418" fill-rule="evenodd" stroke="#6f95e8" stroke-width="2" stroke-opacity=".6"/>`;
+  b += `<rect width="1600" height="900" fill="url(#${p}-vg)"/>`;
+  return svg(p, defs + rg(`${p}-vg`, [[0, "#000", 0], [0.6, "#000", 0.15], [1, "#020203", 0.9]], 0.45, 0.45, 0.72), b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_vault — Ch4: the blank book and its ghostly traces
+// ────────────────────────────────────────────────────────────────────────────
+function cgVault(): string {
+  const p = "cg_vault";
+  const r = rng(909);
+  const defs =
+    rg(`${p}-bg`, [
+      [0, "#1e2e6a"],
+      [0.5, "#0e1638"],
+      [1, "#04060f"],
+    ], 0.5, 0.45, 0.8) +
+    glowGrad(`${p}-g`, "#dfe8ff", 0.95, 0.35) +
+    glowGrad(`${p}-bl`, "#5e8fe8", 0.6, 0.2) +
+    lg(`${p}-page`, 0, 0, 0, 1, [
+      [0, "#ffffff"],
+      [1, "#b9c6f2"],
+    ]) +
+    lg(`${p}-ghost`, 0, 1, 0, 0, [
+      [0, "#eef3ff", 0.75],
+      [1, "#b9c9f5", 0.08],
+    ]) +
+    lg(`${p}-hand`, 0, 0, 1, 1, [
+      [0, "#aab4e0"],
+      [1, "#232a58"],
+    ]) +
+    blurFilter(`${p}-b`, 6);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  // endless chained shelves receding
+  let sh = "";
+  let bk = "";
+  for (const [x0, x1, s2] of [[0, 480, 1], [1120, 1600, 1], [380, 600, 0.6], [1000, 1220, 0.6]] as [number, number, number][]) {
+    for (let y = 40; y < 800; y += 90 * s2) {
+      sh += `M${x0} ${Math.round(y)}H${x1}`;
+      for (let x = x0 + 4; x < x1 - 8; x += (10 + r() * 10) * s2) bk += `M${Math.round(x)} ${Math.round(y - 4)}v${-Math.round((40 + r() * 30) * s2)}`;
+    }
+  }
+  b += `<path d="${bk}" stroke="#23306b" stroke-width="7" opacity=".55"/><path d="${sh}" stroke="#070a1c" stroke-width="8"/>`;
+  let ch = "";
+  for (let i = 0; i < 6; i++) ch += chain(r() < 0.5 ? r() * 460 : 1140 + r() * 460, 60 + r() * 300, r() < 0.5 ? r() * 460 : 1140 + r() * 460, 200 + r() * 500, 60, "#0b0f26", "#5e8fe8", 5);
+  b += `<g opacity=".7">${ch}</g>`;
+  b += `<rect width="1600" height="900" fill="url(#${p}-bl)" opacity=".25"/>`;
+  // floating star-ink glyphs in the vault air
+  let gl = "";
+  for (let i = 0; i < 40; i++) gl += glyphD(r, r() * 1600, 60 + r() * 700, 8 + r() * 8);
+  b += `<path d="${gl}" fill="none" stroke="#8fb8ff" stroke-width="1.4" stroke-linecap="round" opacity=".2"/>`;
+  // lectern
+  b += `<path d="M720 900L760 640H840L880 900Z" fill="#0e1330"/><path d="M620 620L980 620L940 660L660 660Z" fill="#1a2250"/>`;
+  // glow and open blank book
+  b += `<circle cx="800" cy="560" r="360" fill="url(#${p}-g)" opacity=".5"/>`;
+  b += `<path d="M800 556C730 532 640 534 560 548L540 630C630 618 720 622 800 644Z" fill="url(#${p}-page)"/><path d="M800 556C870 532 960 534 1040 548L1060 630C970 618 880 622 800 644Z" fill="url(#${p}-page)"/><path d="M800 556V644" stroke="#8a98c8" stroke-width="2"/>`;
+  // ghostly images rising from the pages
+  const ghost = `url(#${p}-ghost)`;
+  b += `<path d="M700 560C660 460 700 360 800 300C900 360 940 460 900 560Z" fill="${ghost}" opacity=".35"/>`;
+  // boy's silhouette (young squire, faceless)
+  b += `<g opacity=".6" ${A(p, "up", 0, 9)}>${place(800, 330, 0.66, 0, true, `<path d="${HEAD_M}${HAIR_M}M-22 70C-60 84 -96 110 -110 160C-116 190 -118 220 -118 250H118C118 220 116 190 108 160C96 116 60 88 16 72Z" fill="${ghost}"/>`)}</g>`;
+  // ring
+  b += `<g ${A(p, "pu", 1, 4)}><ellipse cx="930" cy="330" rx="30" ry="11" transform="rotate(-24 930 330)" fill="none" stroke="#eef3ff" stroke-width="3"/><ellipse cx="930" cy="330" rx="30" ry="11" transform="rotate(-24 930 330)" fill="none" stroke="#8fb8ff" stroke-width="9" opacity=".3"/></g>`;
+  // white flowers drifting up from the pages
+  const flower = (x: number, y: number, sc: number) => {
+    let d = "";
+    for (let k = 0; k < 6; k++) {
+      const a = (k * 60 * Math.PI) / 180;
+      const ex = x + Math.cos(a) * 20 * sc;
+      const ey = y + Math.sin(a) * 12 * sc;
+      d += `M${n1(x)} ${n1(y)}Q${n1(x + Math.cos(a + 0.5) * 14 * sc)} ${n1(y + Math.sin(a + 0.5) * 9 * sc)} ${n1(ex)} ${n1(ey)}Q${n1(x + Math.cos(a - 0.5) * 14 * sc)} ${n1(y + Math.sin(a - 0.5) * 9 * sc)} ${n1(x)} ${n1(y)}Z`;
+    }
+    return d;
+  };
+  const fl: [number, number, number][] = [[680, 470, 1.3], [930, 440, 1.1], [720, 360, 0.9], [880, 330, 1], [640, 290, 0.7], [960, 260, 0.8], [760, 180, 0.6], [850, 150, 0.5]];
+  fl.forEach(([x, y, sc], i) => {
+    b += `<g ${A(p, "up", i * 1.1, 7 + i)}><path d="${flower(x, y, sc)}" fill="#f4f1ea" opacity="${n1(0.9 - i * 0.07)}"/></g>`;
+  });
+  // rising glyph sparks
+  for (let i = 0; i < 16; i++) b += `<circle cx="${n1(680 + r() * 240)}" cy="${n1(200 + r() * 360)}" r="${n1(1 + r() * 2)}" fill="#eef3ff" ${A(p, "up", r() * 8, 5 + r() * 4)}/>`;
+  // Estelle's hand reaching in from the lower left, drop of blood
+  const hand = "M300 900C380 800 470 720 560 670C600 648 640 634 672 628C690 624 704 628 708 636C712 644 704 650 690 652C706 654 720 658 724 666C726 674 716 678 700 676C712 682 716 690 708 694C698 698 684 694 672 690C660 700 640 706 620 708C560 740 480 810 430 900Z";
+  b += rim(hand, `url(#${p}-hand)`, "#eef3ff", 0, 2.4);
+  b += `<path d="M560 670C520 700 480 740 440 790" stroke="#dfe6ff" stroke-width="3" opacity=".4"/>`;
+  b += `<g fill="#27407a" opacity=".85"><ellipse cx="696" cy="640" rx="4" ry="2"/><ellipse cx="704" cy="668" rx="3" ry="1.6"/></g>`;
+  b += `<path d="M760 580Q768 596 760 604Q752 596 760 580Z" fill="#a8344a"/><ellipse cx="770" cy="620" rx="9" ry="3" fill="#7c1f33" opacity=".9"/>`;
+  b += `<rect width="1600" height="900" fill="url(#${p}-vg)"/>`;
+  return svg(p, defs + rg(`${p}-vg`, [[0, "#000", 0], [0.6, "#000", 0.15], [1, "#010208", 0.9]], 0.5, 0.45, 0.72), b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_l_bad — Lucien bad ending: spectacles alone on a windowsill
+// ────────────────────────────────────────────────────────────────────────────
+function cgLBad(): string {
+  const p = "cg_l_bad";
+  const r = rng(1010);
+  const defs =
+    lg(`${p}-out`, 0, 0, 0, 1, [
+      [0, "#a9b8e4"],
+      [0.5, "#dfe4f4"],
+      [0.8, "#f6e2cc"],
+      [1, "#f0d2b0"],
+    ]) +
+    lg(`${p}-wall`, 0, 0, 1, 0, [
+      [0, "#262a4e"],
+      [0.5, "#565a84"],
+      [1, "#222648"],
+    ]) +
+    lg(`${p}-beam`, 0, 0, 1, 1, [
+      [0, "#fff8e8", 0.4],
+      [1, "#fff8e8", 0],
+    ]) +
+    lg(`${p}-cur`, 0, 0, 1, 0, [
+      [0, "#f4f1ea", 0.9],
+      [0.5, "#f4f1ea", 0.5],
+      [1, "#f4f1ea", 0.85],
+    ]) +
+    lg(`${p}-sill`, 0, 0, 0, 1, [
+      [0, "#f6ecd8"],
+      [1, "#8a8aa8"],
+    ]) +
+    glowGrad(`${p}-sun`, "#fff4dc", 0.8, 0.25) +
+    blurFilter(`${p}-b`, 3) + rg(`${p}-vg`, [[0, "#000", 0], [0.65, "#000", 0.05], [1, "#0a0c20", 0.6]], 0.5, 0.5, 0.75);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-wall)"/><g transform="translate(800 480) scale(1.75) translate(-790 -540)">`;
+  // wall paneling
+  b += `<path d="M80 80H440V800H80ZM1160 80H1520V800H1160Z" fill="none" stroke="#9a9ec0" stroke-width="4" opacity=".4"/>`;
+  // tall arched window
+  const win = "M560 540V200Q560 60 800 60Q1040 60 1040 200V540Z";
+  b += `<path d="${win}" fill="url(#${p}-out)"/>`;
+  // distant palace spires + faint daytime ring
+  b += `<path d="M560 540V440L600 436V400L612 370L624 400V434L680 430V380L700 330L720 380V428L760 424V330L776 280L792 330V424L850 428V396L866 360L882 396V430L940 432V410L952 384L964 410V436L1040 440V540Z" fill="#9aa4cc" opacity=".75"/>` +
+    `<path d="M560 540V470Q640 456 720 470T880 466T1040 474V540Z" fill="#7d86b0" opacity=".8"/>` +
+    `<g fill="#fff" opacity=".5"><ellipse cx="660" cy="250" rx="70" ry="10"/><ellipse cx="960" cy="300" rx="50" ry="8"/></g>`;
+  b += `<path d="M560 320Q800 200 1040 260" fill="none" stroke="#fff" stroke-width="24" opacity=".25" stroke-linecap="round"/>`;
+  b += `<circle cx="900" cy="170" r="220" fill="url(#${p}-sun)"/>`;
+  // mullions
+  b += `<path d="M800 60V540M560 300H1040M560 420H1040" stroke="#6a6e94" stroke-width="10"/>`;
+  b += `<path d="${win}" fill="none" stroke="#3a3e64" stroke-width="22"/>`;
+  // curtains (sheer)
+  b += `<path d="M500 40C540 200 540 400 520 640L600 640C620 420 600 200 560 40Z" fill="url(#${p}-cur)"/><path d="M1100 40C1060 200 1060 400 1080 640L1000 640C980 420 1000 200 1040 40Z" fill="url(#${p}-cur)"/>`;
+  b += `<path d="M520 60C550 200 550 400 540 620M1080 60C1050 200 1050 400 1060 620" fill="none" stroke="#cfcadc" stroke-width="3"/>`;
+  // light shaft into the room
+  b += `<path d="M560 60L1040 60L1300 900L700 900Z" fill="url(#${p}-beam)"/>`;
+  // windowsill
+  b += `<path d="M500 540H1100L1140 580H460Z" fill="url(#${p}-sill)"/><path d="M460 580H1140V606H460Z" fill="#6a6e90"/>`;
+  // blank notebook (open) beside
+  b += `<path d="M860 552L1000 548L1020 572L872 578Z" fill="#fbf8f0"/><path d="M866 556L940 553L946 576L874 578Z" fill="#fff"/><path d="M940 552L946 576" stroke="#c8c2b8" stroke-width="1.5"/><path d="M872 578L1020 572L1020 576L872 582Z" fill="#b8b0a4"/>`;
+  // spectacles: thin silver frames, one arm folded
+  b += `<ellipse cx="746" cy="558" rx="64" ry="9" fill="#5a5e84" opacity=".45" filter="url(#${p}-b)"/><path d="M620 548L660 540M900 548L940 540" stroke="#8a86a8" stroke-width="6" opacity=".25"/>`;
+  b += `<g fill="none" stroke="#dfe3f2" stroke-width="2.4"><ellipse cx="712" cy="548" rx="24" ry="12"/><ellipse cx="770" cy="550" rx="24" ry="12"/>` +
+    `<path d="M736 546Q741 540 746 546M688 546L660 538M794 548L820 556L800 562"/></g>`;
+  b += `<g fill="#fff" opacity=".7"><ellipse cx="704" cy="544" rx="8" ry="3"/><ellipse cx="762" cy="546" rx="8" ry="3"/></g>`;
+  b += `<path d="M712 548m-24 0a24 12 0 0 0 48 0" fill="none" stroke="#fff" stroke-width="1" opacity=".6"/>`;
+  // dust motes in the light
+  for (let i = 0; i < 22; i++) b += `<circle cx="${n1(640 + r() * 460)}" cy="${n1(120 + r() * 560)}" r="${n1(0.8 + r() * 1.6)}" fill="#fffaf0" ${A(p, i % 2 ? "up" : "tw", r() * 8, 6 + r() * 5)}/>`;
+  // floor
+  b += `</g><rect width="1600" height="900" fill="url(#${p}-vg)"/>`;
+  return svg(p, defs, b);
+}
+
+/** pile of folded letters: returns [fillPath, linePath] */
+function letterPile(r: () => number, n: number, cx: number, cy: number, rx: number, ry: number, sz: number): [string, string] {
+  let fd = "";
+  let ld = "";
+  for (let i = 0; i < n; i++) {
+    const a = r() * Math.PI * 2;
+    const d = Math.sqrt(r());
+    const x = cx + Math.cos(a) * rx * d;
+    const y = cy + Math.sin(a) * ry * d - (1 - d) * ry * 0.6;
+    const w = sz * (0.8 + r() * 0.5);
+    const h = w * 0.62;
+    const t = (r() - 0.5) * 1.6;
+    const c = Math.cos(t), s2 = Math.sin(t);
+    const P = (u: number, v: number): string => `${Math.round(x + u * c - v * s2)} ${Math.round(y + u * s2 + v * c)}`;
+    fd += `M${P(-w / 2, -h / 2)}L${P(w / 2, -h / 2)}L${P(w / 2, h / 2)}L${P(-w / 2, h / 2)}Z`;
+    ld += `M${P(-w / 2, -h / 2)}L${P(0, h * 0.1)}L${P(w / 2, -h / 2)}`;
+  }
+  return [fd, ld];
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_c_bad — Cassian normal ending: the box of 2,555 letters in the attic
+// ────────────────────────────────────────────────────────────────────────────
+function cgCBad(): string {
+  const p = "cg_c_bad";
+  const r = rng(1111);
+  const defs =
+    lg(`${p}-wall`, 0, 0, 1, 1, [
+      [0, "#3a2c3e"],
+      [0.6, "#241c30"],
+      [1, "#120e1a"],
+    ]) +
+    lg(`${p}-beam`, 1, 0, 0, 1, [
+      [0, "#fff0c8", 0.55],
+      [0.6, "#f6d48f", 0.18],
+      [1, "#f6d48f", 0],
+    ]) +
+    glowGrad(`${p}-sun`, "#fff0c8", 0.8, 0.25) +
+    lg(`${p}-wood`, 0, 0, 0, 1, [
+      [0, "#8a5a34"],
+      [1, "#3a2418"],
+    ]) +
+    lg(`${p}-fig`, 1, 0, 0, 1, [
+      [0, "#5a4458"],
+      [0.5, "#2e2438"],
+      [1, "#1a1424"],
+    ]) +
+    lg(`${p}-paper`, 0, 0, 0, 1, [
+      [0, "#fbf3e2"],
+      [1, "#c8b8a0"],
+    ]) +
+    blurFilter(`${p}-b`, 6);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-wall)"/>`;
+  // slanted roof boards + rafters
+  let boards = "";
+  for (let i = -8; i < 20; i++) boards += `M${i * 90} 0L${i * 90 + 520} 900`;
+  b += `<path d="${boards}" stroke="#1a1420" stroke-width="3" opacity=".6"/>`;
+  b += `<path d="M-100 120L1700 -60M-100 360L1700 180" stroke="#2a1e24" stroke-width="40"/><path d="M-100 100L1700 -80M-100 340L1700 160" stroke="#8a5a34" stroke-width="3" opacity=".5"/>`;
+  b += `<path d="M180 0L60 900M1420 0L1540 900" stroke="#1e1620" stroke-width="54"/>`;
+  // round dormer window upper right with sunlight
+  b += `<circle cx="1180" cy="190" r="200" fill="url(#${p}-sun)"/><circle cx="1180" cy="190" r="84" fill="#fff6dc"/>`;
+  b += `<path d="M1096 190H1264M1180 106V274" stroke="#3a2a28" stroke-width="10"/><circle cx="1180" cy="190" r="84" fill="none" stroke="#3a2a28" stroke-width="14"/>`;
+  b += `<path d="M1110 150L1250 230L880 900L360 900Z" fill="url(#${p}-beam)"/>`;
+  // clutter silhouettes: crates, a covered chair, stacked books
+  b += `<path d="M1240 640V500H1420V640ZM1260 500V430H1400V500ZM120 640V470L200 420L300 470V640Z" fill="#1c1622"/><path d="M1240 500H1420M1260 430H1400" stroke="#8a6a4a" stroke-width="2" opacity=".5"/>`;
+  b += `<path d="M300 640C300 560 330 520 380 510C430 520 450 560 452 640Z" fill="#2e2638"/>`;
+  // floor
+  b += `<path d="M0 630H1600V900H0Z" fill="#1e1620"/><path d="M0 630H1600" stroke="#6a4a34" stroke-width="2" opacity=".6"/>`;
+  b += `<path d="M0 690H1600M0 770H1600" stroke="#140f16" stroke-width="3"/>`;
+  b += `<path d="M560 640L1080 640L1160 760L480 760Z" fill="#f6d48f" opacity=".12"/>`;
+  // the box (open) with overflowing letters
+  b += `<path d="M820 470L1060 470L1080 640L840 650Z" fill="url(#${p}-wood)"/><path d="M820 470L840 650L780 630L766 468Z" fill="#4a2e1e"/>`;
+  b += `<path d="M846 520H1066M850 580H1072" stroke="#3a2418" stroke-width="3"/>`;
+  // lid leaning against the box
+  b += `<path d="M1060 470L1130 330L1180 350L1110 490Z" fill="#6a4228"/><path d="M1060 470L1130 330" stroke="#c89a64" stroke-width="2"/>`;
+  const [pf, pl] = letterPile(r, 130, 920, 468, 150, 34, 30);
+  const [sf, sl] = letterPile(r, 40, 900, 668, 240, 22, 28);
+  b += `<path d="${sf}" fill="url(#${p}-paper)" stroke="#8a7a64" stroke-width="1"/><path d="${sl}" fill="none" stroke="#9a8a74" stroke-width="1"/>`;
+  b += `<path d="${pf}" fill="url(#${p}-paper)" stroke="#8a7a64" stroke-width="1"/><path d="${pl}" fill="none" stroke="#9a8a74" stroke-width="1"/>`;
+  // dust in the beam
+  for (let i = 0; i < 26; i++) {
+    const t = r();
+    const y = 220 + t * 560;
+    const x = 1120 - t * 450 + (r() - 0.3) * 260;
+    b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(0.8 + r() * 1.8)}" fill="#fff6dc" ${A(p, i % 2 ? "up" : "sw", r() * 8, 6 + r() * 5)}/>`;
+  }
+  // Estelle (older), kneeling, a letter in her hands
+  const hx = 686, hy = 350, hs = 0.66;
+  const body = "M650 390C630 400 616 420 612 450C606 490 604 530 598 570C592 600 580 624 572 646H790C792 624 780 610 760 600C740 590 724 574 716 552C712 530 716 500 716 474C716 444 708 414 690 396Z";
+  const arm = "M700 410C712 426 720 450 730 470C738 482 750 488 764 486L766 500C748 506 728 500 714 486C700 470 692 446 688 424Z";
+  let fg = `<g filter="url(#${p}-b)" opacity=".45"><path d="${body}" fill="none" stroke="#ffe0a8" stroke-width="8"/></g>`;
+  fg += place(hx, hy, hs, 20, false, rim(HAIR_MID, "#2a1c24", "#ffd89a", -2.4, 1.2));
+  fg += rim(body, `url(#${p}-fig)`, "#ffd89a", -2.6, 1);
+  fg += `<path d="M640 440C636 500 630 560 616 630M680 450C684 520 700 580 740 620" fill="none" stroke="#6a5468" stroke-width="2" opacity=".6"/>`;
+  fg += place(hx, hy, hs, 20, false, rim(HEAD_F, `url(#${p}-fig)`, "#ffe6b8", -2.6, 0.8) + rim(BANGS_F, "#2a1c24", "#ffd89a", -1.6, 1) + faceMarks(false, 1, false, true));
+  // the letter she holds (open, lit)
+  fg += `<path d="M752 454L806 442L814 490L760 500Z" fill="#fbf3e2"/><path d="M760 462L802 454M762 472L804 464M764 482L798 476" stroke="#6a5a5a" stroke-width="1.4" opacity=".6"/>`;
+  fg += rim(arm, `url(#${p}-fig)`, "#ffd89a", -1.2, 1.6);
+  fg += `<path d="M760 486C766 482 772 484 774 490C770 496 762 498 758 494Z" fill="#3a2c3a"/>`;
+  b += fg;
+  // tear on her cheek
+  const tp = wpt(27, 14, hx, hy, hs, 20, false);
+  b += `<path d="M${n1(tp[0])} ${n1(tp[1])}q3 6 0 9q-3 -3 0 -9z" fill="#fff" ${A(p, "tw", 0, 3)}/>`;
+  b += `<rect width="1600" height="900" fill="url(#${p}-vg)"/>`;
+  return svg(p, defs + rg(`${p}-vg`, [[0, "#000", 0], [0.6, "#000", 0.1], [1, "#0a0608", 0.8]], 0.55, 0.45, 0.75), b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_depth — True route: sinking through the sea of names
+// ────────────────────────────────────────────────────────────────────────────
+function cgDepth(): string {
+  const p = "cg_depth";
+  const r = rng(1212);
+  const defs =
+    lg(`${p}-sea`, 0, 0, 0, 1, [
+      [0, "#6a8ad0"],
+      [0.18, "#2a4488"],
+      [0.5, "#101a44"],
+      [1, "#03050c"],
+    ]) +
+    lg(`${p}-shaft`, 0, 0, 0, 1, [
+      [0, "#dfe8ff", 0.45],
+      [1, "#dfe8ff", 0],
+    ]) +
+    glowGrad(`${p}-g`, "#b9d0ff", 0.8, 0.25) +
+    lg(`${p}-fig`, 0, 0, 0, 1, [
+      [0, "#4a5a9a"],
+      [0.4, "#1e2856"],
+      [1, "#0a0f2a"],
+    ]) +
+    lg(`${p}-hair`, 0, 1, 0, 0, [
+      [0, "#141634"],
+      [0.6, "#1e2458"],
+      [1, "#2a3a7a", 0.5],
+    ]) +
+    lg(`${p}-dress`, 0, 0, 0, 1, [
+      [0, "#aab8e8"],
+      [0.4, "#4a5a98"],
+      [1, "#0e1438", 0.3],
+    ]) +
+    blurFilter(`${p}-b`, 8);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-sea)"/>`;
+  // surface ripple light
+  b += `<path d="M0 0H1600V60Q1400 90 1200 60T800 64T400 58T0 70Z" fill="#b9d0ff" opacity=".35"/>`;
+  // light shafts from above
+  let sh = "";
+  for (let i = 0; i < 7; i++) {
+    const x = 300 + i * 170 + r() * 60;
+    const w = 30 + r() * 60;
+    sh += `M${n1(x)} 0L${n1(x + w)} 0L${n1(x + w * 0.4 + (x - 800) * 0.5)} 900L${n1(x - w * 0.6 + (x - 800) * 0.5)} 900Z`;
+  }
+  b += `<path d="${sh}" fill="url(#${p}-shaft)"/>`;
+  // millions of letters: far dots + mid glyphs + near bright glyphs
+  const far: Pt[] = [];
+  for (let i = 0; i < 480; i++) far.push([r() * 1600, r() * 900]);
+  b += dotPath(far, 2, "#9fc0ff", 0.5);
+  let mid = "";
+  for (let i = 0; i < 170; i++) mid += runeD(r, r() * 1600, r() * 900, 6 + r() * 6);
+  b += `<path d="${mid}" fill="none" stroke="#8fb8ff" stroke-width="1.3" stroke-linecap="round" opacity=".55"/>`;
+  let near = "";
+  for (let i = 0; i < 26; i++) {
+    const a = r() * Math.PI * 2;
+    const d = 160 + r() * 520;
+    near += runeD(r, 800 + Math.cos(a) * d, 420 + Math.sin(a) * d * 0.7, 14 + r() * 10);
+  }
+  b += `<g filter="url(#${p}-b)"><path d="${near}" fill="none" stroke="#8fb8ff" stroke-width="5" stroke-linecap="round" opacity=".6"/></g><path d="${near}" fill="none" stroke="#eef4ff" stroke-width="1.8" stroke-linecap="round"/>`;
+  // animated drifting glyphs
+  for (let i = 0; i < 18; i++) b += `<path d="${runeD(r, 500 + r() * 600, 120 + r() * 560, 10 + r() * 6)}" fill="none" stroke="#dfe8ff" stroke-width="1.6" stroke-linecap="round" ${A(p, i % 2 ? "up" : "pu", r() * 8, 6 + r() * 5)}/>`;
+  // glow around her
+  b += `<circle cx="800" cy="380" r="330" fill="url(#${p}-g)" opacity=".45"/>`;
+  // Estelle sinking: head tipped back, hair floating up, one arm reaching up
+  const hx = 790, hy = 330, hs = 0.7;
+  const hairM = "M806 306C796 270 826 236 818 196C812 164 836 136 830 100C846 136 846 170 840 200C852 180 874 170 892 150C888 182 870 206 850 230C840 254 834 280 822 304ZM800 300C786 266 792 230 780 196C770 166 780 130 766 96C752 130 756 164 758 196C746 170 724 150 700 132C708 168 724 196 734 226C712 212 684 208 656 214C680 232 704 252 716 280C728 304 748 322 772 330Z";
+  const dress = "M782 376L800 376C810 388 826 392 842 398C848 420 842 450 838 472C848 520 870 566 900 606C926 642 948 676 968 694C948 690 930 694 912 690C894 706 866 712 842 700C824 716 796 716 776 700C756 716 730 710 716 690C690 700 672 684 640 690C668 648 700 610 722 572C740 532 750 492 748 470C742 448 736 420 742 400C758 394 774 390 782 376Z";
+  const arm = "M826 398C836 370 848 330 858 290C866 250 874 206 880 166C882 152 894 150 896 164C896 208 888 254 878 298C868 338 856 374 842 404Z";
+  const armL = "M748 404C730 430 712 460 690 486C682 496 690 506 700 498C724 474 744 446 762 418Z";
+  let fg = `<g filter="url(#${p}-b)" opacity=".45"><path d="${dress}${arm}" fill="none" stroke="#dfe8ff" stroke-width="10"/></g>`;
+  fg += rim(hairM, `url(#${p}-hair)`, "#cfe0ff", 1.4, 2.4);
+  fg += `<path d="M818 290C822 250 832 220 830 190M790 290C784 250 780 210 772 170M760 300C744 270 726 250 704 236" fill="none" stroke="#9fb4e8" stroke-width="1.6" opacity=".6"/>`;
+  fg += `<path d="M780 346L800 346L802 384L780 384Z" fill="#1e2856"/>`;
+  fg += rim(dress, `url(#${p}-dress)`, "#eef3ff", 0, 2.6);
+  fg += `<path d="M784 420C778 500 756 600 716 690M810 420C818 500 850 600 912 690M796 430C796 520 790 620 776 700" fill="none" stroke="#dfe6ff" stroke-width="1.6" opacity=".35"/>`;
+  fg += rim(armL, `url(#${p}-fig)`, "#dfe8ff", 0, 2);
+  fg += place(hx, hy, hs, -42, false, rim(HEAD_F, `url(#${p}-fig)`, "#eef3ff", 0, 2.4) + rim("M30 -40C22 -54 0 -60 -20 -54C-42 -46 -54 -24 -54 4C-54 20 -50 34 -44 42C-30 30 -14 20 -4 0C4 -10 12 -22 18 -28C22 -26 28 -28 30 -40Z", "#141634", "#cfe0ff", 0, 2) + faceMarks(false, 1, false, true));
+  fg += rim(arm, `url(#${p}-fig)`, "#eef3ff", -1.5, 2);
+  // bubbles from her lips drifting up
+  b += fg;
+  const lp = wpt(38, 22, hx, hy, hs, -42, false);
+  for (let i = 0; i < 5; i++) b += `<circle cx="${n1(lp[0] + 6 + i * 3)}" cy="${n1(lp[1] - 12 - i * 22)}" r="${n1(2 + i * 0.8)}" fill="none" stroke="#eef3ff" stroke-width="1.2" ${A(p, "up", i, 4 + i)}/>`;
+  // her reaching hand touches a bright name
+  b += `<circle cx="888" cy="150" r="60" fill="url(#${p}-g)" ${A(p, "pu", 0, 3)}/><path d="${sparkle(888, 146, 12)}" fill="#fff"/>`;
+  b += `<rect width="1600" height="900" fill="url(#${p}-vg)"/>`;
+  return svg(p, defs + rg(`${p}-vg`, [[0, "#000", 0], [0.6, "#000", 0.1], [1, "#010206", 0.85]], 0.5, 0.4, 0.75), b);
+}
+
 export const CGS: Record<string, string> = {
   cg_oath: cgOath(),
+  cg_newborn: cgNewborn(),
   cg_meet: cgMeet(),
+  cg_letter: cgLetter(),
   cg_lantern: cgLantern(),
+  cg_vault: cgVault(),
   cg_confession: cgConfession(),
   cg_snow_kiss: cgSnowKiss(),
+  cg_c_bad: cgCBad(),
+  cg_l_bad: cgLBad(),
+  cg_depth: cgDepth(),
   cg_true: cgTrue(),
 };

@@ -556,7 +556,9 @@ ruby rt { font-size: 0.5em; color: var(--ink-soft); letter-spacing: 0.08em; }
   .nameplate { font-size: calc(15px * var(--font-scale)); padding: 6px 18px 6px 16px; top: -17px; }
   .line { line-height: 1.8; }
   .quick { left: 50%; right: auto; transform: translateX(-50%); width: calc(100% - 2 * var(--gutter) - 12px); justify-content: space-between; overflow-x: auto; scrollbar-width: none; }
-  .quick button { font-size: 10.5px; padding: 4px 3px; letter-spacing: 0; flex-shrink: 0; }
+  .quick button { font-size: 11px; padding: 4px 3px; letter-spacing: 0; flex-shrink: 0; }
+  .quick .wide-only { display: none; }
+  .title-foot { font-size: 10px; letter-spacing: 0.08em; padding: 0 12px; }
   .slots { grid-template-columns: 1fr; }
   .setting { grid-template-columns: 1fr 64px; }
   .setting input[type="range"] { grid-column: 1 / 3; grid-row: 2; }

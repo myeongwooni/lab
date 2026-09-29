@@ -562,8 +562,9 @@ export default function Game() {
             </button>
             <button onClick={() => setOverlay("save")}>저장</button>
             <button onClick={() => setOverlay("load")}>불러오기</button>
-            <button onClick={() => saveTo("quick")}>빠른저장</button>
+            <button className="wide-only" onClick={() => saveTo("quick")}>빠른저장</button>
             <button
+              className="wide-only"
               onClick={() => {
                 const d = loadSlot("quick");
                 if (d) loadData(d);

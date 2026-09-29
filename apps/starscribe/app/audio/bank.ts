@@ -242,7 +242,7 @@ const SPECS: Record<SampleInst, Spec> = {
   piano: { sr: 32000, notes: range(28, 100, 4), render: piano },
   celesta: {
     sr: 32000,
-    notes: range(60, 105, 5),
+    notes: range(55, 105, 5),
     render: (sr, m, r) => ({
       f0: mtof(m),
       data: modal(
@@ -263,7 +263,7 @@ const SPECS: Record<SampleInst, Spec> = {
   },
   mbox: {
     sr: 32000,
-    notes: range(60, 105, 5),
+    notes: range(45, 105, 5),
     render: (sr, m, r) => ({
       f0: mtof(m),
       data: modal(
