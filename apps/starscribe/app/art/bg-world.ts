@@ -34,7 +34,7 @@ class Rng {
 
 const f = (v: number): string => String(Math.round(v * 10) / 10);
 const q = (v: number): string => String(Math.round(v));
-const f2 = (v: number): string => String(Math.round(v * 100) / 100);
+const f2 = (v: number): string => String(Math.round(v * 100) / 100).replace(/^(-?)0\./, "$1.");
 const pt = (p: Pt): string => `${q(p[0])} ${q(p[1])}`;
 
 class Pic {
@@ -60,6 +60,8 @@ class Pic {
     this.d.push(s);
   }
   add(...s: string[]): void {
+    const D = (globalThis as { __bgw?: [string, number, string][] }).__bgw; // DEBUG
+    if (D) for (const x of s) D.push([this.p, x.length, x.slice(0, 70)]); // DEBUG
     this.b.push(...s);
   }
   private uid(): string {
@@ -88,8 +90,9 @@ class Pic {
     if (hit) return hit;
     const n = "g" + this.uid();
     const fxy = fx === undefined ? "" : ` fx="${fx}" fy="${fy}"`;
+    const geo = cx === 0.5 && cy === 0.5 && r === 0.5 ? "" : ` cx="${cx}" cy="${cy}" r="${r}"`;
     this.def(
-      `<radialGradient id="${this.id(n)}" cx="${cx}" cy="${cy}" r="${r}"${fxy}${user ? ' gradientUnits="userSpaceOnUse"' : ""}>${this.stops(st)}</radialGradient>`,
+      `<radialGradient id="${this.id(n)}"${geo}${fxy}${user ? ' gradientUnits="userSpaceOnUse"' : ""}>${this.stops(st)}</radialGradient>`,
     );
     const u = this.ref(n);
     this.cache.set(key, u);
@@ -98,8 +101,8 @@ class Pic {
   /** soft bloom falloff, objectBoundingBox — reuse on any ellipse */
   glow(c: string, hard = false): string {
     return hard
-      ? this.rad([[0, c, 1], [0.12, c, 0.9], [0.3, c, 0.35], [0.6, c, 0.1], [1, c, 0]])
-      : this.rad([[0, c, 1], [0.22, c, 0.55], [0.48, c, 0.2], [0.75, c, 0.06], [1, c, 0]]);
+      ? this.rad([[0, c, 1], [0.14, c, 0.85], [0.35, c, 0.3], [1, c, 0]])
+      : this.rad([[0, c, 1], [0.25, c, 0.5], [0.55, c, 0.15], [1, c, 0]]);
   }
   blur(sd: number, name = "b"): string {
     this.filters++;
@@ -554,6 +557,40 @@ function blobLight(b: Blob[], cx: number, cy: number, rx: number, ry: number, lx
     .filter(([x, y]) => ((x - cx) / rx) * lx + ((y - cy) / ry) * ly > thr)
     .map(([x, y, rr]): Blob => [x + lx * rr * 0.28, y + ly * rr * 0.28, rr * shrink]);
 }
+/** paint blobs as round-capped dots, bucketed by radius (very compact) */
+function blobPaint(b: Blob[], c: string, op = 1, sy = 1, cy = 0): string {
+  const m = new Map<number, Pt[]>();
+  for (const [x, y, rr] of b) {
+    const k = rr < 12 ? Math.max(1, Math.round(rr / 2) * 2) : Math.round(rr / 5) * 5;
+    const a = m.get(k) ?? [];
+    a.push([x, sy === 1 ? y : cy + (y - cy) / sy]);
+    m.set(k, a);
+  }
+  let s = "";
+  for (const [k, pts] of m) s += `<path d="${dotsD(pts)}" stroke-width="${k * 2}"/>`;
+  const tr = sy === 1 ? "" : ` transform="matrix(1 0 0 ${f2(sy)} 0 ${f(cy * (1 - sy))})"`;
+  return `<g fill="none" stroke="${c}" stroke-linecap="round"${op < 1 ? ` opacity="${f2(op)}"` : ""}${tr}>${s}</g>`;
+}
+/** leafy mass: base blobs + progressively lit, finer clumps toward the light */
+function foliage(r: Rng, cx: number, cy: number, rx: number, ry: number, n: number, rmin: number, rmax: number, lx: number, ly: number, cs: string[], sy = 1): string {
+  const b = blobs(r, cx, cy, rx, ry, n, rmin, rmax);
+  let s = blobPaint(b, cs[0], 1, sy, cy);
+  const thr = [-0.1, 0.35, 0.72];
+  for (let k = 1; k < cs.length; k++) {
+    const sub: Blob[] = [];
+    for (const [x, y, rr] of b) {
+      const d = ((x - cx) / rx) * lx + ((y - cy) / ry) * ly;
+      if (d < thr[k - 1] + r.r(-0.15, 0.15)) continue;
+      const m = k === 1 ? 2 : 3;
+      for (let j = 0; j < m; j++) {
+        const s2 = rr * r.r(0.22, 0.5) * (1 - k * 0.12);
+        sub.push([x + lx * rr * 0.35 + r.r(-rr, rr) * 0.55, y + ly * rr * 0.35 + r.r(-rr, rr) * 0.55, s2]);
+      }
+    }
+    s += blobPaint(sub, cs[k], 1, sy, cy);
+  }
+  return s;
+}
 function glyphD(r: Rng, x: number, y: number, s: number): string {
   let d = "";
   const k = r.i(2, 3);
@@ -583,7 +620,7 @@ function glyphD(r: Rng, x: number, y: number, s: number): string {
 /* moonflower symbol (six petals, lily × magnolia) */
 function moonflowerDef(P: Pic, tone: { hi: string; mid: string; edge: string; heart: string }): { top: string; side: string } {
   const pg = P.rad([[0, tone.heart], [0.25, tone.hi], [0.7, tone.mid], [1, tone.edge]], 0, 0, 44, true);
-  const petal = (L: number, W: number) => `M0 0C${W} ${-L * 0.25} ${W * 0.95} ${-L * 0.72} 0 ${-L}C${-W * 0.95} ${-L * 0.72} ${-W} ${-L * 0.25} 0 0Z`;
+  const petal = (L: number, W: number) => `M0 0C${W} ${f(-L * 0.25)} ${f(W * 0.95)} ${f(-L * 0.72)} 0 ${-L}C${f(-W * 0.95)} ${f(-L * 0.72)} ${-W} ${f(-L * 0.25)} 0 0Z`;
   let top = "";
   for (let k = 0; k < 6; k++) {
     const L = k % 2 ? 36 : 42;
@@ -679,15 +716,14 @@ function sGarden(): string {
   P.add(rect(P.lin([[0, "#050820"], [0.3, "#0e1644"], [0.52, "#27397e"], [0.62, "#4458a4"]])));
   P.add(ell(MX, MY, 820, 560, P.glow("#5d74d0"), 0.6));
   P.add(ell(MX, MY, 330, 300, P.glow("#c3d0ff"), 0.4));
-  P.add(starField(P, r, { n: 260, box: [0, 0, 1600, 470], keep: (x, y) => Math.min(1, Math.hypot(x - MX, y - MY) / 420) * (1 - y / 560) }));
-  P.add(ring(P, r, { a: [-160, 520], c: [640, -140], b: [1760, 260], w: 66, n: 900, glow: 0.8, fs, bright: 6 }));
+  P.add(starField(P, r, { n: 180, box: [0, 0, 1600, 470], keep: (x, y) => Math.min(1, Math.hypot(x - MX, y - MY) / 420) * (1 - y / 560) }));
+  P.add(ring(P, r, { a: [-160, 520], c: [640, -140], b: [1760, 260], w: 66, n: 440, glow: 0.8, fs, bright: 6 }));
   // moon
   P.add(ell(MX, MY, 110, 110, P.glow("#f0f4ff", true), 0.7));
   P.add(`<circle cx="${MX}" cy="${MY}" r="50" fill="${P.rad([[0, "#ffffff"], [0.65, "#f3f4ff"], [1, "#d3daf6"]], 0.4, 0.38, 0.62)}"/>`);
   P.add(path(`M${MX - 26} ${MY - 8}c6-14 22-16 30-6c-4 12-22 18-30 6ZM${MX + 6} ${MY + 16}c8-6 20-2 22 8c-8 6-20 4-22-8Z`, "#c5cdef", 0.4));
   // far treeline, cypresses, hazy
-  const far = blobs(r, 800, 492, 900, 18, 70, 18, 42);
-  P.add(path(blobsD(far, 0.8), "#2c3c84"));
+  P.add(foliage(r, 800, 492, 900, 16, 64, 14, 36, 0.3, -1, ["#2c3c84", "#3a4c98", "#4d62ae"], 0.8));
   let cyp = "";
   for (const [x, h] of [
     [380, 150],
@@ -699,7 +735,6 @@ function sGarden(): string {
   ] as Pt[])
     cyp += `M${x - 13} 500C${x - 16} ${500 - h * 0.6} ${x - 4} ${500 - h * 0.9} ${x} ${500 - h}C${x + 4} ${500 - h * 0.9} ${x + 16} ${500 - h * 0.6} ${x + 13} 500Z`;
   P.add(path(cyp, "#26357a"));
-  P.add(path(blobsD(blobLight(far, 800, 492, 900, 18, 0.3, -1, 0.1, 0.6), 0.8), "#4d62ae", 0.7));
   P.add(ell(800, 505, 1000, 60, P.glow("#9fb2f4"), 0.6));
 
   // ── rotunda (defined once, reused for the reflection)
@@ -754,47 +789,48 @@ function sGarden(): string {
   }
   vine += `M${CX - 168} ${BY - 214}Q${CX - 84} ${BY - 170} ${CX} ${BY - 200}Q${CX + 84} ${BY - 170} ${CX + 168} ${BY - 214}`;
   P.add(`<path d="${vine}" fill="none" stroke="#15294a" stroke-width="2.4"/>`);
-  for (let k = 0; k < 16; k++) P.add(use(r.n() < 0.55 ? mf.top : mf.side, CX - 165 + r.r(0, 330), BY - 226 + r.r(0, 110), r.r(0.17, 0.28), r.r(-30, 30), 0.72));
+  for (let k = 0; k < 9; k++) P.add(use(r.n() < 0.55 ? mf.top : mf.side, CX - 165 + r.r(0, 330), BY - 226 + r.r(0, 110), r.r(0.17, 0.28), r.r(-30, 30), 0.72));
 
   // ── framing trees (dappled moonlight)
   const tree = (cx: number, cy: number, rx: number, ry: number, lx: number, tx: number) => {
-    const b = blobs(r, cx, cy, rx, ry, 46, 40, 96);
-    const l1 = blobLight(b, cx, cy, rx, ry, lx, -0.7, 0.15, 0.7);
-    const l2 = blobLight(b, cx, cy, rx, ry, lx, -0.7, 0.62, 0.45);
     const trunk = `M${tx - 22} 720C${tx - 16} 600 ${tx - 4} 480 ${tx - 30} ${cy + 40}L${tx + 4} ${cy + 50}C${tx + 14} 480 ${tx + 26} 600 ${tx + 34} 720Z`;
     const pts: Pt[] = [];
-    for (const [x, y, rr] of l2) for (let j = 0; j < 3; j++) pts.push([x + r.r(-rr, rr) * 0.7, y + r.r(-rr, rr) * 0.7]);
-    return path(trunk, "#080c26") + path(blobsD(b), "#0c1235") + path(blobsD(l1), "#1d2a62") + path(blobsD(l2), "#34478e", 0.9) + dots(pts, 2.4, "#aab8ee", 0.55);
+    for (let j = 0; j < 60; j++) {
+      const a = r.r(0, 6.28);
+      const d = Math.sqrt(r.n());
+      const x = cx + Math.cos(a) * rx * d;
+      const y = cy + Math.sin(a) * ry * d;
+      if ((x - cx) / rx * lx - (y - cy) / ry * 0.7 > 0.35) pts.push([x, y]);
+    }
+    return path(trunk, "#080c26") + foliage(r, cx, cy, rx, ry, 42, 32, 84, lx, -0.7, ["#0b1134", "#141d4a", "#22306a", "#3a4e94"]) + dots(pts, 2.2, "#b4c2f2", 0.6);
   };
   P.add(tree(150, 190, 320, 190, 0.75, 170), tree(1470, 170, 290, 200, 0.2, 1450));
   // weeping strands of moonflowers from the left tree
   let wv = "";
   const wf: string[] = [];
-  for (let k = 0; k < 9; k++) {
-    const x = 250 + k * 36 + r.r(-8, 8);
+  for (let k = 0; k < 7; k++) {
+    const x = 250 + k * 44 + r.r(-8, 8);
     const y0 = 250 + r.r(-30, 40);
     const len = r.r(90, 200);
     wv += `M${q(x)} ${q(y0)}q${q(r.r(-8, 8))} ${q(len / 2)} ${q(r.r(-4, 4))} ${q(len)}`;
-    for (let j = 0; j < 3; j++) wf.push(use(mf.side, x + r.r(-4, 4), y0 + len * (0.4 + j * 0.3), r.r(0.16, 0.24), 180 + r.r(-20, 20)));
+    for (let j = 0; j < 2; j++) wf.push(use(mf.side, x + r.r(-4, 4), y0 + len * (0.4 + j * 0.3), r.r(0.16, 0.24), 180 + r.r(-20, 20)));
   }
   P.add(`<path d="${wv}" fill="none" stroke="#1d2e5c" stroke-width="1.6"/>`, wf.join(""));
 
   // ── hedged flower beds (mid)
-  const hedge = (x0: number, x1: number) => blobs(r, (x0 + x1) / 2, 575, (x1 - x0) / 2, 22, 34, 24, 44);
-  const hb = [...hedge(-40, 620), ...hedge(980, 1640)];
   P.add(path(`M-40 590H1640V760H-40Z`, "#0b1236"));
-  P.add(path(blobsD(hb, 0.75), "#111a48"), path(blobsD(blobLight(hb, 800, 575, 820, 22, 0.2, -1, 0.2, 0.7), 0.7), "#263a7c", 0.85));
+  for (const hx of [290, 1310]) P.add(foliage(r, hx, 578, 340, 20, 36, 18, 40, 0.2, -1, ["#101946", "#1a2658", "#2a3c7e"], 0.75));
   P.add(ell(290, 560, 380, 60, P.glow("#dbe4ff"), 0.4), ell(1310, 560, 380, 60, P.glow("#dbe4ff"), 0.4));
   const tiny: Pt[] = [];
   const tiny2: Pt[] = [];
-  for (let k = 0; k < 260; k++) {
+  for (let k = 0; k < 200; k++) {
     const x = r.n() < 0.5 ? r.r(-20, 610) : r.r(990, 1620);
     const y = r.r(548, 600);
     (r.n() < 0.6 ? tiny : tiny2).push([x, y]);
   }
   P.add(dots(tiny, 3.2, "#eef2ff", 0.8), dots(tiny2, 5, "#ffffff", 0.9));
   const fl: [number, number, number][] = [];
-  for (let k = 0; k < 40; k++) {
+  for (let k = 0; k < 22; k++) {
     const x = k % 2 ? r.r(-20, 600) : r.r(1000, 1620);
     const y = r.r(556, 650);
     fl.push([x, y, 0.3 + ((y - 556) / 94) * 0.32]);
@@ -835,13 +871,12 @@ function sGarden(): string {
   P.add(`<g ${P.tw(2.6, 1, 0.4)}>${ell(CX, FY + 4, 90, 7, P.glow("#ffffff"), 0.6)}</g>`);
 
   // ── foreground flower thickets
-  const fb = [...blobs(r, 60, 800, 330, 170, 30, 50, 100), ...blobs(r, 1560, 800, 330, 170, 30, 50, 100)];
-  P.add(path(blobsD(fb), "#070b24"), path(blobsD(blobLight(fb, 800, 800, 800, 170, 0.35, -0.9, 0.15, 0.62)), "#18225a", 0.9));
+  P.add(foliage(r, 60, 810, 330, 170, 34, 44, 90, 0.5, -0.9, ["#070b24", "#0f1640", "#1b275c"]), foliage(r, 1560, 810, 330, 170, 34, 44, 90, -0.3, -0.9, ["#070b24", "#0f1640", "#1b275c"]));
   const ff: [number, number, number][] = [];
-  for (let k = 0; k < 22; k++) ff.push([k % 2 ? r.r(-30, 360) : r.r(1240, 1630), r.r(640, 870), r.r(0.8, 1.4)]);
+  for (let k = 0; k < 16; k++) ff.push([k % 2 ? r.r(-30, 360) : r.r(1240, 1630), r.r(640, 870), r.r(0.8, 1.4)]);
   ff.sort((a, b) => a[1] - b[1]);
   P.add(ff.map(([x, y, s]) => use(r.n() < 0.75 ? mf.top : mf.side, x, y, s, r.r(-40, 40), 0.62)).join(""));
-  for (let k = 0; k < 8; k++) P.add(flare(P, fs, r.n() < 0.5 ? r.r(100, 540) : r.r(1060, 1500), r.r(420, 640), r.r(0.25, 0.45), P.tw(r.r(2.5, 5), r.r(0, 4), 0.1)));
+  for (let k = 0; k < 5; k++) P.add(flare(P, fs, r.n() < 0.5 ? r.r(100, 540) : r.r(1060, 1500), r.r(420, 640), r.r(0.25, 0.45), P.tw(r.r(2.5, 5), r.r(0, 4), 0.1)));
   // mist + grade
   P.add(ell(800, 600, 1100, 70, P.glow("#b4c2f0"), 0.3));
   P.add(bottomShade(P, "#04061a", 0.5, 0.66));

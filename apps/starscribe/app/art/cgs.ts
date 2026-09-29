@@ -206,6 +206,8 @@ function flowerSym(id: string, petal: string, center: string, edge = "#ffffff"):
 }
 
 function useAt(id: string, x: number, y: number, s: number, rot = 0, flat = 1, extra = ""): string {
+  // animated wrappers must not carry the transform attribute (CSS transform would replace it)
+  if (extra.includes("class=")) return `<g${extra}>${useAt(id, x, y, s, rot, flat)}</g>`;
   return `<use href="#${id}" transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(rot)}) scale(${Math.round(s * 100) / 100} ${Math.round(s * flat * 100) / 100})"${extra}/>`;
 }
 
@@ -688,11 +690,11 @@ function cgLantern(): string {
 
   // lanterns: far = warm dots, mid/near = symbols (a few drifting)
   const farL: Pt[] = [];
-  for (let i = 0; i < 420; i++) farL.push([r() * 1600, 40 + Math.pow(r(), 0.8) * 480]);
+  for (let i = 0; i < 300; i++) farL.push([r() * 1600, 40 + Math.pow(r(), 0.8) * 480]);
   b += dotPath(farL, 3, "#f6c77a", 0.75) + dotPath(farL.slice(0, 140), 7, "#f6c77a", 0.15);
   let lan = "";
   let an = 0;
-  for (let i = 0; i < 110; i++) {
+  for (let i = 0; i < 90; i++) {
     const x = r() * 1600;
     const y = 30 + r() * 470;
     const sc = 0.18 + Math.pow(r(), 2.2) * 0.5;
@@ -708,7 +710,7 @@ function cgLantern(): string {
   let bal = `M0 600H1600V618H0Z`;
   for (let x = 12; x < 1600; x += 46) bal += `M${x} 618h22v70h-22z`;
   b += `<path d="M0 584H1600V604H0Z" fill="#3a3a64"/><path d="M0 584H1600" stroke="#f0c888" stroke-width="2.4" opacity=".6"/>`;
-  b += `<path d="${bal}" fill="#24264a"/><path d="M0 700H1600V900H0Z" fill="#191a36"/>`;
+  b += `<path d="${bal}" fill="#24264a"/><path d="M0 700H1600V900H0Z" fill="#191a36"/><path d="M0 700H1600M0 740H1600M0 800H1600M200 700L60 900M520 700L440 900M1080 700L1160 900M1400 700L1540 900" stroke="#2c2c52" stroke-width="3"/>`;
   b += `<rect y="560" width="1600" height="340" fill="url(#${p}-fg)"/>`;
 
   // ── figures from behind: Estelle (left) & Cassian (right), very close ──
@@ -813,7 +815,7 @@ function cgConfession(): string {
   b += chain(978, 420, 1040, 900, 60, "#141830", "#5a6aa8", 9);
   b += rim(hisHand, `url(#${p}-hisA)`, "#b9c6f2", 0, 2.6);
   // his silver ring scar (between hand and shackle)
-  b += `<ellipse cx="918" cy="408" rx="8" ry="32" transform="rotate(-8 918 408)" fill="none" stroke="#dfe6ff" stroke-width="2" ${A(p, "pu", 1, 3)}/>`;
+  b += `<g ${A(p, "pu", 1, 3)}><ellipse cx="918" cy="408" rx="8" ry="32" transform="rotate(-8 918 408)" fill="none" stroke="#dfe6ff" stroke-width="2"/></g>`;
 
   // bars (vertical, rounded iron)
   const bars = [300, 680, 1060, 1440];
@@ -835,6 +837,9 @@ function cgConfession(): string {
   // finger separations & ink stains
   b += `<path d="M850 414C836 416 822 418 808 420M836 432C824 432 812 432 800 432M808 446C800 444 790 442 782 440" fill="none" stroke="#1e2244" stroke-width="2.2" stroke-linecap="round"/>`;
   b += `<g fill="#27407a" opacity=".85"><ellipse cx="846" cy="402" rx="6" ry="3"/><ellipse cx="826" cy="438" rx="4" ry="2.4"/><ellipse cx="788" cy="408" rx="3" ry="2"/></g>`;
+  // his thumb over the back of her hand, his fingertips curling up under her palm
+  b += rim("M896 386C878 380 858 380 842 386C832 390 828 398 834 402C846 400 862 398 878 400C888 402 896 398 896 386Z", `url(#${p}-hisA)`, "#b9c6f2", 0, 2);
+  b += rim("M784 452C778 462 780 472 790 474C800 476 808 468 810 458ZM806 456C802 468 806 478 816 478C826 478 832 470 832 460ZM832 458C830 468 836 476 846 474C854 472 856 462 854 454Z", `url(#${p}-hisA)`, "#9fb4d8", 0, 2);
   // her ring scar
   b += `<circle cx="712" cy="440" r="70" fill="url(#${p}-sil)" opacity=".35" ${A(p, "pu", 2, 3)}/>`;
   b += `<ellipse cx="712" cy="438" rx="8" ry="30" transform="rotate(-10 712 438)" fill="none" stroke="#eef2ff" stroke-width="2.2"/>`;

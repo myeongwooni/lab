@@ -41,6 +41,8 @@ function mix(a: string, b: string, t: number): string {
   return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * k).toString(16).padStart(2, "0")).join("");
 }
 const i0 = (v: number) => String(Math.round(v));
+/** 경로 문자열에서 " -" 를 "-" 로 줄이기 */
+const rel = (d: string) => d.replace(/ -/g, "-");
 const gauss = (r: Rnd) => (r() + r() + r() - 1.5) / 1.5;
 const pick = <T,>(r: Rnd, a: readonly T[]): T => a[Math.floor(r() * a.length)];
 const pts = (p: [number, number][]) => "M" + p.map(([x, y]) => `${Math.round(x)} ${Math.round(y)}`).join("L") + "Z";
@@ -163,7 +165,7 @@ function starField(r: Rnd, n: number, x0: number, y0: number, x1: number, y1: nu
 }
 
 interface RingOpt {
-  cx: number; cy: number; R: number; a0: number; a1: number; w: number; n: number; op?: number; twinkle?: number; seed?: number; box?: [number, number, number, number];
+  cx: number; cy: number; R: number; a0: number; a1: number; w: number; n: number; op?: number; twinkle?: number; seed?: number; box?: [number, number, number, number]; dense?: number;
 }
 /** 천환: 비스듬한 은빛 별의 띠 (원호) */
 function ring(A: Art, o: RingOpt, blurUrl: string) {
@@ -178,10 +180,31 @@ function ring(A: Art, o: RingOpt, blurUrl: string) {
   const g = A.lin("ringband", 0, 0, 1, 0, [[0, "#b9c6f2", 0], [0.2, "#c8d4ff", 1], [0.55, "#e4e8ff", 1], [0.85, "#b9c6f2", 1], [1, "#b9c6f2", 0]]);
   let s = `<g opacity="${op}">`;
   s += `<g filter="${blurUrl}" fill="none" stroke-linecap="round">`;
-  s += `<path d="${arcD(0)}" stroke="${g}" stroke-width="${f(o.w * 2.6)}" opacity=".07"/>`;
-  s += `<path d="${arcD(0)}" stroke="${g}" stroke-width="${f(o.w * 1.3)}" opacity=".12"/>`;
-  s += `<path d="${arcD(o.w * 0.05)}" stroke="${g}" stroke-width="${f(o.w * 0.45)}" opacity=".2"/>`;
+  s += `<path d="${arcD(0)}" stroke="${g}" stroke-width="${f(o.w * 2.6)}" opacity=".1"/>`;
+  s += `<path d="${arcD(0)}" stroke="${g}" stroke-width="${f(o.w * 1.3)}" opacity=".17"/>`;
+  s += `<path d="${arcD(o.w * 0.05)}" stroke="${g}" stroke-width="${f(o.w * 0.45)}" opacity=".26"/>`;
   s += `<path d="${arcD(-o.w * 0.18)}" stroke="#070a1c" stroke-width="${f(o.w * 0.12)}" opacity=".35"/>`;
+  s += `</g>`;
+  // 별 무늬 타일 세 벌을 굵은 호의 선 채우기로: 수천 개의 별을 싸게
+  const tiles: [number, number, string][] = [[97, 70, "a"], [131, 110, "b"], [173, 150, "c"]];
+  for (const [sz, n, k] of tiles) {
+    if (A.defs.some((d) => d.includes(`id="${A.id("st" + k)}"`))) continue;
+    const L: [number, number][][] = [[], [], []];
+    for (let i = 0; i < n * (o.dense ?? 1); i++) L[i % 7 === 0 ? 2 : i % 3 === 0 ? 1 : 0].push([r() * sz, r() * sz]);
+    A.defs.push(`<pattern id="${A.id("st" + k)}" width="${sz}" height="${sz}" patternUnits="userSpaceOnUse">${dots(L[0], "#c8d4ff", 1.1, 0.7)}${dots(L[1], "#e4eaff", 1.6, 0.85)}${dots(L[2], "#ffffff", 2.2)}</pattern>`);
+  }
+  const kn = A.glowG("knot", "#c8d4ff", "#eef2ff");
+  for (let i = 0; i < (o.box ? 0 : 7); i++) {
+    const t = 0.12 + 0.76 * ((i + r() * 0.6) / 7);
+    const [x, y] = xy(P(t), gauss(r) * o.w * 0.15);
+    const rr = o.w * (0.5 + r() * 0.6);
+    s += A.ell(x, y, rr * 1.4, rr * 0.8, kn, 0.1 + r() * 0.08, `transform="rotate(${f((P(t) * 180) / Math.PI + 90)} ${f(x)} ${f(y)})"`);
+  }
+  s += `<g fill="none">`;
+  s += `<path d="${arcD(0)}" stroke="${A.u("sta")}" stroke-width="${f(o.w * 1.5)}" opacity=".45"/>`;
+  s += `<path d="${arcD(o.w * 0.05)}" stroke="${A.u("stb")}" stroke-width="${f(o.w * 0.95)}" opacity=".75"/>`;
+  s += `<path d="${arcD(-o.w * 0.04)}" stroke="${A.u("stc")}" stroke-width="${f(o.w * 0.55)}"/>`;
+  s += `<path d="${arcD(o.w * 0.12)}" stroke="${A.u("sta")}" stroke-width="${f(o.w * 0.3)}"/>`;
   s += `</g>`;
   const L: [number, number][][] = [[], [], [], []];
   for (let i = 0; i < o.n; i++) {
@@ -259,7 +282,7 @@ function archive(night: boolean): string {
   const winClip = A.clip("win", wins.map((w) => arch(w.x0, w.yb, w.x1 - w.x0, w.yt, 0.75)).join(""));
   let inside = A.rect(fx0, 0, fx1 - fx0, fyb, skyG);
   if (night) {
-    inside += ring(A, { cx: 1500, cy: 1100, R: 1080, a0: Math.PI * 1.12, a1: Math.PI * 1.5, w: 60, n: 480, op: 1, twinkle: 2, seed: 9, box: [700, 30, 900, 500] }, blur);
+    inside += ring(A, { cx: 1500, cy: 1100, R: 1080, a0: Math.PI * 1.12, a1: Math.PI * 1.5, w: 70, n: 60, op: 1, twinkle: 2, seed: 9, dense: 0.45, box: [700, 30, 900, 500] }, blur);
     inside += starField(r, 60, fx0, 0, fx1, fyb, "#dfe6ff", 0.8);
     const mg = A.glowG("moon", "#dfe8ff", "#ffffff");
     inside += A.ell(800, 131, 130, 130, mg, 0.6) + `<circle cx="800" cy="131" r="24" fill="#f4f6ff"/>`;
@@ -331,7 +354,7 @@ function archive(night: boolean): string {
       const near = z0 < 3.5;
       for (let z = z0 + pw; z < z1 - pw * 0.5; z += near ? 0.12 : 0.36) {
         const cw = ((W * F) / (z * z)) * 0.12;
-        uses += `<use href="#${A.id("bc" + (near ? nT + Math.floor(r() * 2) : Math.floor(r() * nT)))}" transform="matrix(${f(-side * cw)} 0 0 ${(F / z / 100).toFixed(3)} ${f(X(side * W, z))} ${VY})"/>`;
+        uses += `<use href="#${A.id("bc" + (near ? nT + Math.floor(r() * 2) : Math.floor(r() * nT)))}" transform="matrix(${f(-side * cw)} 0 0 ${(F / z / 100).toFixed(3).replace(/^0/, "")} ${i0(X(side * W, z))} ${VY})"/>`;
       }
       A.add(uses);
       let sh = "";
@@ -349,7 +372,7 @@ function archive(night: boolean): string {
       A.add(A.path(pts([[px1, -2], [ix1, -2], [ix1, Y(FLOOR, z0 + pw)], [px1, yb]]), hz(C.lit, zf)));
       const fw = Math.abs(px1 - px0);
       let fl = "";
-      for (const k of [0.3, 0.55, 0.8]) fl += `M${f(px0 + (px1 - px0) * k)} -2V${f(yb)}`;
+      for (const k of [0.35, 0.7]) fl += `M${f(px0 + (px1 - px0) * k)} -2V${f(yb)}`;
       if (zf < 4) A.add(A.path(pts([[px0, -2], [ix1, -2], [ix1, Y(FLOOR, z0 + pw)], [px0, yb]]), night ? "#03040e" : "#231a22", `opacity="${f((4 - zf) * 0.3)}"`));
       A.add(`<path d="${fl}" stroke="${hz(night ? "#27336e" : "#b3adb5", zf)}" stroke-width="${f(Math.max(1, fw * 0.05))}" opacity=".6"/>`);
       A.add(`<path d="M${f(px1)} -2V${f(yb)}" stroke="${night ? "#9fb4ff" : "#fffaf0"}" stroke-width="${f(Math.max(1.2, 12 / z0))}" opacity="${night ? 0.5 : 0.85}"/>`);
@@ -364,7 +387,7 @@ function archive(night: boolean): string {
       A.add(A.path(pts([[X(side * W, za), Y(gy, za)], [X(ex, za), Y(gy, za)], [X(ex, zb), Y(gy, zb)], [X(side * W, zb), Y(gy, zb)]]), night ? "#080c26" : "#6a5f68"));
       A.add(A.path(pts([[X(ex, za), Y(gy, za)], [X(ex, zb), Y(gy, zb)], [X(ex, zb), Y(gy + 0.18, zb)], [X(ex, za), Y(gy + 0.18, za)]]), night ? "#3b4a8a" : "#e6d6bc"));
       let bl = "";
-      for (let z = za; z < zb; z *= 1.07) if (Y(gy, z) > 0) bl += `M${Math.round(X(ex, z))} ${Math.round(Y(gy, z))}V${Math.round(Y(gy - 0.55, z))}`;
+      for (let z = za; z < zb; z *= 1.1) if (Y(gy, z) > 0) bl += `M${Math.round(X(ex, z))} ${Math.round(Y(gy, z))}V${Math.round(Y(gy - 0.55, z))}`;
       bl += `M${f(X(ex, za))} ${f(Y(gy - 0.55, za))}L${f(X(ex, zb))} ${f(Y(gy - 0.55, zb))}`;
       A.add(`<path d="${bl}" stroke="${night ? "#34427f" : "#efe5d2"}" stroke-width="2.2" fill="none" opacity=".85"/>`);
     }
@@ -430,7 +453,7 @@ function archive(night: boolean): string {
   A.add(A.ell(800, 250, 300, 260, lg, night ? 0.25 : 0.6));
   // 공중 먼지 (정적 + 반짝임 몇 개)
   const dust: [number, number][] = [];
-  for (let i = 0; i < (night ? 60 : 110); i++) dust.push([640 + gauss(r) * 260, 180 + r() * 480]);
+  for (let i = 0; i < (night ? 36 : 110); i++) dust.push([640 + gauss(r) * 260, 180 + r() * 480]);
   A.add(dots(dust, C.lightCore, 1.6, night ? 0.35 : 0.6));
   const dg = A.glowG("dust", C.lightCore, "#ffffff");
   for (let i = 0; i < 14; i++) {
@@ -474,14 +497,14 @@ function cityRow(A: Art, o: RowOpt): string {
     yMin = Math.min(yMin, apex);
     yMax = Math.max(yMax, b);
     if (tower) {
-      body += `M${i0(tx)} ${i0(b)}V${i0(yt)}H${i0(tx - tw * 0.12)}L${i0(tx + tw / 2)} ${i0(apex)}L${i0(tx + tw * 1.12)} ${i0(yt)}H${i0(tx + tw)}V${i0(b)}Z`;
+      body += rel(`M${i0(tx)} ${i0(b)}v${i0(-h)}h${i0(-tw * 0.12)}l${i0(tw * 0.62)} ${i0(-rh)}l${i0(tw * 0.62)} ${i0(rh)}h${i0(-tw * 0.12)}v${i0(h)}z`);
       rim += `M${i0(tx - tw * 0.12)} ${i0(yt)}L${i0(tx + tw / 2)} ${i0(apex)}`;
     } else {
       const ov = w * 0.06;
-      body += `M${i0(x)} ${i0(b)}V${i0(yt)}H${i0(x - ov)}L${i0(x + w / 2)} ${i0(apex)}L${i0(x + w + ov)} ${i0(yt)}H${i0(x + w)}V${i0(b)}Z`;
+      body += rel(`M${i0(x)} ${i0(b)}v${i0(-h)}h${i0(-ov)}l${i0(w / 2 + ov)} ${i0(-rh)}l${i0(w / 2 + ov)} ${i0(rh)}h${i0(-ov)}v${i0(h)}z`);
       rim += `M${i0(x - ov)} ${i0(yt)}L${i0(x + w / 2)} ${i0(apex)}`;
       if (o.snow) snow += `M${i0(x - ov)} ${i0(yt + 1)}L${i0(x + w / 2)} ${i0(apex)}L${i0(x + w + ov)} ${i0(yt + 1)}L${i0(x + w * 0.8)} ${i0(yt - rh * 0.12)}L${i0(x + w / 2)} ${i0(apex + rh * 0.35)}L${i0(x + w * 0.2)} ${i0(yt - rh * 0.1)}Z`;
-      if (r() < 0.45) {
+      if (r() < 0.3) {
         const cx = x + w * (0.2 + r() * 0.5), cw = Math.max(3, w * 0.08);
         const cy = apex + (Math.abs(cx - (x + w / 2)) / (w / 2)) * rh;
         body += `M${i0(cx)} ${i0(cy + 2)}V${i0(cy - rh * 0.4)}h${i0(cw)}V${i0(cy + 4)}Z`;
@@ -562,13 +585,13 @@ function capitalNight(): string {
   const r = mulberry32(303);
   const blur = A.blur("soft", 16);
   A.add(A.rect(0, 0, 1600, 900, A.lin("sky", 0, 0, 0, 1, [[0, "#050818"], [0.3, "#0d1438"], [0.55, "#1d2660"], [0.68, "#3a3a78"], [0.78, "#5a4a7c"], [1, "#1a1a3a"]])));
-  A.add(starField(r, 200, 0, 0, 1600, 560, "#dfe6ff", 0.9));
+  A.add(starField(r, 100, 0, 0, 1600, 560, "#dfe6ff", 0.9));
   // 달 (왼쪽 위)
   const mg = A.glowG("moon", "#c9d6ff", "#ffffff");
-  A.add(A.ell(300, 150, 260, 260, mg, 0.45), `<circle cx="300" cy="150" r="34" fill="#f4f6ff"/>`, `<circle cx="312" cy="143" r="30" fill="#dfe6ff" opacity=".35"/>`);
+  A.add(A.ell(300, 150, 260, 260, mg, 0.45), `<circle cx="300" cy="150" r="34" fill="#f4f6ff"/>`, `<circle cx="292" cy="158" r="9" fill="#c9d3f0" opacity=".5"/><circle cx="312" cy="138" r="6" fill="#c9d3f0" opacity=".4"/>`);
   // 천환
   const cx = 1900, cy = 1500, R = 1650;
-  A.add(ring(A, { cx, cy, R, a0: -Math.acos((330 - cx) / R), a1: -Math.acos((1760 - cx) / R), w: 120, n: 1100, twinkle: 9, seed: 31 }, blur));
+  A.add(ring(A, { cx, cy, R, a0: -Math.acos((330 - cx) / R), a1: -Math.acos((1760 - cx) / R), w: 150, n: 120, twinkle: 8, seed: 31 }, blur));
   // 지평선 도시 불빛 안개
   const hg = A.glowG("haze", "#e8a0a0");
   A.add(A.ell(800, 560, 1000, 150, hg, 0.25));
@@ -577,35 +600,37 @@ function capitalNight(): string {
   for (let x = 0; x <= 1600; x += 40) hill += `L${x} ${f(545 - 40 * Math.sin(x / 260) - 70 * Math.exp(-(((x - 800) / 500) ** 2)) + gauss(r) * 4)}`;
   hill += "V900Z";
   A.add(A.path(hill, A.lin("hill", 0, 0, 0, 1, [[0, "#2c3574"], [1, "#1a2050"]])));
-  const lights: [number, number][] = [];
   const hillB = (x: number) => 560 - 150 * Math.exp(-(((x - 800) / 380) ** 2));
-  A.add(cityRow(A, { name: "r1", seed: 1, x0: 150, x1: 1450, base: hillB, hMin: 18, hMax: 40, wMin: 16, wMax: 34, top: "#3a4588", bottom: "#4a4a86", win: 0.22, ws: 2, spire: 0.12, rim: "#b9c6f2", rimOp: 0.5 }));
+  A.add(cityRow(A, { name: "r1", seed: 1, x0: 230, x1: 1370, base: hillB, hMin: 18, hMax: 40, wMin: 20, wMax: 36, top: "#3a4588", bottom: "#4a4a86", win: 0.22, ws: 2, spire: 0.12, rim: "#b9c6f2", rimOp: 0.5 }));
   // 성서관 탑
   const tg = A.glowG("tglow", "#b8cdff", "#e8eeff");
   A.add(A.ell(800, 260, 190, 300, tg, 0.28));
   A.add(`<g>${whiteTower(A, 800, 470, 70, "#dfe4f6", "#8a93c4", "#bcd2ff", 0.8)}</g>`);
   A.add(A.ell(800, 250, 36, 36, tg, 0.9, A.a("br", 2, 6)));
   const hillC = (x: number) => 610 - 95 * Math.exp(-(((x - 800) / 420) ** 2));
-  A.add(cityRow(A, { name: "r2", seed: 2, x0: -20, x1: 1620, base: hillC, hMin: 28, hMax: 60, wMin: 26, wMax: 52, top: "#27306a", bottom: "#353a72", win: 0.25, ws: 2.6, spire: 0.1, rim: "#aebde8", rimOp: 0.55 }));
-  A.add(cityRow(A, { name: "r3", seed: 3, x0: -30, x1: 1630, base: (x) => 668 - 40 * Math.exp(-(((x - 800) / 500) ** 2)), hMin: 40, hMax: 85, wMin: 40, wMax: 74, top: "#1a2152", bottom: "#262b5a", win: 0.28, ws: 3.2, spire: 0.07, rim: "#9fb0e0", rimOp: 0.5, lights }));
+  A.add(cityRow(A, { name: "r2", seed: 2, x0: -20, x1: 1620, base: hillC, hMin: 28, hMax: 60, wMin: 32, wMax: 56, top: "#27306a", bottom: "#353a72", win: 0.25, ws: 2.6, spire: 0.1, rim: "#aebde8", rimOp: 0.55 }));
+  A.add(cityRow(A, { name: "r3", seed: 3, x0: -30, x1: 1630, base: (x) => 668 - 40 * Math.exp(-(((x - 800) / 500) ** 2)), hMin: 40, hMax: 85, wMin: 40, wMax: 74, top: "#1a2152", bottom: "#262b5a", win: 0.28, ws: 3.2, spire: 0.07, rim: "#9fb0e0", rimOp: 0.5 }));
+  // 골목의 따뜻한 불빛
+  const sg = A.glowG("street", "#e5a654", "#f6d48f");
+  for (let i = 0; i < 14; i++) {
+    const x = 60 + i * 115 + gauss(r) * 30;
+    const y = i % 2 ? hillC(x) + 4 : 670 - 40 * Math.exp(-(((x - 800) / 500) ** 2));
+    A.add(A.ell(x, y, 60 + r() * 50, 16 + r() * 10, sg, 0.5));
+  }
   // 안개 띠
   A.add(A.rect(0, 600, 1600, 110, A.lin("mist", 0, 0, 0, 1, [[0, "#6a5a8a", 0], [0.6, "#6a5a8a", 0.3], [1, "#6a5a8a", 0]])));
-  A.add(`<g id="${A.id("front")}">` + cityRow(A, { name: "r4", seed: 4, x0: -40, x1: 1640, base: () => 724, hMin: 60, hMax: 120, wMin: 60, wMax: 110, top: "#0e1334", bottom: "#141a3e", win: 0.22, ws: 4, spire: 0.05, rim: "#8fa2d8", rimOp: 0.45, lights }) + "</g>");
+  A.add(`<g id="${A.id("front")}">` + cityRow(A, { name: "r4", seed: 4, x0: -40, x1: 1640, base: () => 724, hMin: 60, hMax: 120, wMin: 60, wMax: 110, top: "#0e1334", bottom: "#141a3e", win: 0.22, ws: 4, spire: 0.05, rim: "#8fa2d8", rimOp: 0.45 }) + "</g>");
   // 운하
   A.add(A.rect(0, 722, 1600, 178, A.lin("water", 0, 0, 0, 1, [[0, "#1b2150"], [0.4, "#0e1234"], [1, "#05070f"]])));
-  A.add(`<use href="#${A.id("front")}" transform="matrix(1 0 0 -1 0 1448)" opacity=".28"/>`);
-  // 물에 비친 불빛
-  let refl = "";
-  for (const [x, y] of lights) if (y > 600 && r() < 0.8) refl += `M${f(x - 3)} ${f(1448 - y + r() * 4)}h${f(6 + r() * 6)}`;
-  A.add(`<path d="${refl}" stroke="#f6d48f" stroke-width="2" opacity=".55"/>`);
+  A.add(`<use href="#${A.id("front")}" transform="matrix(1 0 0 -1 0 1448)" opacity=".2"/>`);
   const rg = A.lin("rstreak", 0, 0, 1, 0, [[0, "#f6d48f", 0], [0.5, "#f6d48f", 0.9], [1, "#f6d48f", 0]]);
-  for (let i = 0; i < 12; i++) {
-    const x = 120 + i * 120 + gauss(r) * 30, y = 740 + r() * 90;
+  for (let i = 0; i < 8; i++) {
+    const x = 160 + i * 180 + gauss(r) * 30, y = 740 + r() * 90;
     A.add(A.rect(x, y, 40 + r() * 60, 2, rg, A.a("sh", r() * 7, 5 + r() * 4)));
   }
   // 달빛 물결
   const mw = A.lin("mwave", 0, 0, 1, 0, [[0, "#dfe6ff", 0], [0.5, "#dfe6ff", 0.8], [1, "#dfe6ff", 0]]);
-  for (let i = 0; i < 6; i++) A.add(A.rect(740 + gauss(r) * 50, 745 + i * 16, 60 + r() * 60, 1.6, mw, A.a("sh", r() * 7, 6 + r() * 3)));
+  for (let i = 0; i < 4; i++) A.add(A.rect(740 + gauss(r) * 50, 745 + i * 16, 60 + r() * 60, 1.6, mw, A.a("sh", r() * 7, 6 + r() * 3)));
   // 제방
   A.add(A.rect(0, 718, 1600, 8, "#070a1c"));
   A.add(A.rect(0, 0, 1600, 900, A.rad("vig", [[0, "#000", 0], [0.65, "#000", 0], [1, "#02030a", 0.6]], 'cx=".5" cy=".4" r=".8"')));
