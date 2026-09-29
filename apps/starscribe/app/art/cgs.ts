@@ -206,7 +206,7 @@ function flowerSym(id: string, petal: string, center: string, edge = "#ffffff"):
 }
 
 function useAt(id: string, x: number, y: number, s: number, rot = 0, flat = 1, extra = ""): string {
-  return `<use href="#${id}" transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(rot)}) scale(${n1(s * 100) / 100} ${n1(s * flat * 100) / 100})"${extra}/>`;
+  return `<use href="#${id}" transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(rot)}) scale(${Math.round(s * 100) / 100} ${Math.round(s * flat * 100) / 100})"${extra}/>`;
 }
 
 /**

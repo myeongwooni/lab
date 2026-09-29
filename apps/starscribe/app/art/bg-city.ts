@@ -191,7 +191,8 @@ function ring(A: Art, o: RingOpt, blurUrl: string) {
     const d = gauss(r) * o.w * 0.55;
     const [x, y] = xy(P(t), d);
     const k = r();
-    if (o.box && (x < o.box[0] || y < o.box[1] || x > o.box[2] || y > o.box[3])) continue;
+    const bx = o.box ?? [0, 0, 1600, 900];
+    if (x < bx[0] || y < bx[1] || x > bx[2] || y > bx[3]) continue;
     L[k < 0.6 ? 0 : k < 0.88 ? 1 : k < 0.97 ? 2 : 3].push([x, y]);
   }
   s += dots(L[0], "#c8d4ff", 1.1, 0.6) + dots(L[1], "#dfe6ff", 1.6, 0.75) + dots(L[2], "#f4f6ff", 2.3, 0.9) + dots(L[3], "#fff", 3, 1);
@@ -561,13 +562,13 @@ function capitalNight(): string {
   const r = mulberry32(303);
   const blur = A.blur("soft", 16);
   A.add(A.rect(0, 0, 1600, 900, A.lin("sky", 0, 0, 0, 1, [[0, "#050818"], [0.3, "#0d1438"], [0.55, "#1d2660"], [0.68, "#3a3a78"], [0.78, "#5a4a7c"], [1, "#1a1a3a"]])));
-  A.add(starField(r, 320, 0, 0, 1600, 560, "#dfe6ff", 0.9));
+  A.add(starField(r, 200, 0, 0, 1600, 560, "#dfe6ff", 0.9));
   // 달 (왼쪽 위)
   const mg = A.glowG("moon", "#c9d6ff", "#ffffff");
   A.add(A.ell(300, 150, 260, 260, mg, 0.45), `<circle cx="300" cy="150" r="34" fill="#f4f6ff"/>`, `<circle cx="312" cy="143" r="30" fill="#dfe6ff" opacity=".35"/>`);
   // 천환
   const cx = 1900, cy = 1500, R = 1650;
-  A.add(ring(A, { cx, cy, R, a0: -Math.acos((330 - cx) / R), a1: -Math.acos((1760 - cx) / R), w: 120, n: 1500, twinkle: 9, seed: 31 }, blur));
+  A.add(ring(A, { cx, cy, R, a0: -Math.acos((330 - cx) / R), a1: -Math.acos((1760 - cx) / R), w: 120, n: 1100, twinkle: 9, seed: 31 }, blur));
   // 지평선 도시 불빛 안개
   const hg = A.glowG("haze", "#e8a0a0");
   A.add(A.ell(800, 560, 1000, 150, hg, 0.25));
