@@ -11,6 +11,7 @@
     "quest": "npm run dev --workspace apps/quest",
     "omikuji": "npm run dev --workspace apps/omikuji",
     "dicetale": "npm run dev --workspace apps/dicetale",
-    "jamotris": "npm run dev --workspace apps/jamotris"
+    "jamotris": "npm run dev --workspace apps/jamotris",
+    "starscribe": "npm run dev --workspace apps/starscribe"
   }
 }
