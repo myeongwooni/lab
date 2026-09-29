@@ -961,8 +961,10 @@ function streetScene(rain: boolean): string {
   // 거리 끝: 흰 탑 (안개 속)
   A.add(`<g opacity="${rain ? 0.45 : 0.6}">${whiteTower(A, VX + 20, VY + 20, 150, rain ? "#8a94b4" : "#f4f2ec", rain ? "#4a5474" : "#b4bccc", rain ? "#f6d48f" : "#9aa8c4", 0.5)}</g>`);
   const lampG = A.glowG("lamp", "#f6c070", "#fff1c8");
+  if (!rain) A.lin("wref", 0, 0, 1, 1, [[0, "#ffffff", 0], [0.45, "#e8eef8", 0.9], [0.55, "#e8eef8", 0.1], [1, "#ffffff", 0]]);
   const zs = [1.9, 2.6, 3.4, 4.4, 5.7, 7.3, 9.4, 12, 16];
   const lamps: [number, number, number][] = [];
+  const shopRefl: [number, number, number, number][] = [];
   for (const side of [-1, 1]) {
     for (let i = zs.length - 2; i >= 0; i--) {
       const z0 = zs[i], z1 = zs[i + 1], zm = (z0 + z1) / 2;
@@ -971,7 +973,10 @@ function streetScene(rain: boolean): string {
       const H = -(3.4 + r() * 2.2), gab = H - 0.9 - r() * 0.7;
       const xa = X(side * W, z0), xb = X(side * W, z1);
       const face = pts([[xa, Y(1.6, z0)], [xa, Y(H, z0)], [xb, Y(H, z1)], [xb, Y(1.6, z1)]]);
-      A.add(A.path(face, hz(C.facade[i % 4])));
+      const lit = rain ? 0 : side > 0 ? 0.12 : -0.22;
+      const base = lit > 0 ? mix(C.facade[i % 4], "#fff4de", lit) : mix(C.facade[i % 4], "#6a7090", -lit);
+      A.add(A.path(face, hz(base)));
+      if (!rain && side > 0) A.add(A.path(pts([[xa, Y(H, z0)], [xb, Y(H, z1)], [xb, Y(-1.2 + r() * 0.8, z1)], [xa, Y(-2 + r() * 0.6, z0)]]), "#fff2d6", `opacity="${f2(0.35 * (1 - fog))}"`));
       // 지붕 (박공 + 눈)
       const rp: [number, number][] = [[xa, Y(H, z0)], [(xa + xb) / 2, Y(gab, zm)], [xb, Y(H, z1)]];
       A.add(A.path(pts([[xa, Y(H + 0.25, z0)], ...rp, [xb, Y(H + 0.25, z1)]]), hz(C.roof)));
@@ -992,12 +997,14 @@ function streetScene(rain: boolean): string {
           sill += `M${i0(X(side * W, z - dz * 1.3))} ${i0(Y(yy + 0.64, z - dz))}L${i0(X(side * W, z + dz * 1.3))} ${i0(Y(yy + 0.64, z + dz))}`;
         }
       }
-      A.add(A.path(wd, hz(C.win)), `<path d="${sill}" stroke="${rain ? hz("#5a6480") : "#fbfcff"}" stroke-width="${f(Math.max(1.2, 18 / zm))}"/>`);
+      A.add(A.path(wd, hz(C.win)), rain ? "" : A.path(wd, A.u("wref"), `opacity="${f2(0.5 * (1 - fog))}"`), `<path d="${sill}" stroke="${rain ? hz("#5a6480") : "#fbfcff"}" stroke-width="${f(Math.max(1.2, 18 / zm))}"/>`);
       if (wl) A.add(A.path(wl, "#f2c070", `opacity="${f2(1 - fog * 0.6)}"`));
       // 1층 진열창
       const zA = z0 + (z1 - z0) * 0.2, zB = z0 + (z1 - z0) * 0.8;
       const shop = pts([[X(side * W, zA), Y(0.2, zA)], [X(side * W, zB), Y(0.2, zB)], [X(side * W, zB), Y(1.25, zB)], [X(side * W, zA), Y(1.25, zA)]]);
-      A.add(A.path(shop, rain ? (r() < 0.4 ? "#c89050" : hz(C.win)) : hz("#8a9ab4")));
+      const litShop = rain && r() < 0.45;
+      A.add(A.path(shop, litShop ? mix("#e0a058", C.haze, fog * 0.7) : hz(rain ? C.win : "#8a9ab4")));
+      if (litShop) shopRefl.push([X(side * (W - 0.1), zm), Y(1.6, zm), (0.6 * F) / zm, fog]);
       // 매달린 간판 (정면을 향한 모양)
       if (zm < 11 && r() < 0.75) {
         const zz = z0 + 0.15, bx = X(side * W, zz), by = Y(-0.55, zz), ex = X(side * (W - 0.55), zz);
@@ -1012,7 +1019,7 @@ function streetScene(rain: boolean): string {
         A.add(`<path d="M${i0(bx)} ${i0(by)}H${i0(ex)}M${i0(sx - 10 * s)} ${i0(by)}v${f(8 * s)}M${i0(sx + 10 * s)} ${i0(by)}v${f(8 * s)}" stroke="${hz(C.sign)}" stroke-width="${f(Math.max(1, 3 * s))}"/>`, A.path(d, hz(kind % 2 ? "#7c1f33" : C.sign)));
         if (!rain) A.add(`<path d="M${f(sx - 18 * s)} ${f(by + 6 * s)}h${f(36 * s)}" stroke="#fbfcff" stroke-width="${f(Math.max(1, 3 * s))}"/>`);
       }
-      if (i % 2 === 0) lamps.push([side, z0 + 0.1, fog]);
+      if (i % 2 === 0 && z0 > 3) lamps.push([side, z0 + 0.1, fog]);
     }
   }
   // 길: 인도 + 돌길
@@ -1020,11 +1027,15 @@ function streetScene(rain: boolean): string {
   A.add(A.path(road, A.lin("road", 0, 0, 0, 1, [[0, C.ground[0]], [0.4, C.ground[1]], [1, C.ground[2]]])));
   let rows = "";
   const cw = W - 0.45;
-  for (let z = 16, k = 0; z > 1.3; z /= 1.07, k++) {
-    const y = Y(1.6, z), sw = (0.12 * F) / z;
-    rows += `<path d="M${i0(X(-cw, z))} ${f(y)}H${i0(X(cw, z))}" stroke-width="${f(sw * 0.8)}" stroke-dasharray="${f((0.24 * F) / z)} ${f((0.05 * F) / z)}" stroke-dashoffset="${k % 2 ? f((0.14 * F) / z) : 0}"/>`;
+  for (let z = 14, k = 0; z > 1.3; z /= 1.045, k++) {
+    const y = Y(1.6, z), sw = (0.075 * F) / z;
+    rows += `<path d="M${i0(X(-cw, z))} ${f(y)}H${i0(X(cw, z))}" stroke-width="${f(sw * 0.75)}" stroke-dasharray="${f((0.13 * F) / z)} ${f((0.035 * F) / z)}" stroke-dashoffset="${k % 2 ? f((0.08 * F) / z) : 0}"/>`;
   }
-  A.add(`<g stroke="${rain ? "#2c3346" : "#b8bdc8"}" opacity="${rain ? 0.7 : 0.55}" fill="none">${rows}</g>`);
+  A.add(`<g stroke="${rain ? "#3a4258" : "#c4c8d2"}" opacity="${rain ? 0.55 : 0.45}" fill="none" stroke-linecap="round">${rows}</g>`);
+  if (!rain) {
+    // 왼쪽 건물이 드리운 그림자 (낮은 겨울 해)
+    A.add(A.path(pts([[X(-cw, 16), Y(1.6, 16)], [X(0.2, 16), Y(1.6, 16)], [X(-0.6, 5), Y(1.6, 5)], [X(0.4, 3), Y(1.6, 3)], [X(-0.3, 1.3), 900], [X(-cw, 1.3), 900]]), "#4a5478", 'opacity=".35"'));
+  }
   // 연석
   A.add(`<path d="M${i0(X(-cw, 16))} ${i0(Y(1.6, 16))}L${i0(X(-cw, 1.25))} 900M${i0(X(cw, 16))} ${i0(Y(1.6, 16))}L${i0(X(cw, 1.25))} 900" stroke="${rain ? "#6a7390" : "#f4f6fa"}" stroke-width="5" opacity=".6"/>`);
   if (!rain) {
@@ -1038,17 +1049,17 @@ function streetScene(rain: boolean): string {
   let refl = "";
   for (const [side, z, fog] of lamps) {
     const x = X(side * (cw + 0.05), z), yb = Y(1.6, z), yt = Y(-1.4, z), s = F / z / 100;
-    posts += `M${i0(x)} ${i0(yb)}V${i0(yt)}`;
-    posts += `M${i0(x - 6 * s)} ${i0(yt)}h${i0(12 * s)}v${i0(-18 * s)}h${i0(-12 * s)}z`;
+    posts += `<path d="M${i0(x)} ${i0(yb)}V${i0(yt)}" stroke-width="${f(Math.max(1.5, 5 * s))}"/><path d="M${f(x - 6 * s)} ${i0(yt)}h${f(12 * s)}l${f(-2 * s)} ${f(-16 * s)}h${f(-8 * s)}z"/>`;
     if (rain) {
       gl.push([x, yt - 9 * s, 90 * s]);
       refl += `<path d="M${i0(x - 5 * s)} ${i0(yb + 4)}h${i0(10 * s)}l${i0(8 * s)} ${i0(160 * s)}h${i0(-26 * s)}z" opacity="${f2(0.75 - fog * 0.5)}"/>`;
     }
   }
-  A.add(`<path d="${posts}" fill="${rain ? "#0c101c" : "#2a2c38"}" stroke="${rain ? "#0c101c" : "#2a2c38"}" stroke-width="2.5"/>`);
+  A.add(`<g fill="${rain ? "#0c101c" : "#2a2c38"}" stroke="${rain ? "#0c101c" : "#2a2c38"}">${posts}</g>`);
   if (rain) {
     const rg = A.lin("rf", 0, 0, 0, 1, [[0, "#f6c070", 0.85], [1, "#f6c070", 0]]);
-    A.add(`<g fill="${rg}">${refl}</g>`, glows(lampG, 0.85, gl));
+    for (const [x, y, w, fog] of shopRefl) refl += `<path d="M${i0(x - w / 2)} ${i0(y)}h${i0(w)}l${i0(w * 0.2)} ${i0(w * 1.4)}h${i0(-w * 1.4)}z" opacity="${f2(0.5 - fog * 0.4)}"/>`;
+    A.add(`<g fill="${rg}" filter="${blur}">${refl}</g>`, glows(lampG, 0.85, gl));
     for (const [x, y, rr] of gl.slice(0, 4)) A.add(A.ell(x, y, rr * 0.5, rr * 0.5, lampG, 0.6, A.a("fl", r() * 3, 3 + r() * 2)));
     let cores = "";
     for (const [x, y, rr] of gl) cores += `M${i0(x)} ${i0(y)}h0`;
