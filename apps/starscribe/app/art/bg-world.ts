@@ -417,7 +417,7 @@ function cityD(
     }
     // lit wall strip on the light side
     const W = Math.round(w);
-    lit += L > 0 ? `M${X + W - Math.max(2, Math.round(W * 0.16))} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z` : `M${X} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z`;
+    if (r.n() < 0.45) lit += L > 0 ? `M${X + W - Math.max(2, Math.round(W * 0.16))} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z` : `M${X} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z`;
     if (o.win && r.n() < 0.7) {
       const cols = Math.max(1, Math.floor(w / 8));
       const rows = Math.min(o.winMax ?? 5, Math.floor(h / 10));
@@ -478,7 +478,6 @@ function archive(
   for (const s of [-1, 1]) {
     dS += `M${X(s * 12.5)} ${Y(-8)}V${Y(8)}L${X(s * 17)} ${Y(12)}L${X(s * 22)} ${Y(8)}V${Y(-8)}Z`;
     // flying buttress arcs
-    dS += `M${X(s * 21)} ${Y(8)}Q${X(s * 16)} ${Y(22)} ${X(s * 8)} ${Y(30)}L${X(s * 8)} ${Y(27)}Q${X(s * 14.5)} ${Y(20)} ${X(s * 19)} ${Y(8)}Z`;
     spire(s * 17, 12, 9, 1.8);
     spire(s * 12.8, 15.6, 13, 2.2);
     spire(s * 9.4, 38, 10, 1.9);
@@ -569,25 +568,24 @@ function blobPaint(b: Blob[], c: string, op = 1, sy = 1, cy = 0): string {
   let s = "";
   for (const [k, pts] of m) s += `<path d="${dotsD(pts)}" stroke-width="${k * 2}"/>`;
   const tr = sy === 1 ? "" : ` transform="matrix(1 0 0 ${f2(sy)} 0 ${f(cy * (1 - sy))})"`;
-  return `<g fill="none" stroke="${c}" stroke-linecap="round"${op < 1 ? ` opacity="${f2(op)}"` : ""}${tr}>${s}</g>`;
+  return `<g fill="none"${c ? ` stroke="${c}"` : ""} stroke-linecap="round"${op < 1 ? ` opacity="${f2(op)}"` : ""}${tr}>${s}</g>`;
 }
-/** leafy mass: base blobs + progressively lit, finer clumps toward the light */
-function foliage(r: Rng, cx: number, cy: number, rx: number, ry: number, n: number, rmin: number, rmax: number, lx: number, ly: number, cs: string[], sy = 1): string {
+/** leafy mass: silhouette with a thin moonlit rim toward the light + subtle inner clumps. cs = [base, inner, rim] */
+function foliage(P: Pic, r: Rng, cx: number, cy: number, rx: number, ry: number, n: number, rmin: number, rmax: number, lx: number, ly: number, cs: string[], sy = 1, rimW = 4): string {
   const b = blobs(r, cx, cy, rx, ry, n, rmin, rmax);
-  let s = blobPaint(b, cs[0], 1, sy, cy);
-  const thr = [-0.1, 0.35, 0.72];
-  for (let k = 1; k < cs.length; k++) {
+  const id = P.id("fo" + Math.round(cx) + "_" + Math.round(cy));
+  P.def(`<g id="${id}">${blobPaint(b, "", 1, sy, cy)}</g>`);
+  let s = "";
+  if (cs[2]) s += `<use href="#${id}" stroke="${cs[2]}" x="${f(lx * rimW)}" y="${f(ly * rimW)}"/>`;
+  s += `<use href="#${id}" stroke="${cs[0]}"/>`;
+  if (cs[1]) {
     const sub: Blob[] = [];
     for (const [x, y, rr] of b) {
       const d = ((x - cx) / rx) * lx + ((y - cy) / ry) * ly;
-      if (d < thr[k - 1] + r.r(-0.15, 0.15)) continue;
-      const m = k === 1 ? 2 : 3;
-      for (let j = 0; j < m; j++) {
-        const s2 = rr * r.r(0.22, 0.5) * (1 - k * 0.12);
-        sub.push([x + lx * rr * 0.35 + r.r(-rr, rr) * 0.55, y + ly * rr * 0.35 + r.r(-rr, rr) * 0.55, s2]);
-      }
+      if (d < 0.25 + r.r(-0.2, 0.2)) continue;
+      for (let j = 0; j < 2; j++) sub.push([x + lx * rr * 0.3 + r.r(-rr, rr) * 0.5, y + ly * rr * 0.3 + r.r(-rr, rr) * 0.5, rr * r.r(0.3, 0.55)]);
     }
-    s += blobPaint(sub, cs[k], 1, sy, cy);
+    s += blobPaint(sub, cs[1], 1, sy, cy);
   }
   return s;
 }
@@ -721,9 +719,9 @@ function sGarden(): string {
   // moon
   P.add(ell(MX, MY, 110, 110, P.glow("#f0f4ff", true), 0.7));
   P.add(`<circle cx="${MX}" cy="${MY}" r="50" fill="${P.rad([[0, "#ffffff"], [0.65, "#f3f4ff"], [1, "#d3daf6"]], 0.4, 0.38, 0.62)}"/>`);
-  P.add(path(`M${MX - 26} ${MY - 8}c6-14 22-16 30-6c-4 12-22 18-30 6ZM${MX + 6} ${MY + 16}c8-6 20-2 22 8c-8 6-20 4-22-8Z`, "#c5cdef", 0.4));
+  P.add(ell(MX - 12, MY - 6, 26, 18, P.glow("#aeb8e4"), 0.35), ell(MX + 14, MY + 16, 18, 12, P.glow("#aeb8e4"), 0.3));
   // far treeline, cypresses, hazy
-  P.add(foliage(r, 800, 492, 900, 16, 64, 14, 36, 0.3, -1, ["#2c3c84", "#3a4c98", "#4d62ae"], 0.8));
+  P.add(foliage(P, r, 800, 492, 900, 16, 64, 14, 36, 0.3, -1, ["#2c3c84", "#34479a", "#5a70bc"], 0.8, 3));
   let cyp = "";
   for (const [x, h] of [
     [380, 150],
@@ -802,7 +800,7 @@ function sGarden(): string {
       const y = cy + Math.sin(a) * ry * d;
       if ((x - cx) / rx * lx - (y - cy) / ry * 0.7 > 0.35) pts.push([x, y]);
     }
-    return path(trunk, "#080c26") + foliage(r, cx, cy, rx, ry, 42, 32, 84, lx, -0.7, ["#0b1134", "#141d4a", "#22306a", "#3a4e94"]) + dots(pts, 2.2, "#b4c2f2", 0.6);
+    return path(trunk, "#080c26") + foliage(P, r, cx, cy, rx, ry, 70, 24, 70, lx, -0.7, ["#0b1134", "#121b46", "#5a6cb8"], 1, 5) + dots(pts, 2.2, "#b4c2f2", 0.6);
   };
   P.add(tree(150, 190, 320, 190, 0.75, 170), tree(1470, 170, 290, 200, 0.2, 1450));
   // weeping strands of moonflowers from the left tree
@@ -819,7 +817,7 @@ function sGarden(): string {
 
   // ── hedged flower beds (mid)
   P.add(path(`M-40 590H1640V760H-40Z`, "#0b1236"));
-  for (const hx of [290, 1310]) P.add(foliage(r, hx, 578, 340, 20, 36, 18, 40, 0.2, -1, ["#101946", "#1a2658", "#2a3c7e"], 0.75));
+  for (const hx of [290, 1310]) P.add(foliage(P, r, hx, 578, 340, 20, 36, 18, 40, 0.2, -1, ["#101946", "#172252", "#4a5ca8"], 0.75, 3));
   P.add(ell(290, 560, 380, 60, P.glow("#dbe4ff"), 0.4), ell(1310, 560, 380, 60, P.glow("#dbe4ff"), 0.4));
   const tiny: Pt[] = [];
   const tiny2: Pt[] = [];
@@ -850,13 +848,14 @@ function sGarden(): string {
     let s = "";
     for (let k = 0; k < n; k++) {
       const y = y0 + k * 22 + r.r(-4, 4);
-      const w = 10 + (y - PY) * 0.12 + r.r(0, 18);
-      s += `M${q(930 + (y - PY) * 0.12 - w / 2 + r.r(-8, 8))} ${q(y)}h${q(w)}`;
+      const w = r.r(6, 40) + (y - PY) * 0.1;
+      s += `M${q(935 + (y - PY) * 0.1 - w / 2 + r.r(-30, 30))} ${q(y)}h${q(w)}`;
     }
     return s;
   };
-  P.add(`<g ${P.tw(3.1, 0, 0.35)}><path d="${streak(PY + 6, 11)}" stroke="#eef2ff" stroke-width="3" stroke-linecap="round" stroke-opacity=".75"/></g>`);
-  P.add(`<g ${P.tw(4.3, 1.9, 0.3)}><path d="${streak(PY + 16, 10)}" stroke="#c8d4ff" stroke-width="2" stroke-linecap="round" stroke-opacity=".6"/></g>`);
+  P.add(ell(940, 780, 60, 130, P.glow("#c8d4ff"), 0.3));
+  P.add(`<g ${P.tw(3.1, 0, 0.35)}><path d="${streak(PY + 6, 11)}" stroke="#eef2ff" stroke-width="2.2" stroke-linecap="round" stroke-opacity=".45"/></g>`);
+  P.add(`<g ${P.tw(4.3, 1.9, 0.3)}><path d="${streak(PY + 16, 10)}" stroke="#c8d4ff" stroke-width="1.6" stroke-linecap="round" stroke-opacity=".4"/></g>`);
   P.add(`</g>`);
   // fountain
   const FY = PY + 4;
@@ -871,7 +870,7 @@ function sGarden(): string {
   P.add(`<g ${P.tw(2.6, 1, 0.4)}>${ell(CX, FY + 4, 90, 7, P.glow("#ffffff"), 0.6)}</g>`);
 
   // ── foreground flower thickets
-  P.add(foliage(r, 60, 810, 330, 170, 34, 44, 90, 0.5, -0.9, ["#070b24", "#0f1640", "#1b275c"]), foliage(r, 1560, 810, 330, 170, 34, 44, 90, -0.3, -0.9, ["#070b24", "#0f1640", "#1b275c"]));
+  P.add(foliage(P, r, 60, 810, 330, 170, 40, 40, 86, 0.5, -0.9, ["#070b24", "#0c1236", "#3c4c98"], 1, 4), foliage(P, r, 1560, 810, 330, 170, 40, 40, 86, -0.3, -0.9, ["#070b24", "#0c1236", "#3c4c98"], 1, 4));
   const ff: [number, number, number][] = [];
   for (let k = 0; k < 16; k++) ff.push([k % 2 ? r.r(-30, 360) : r.r(1240, 1630), r.r(640, 870), r.r(0.8, 1.4)]);
   ff.sort((a, b) => a[1] - b[1]);
@@ -900,6 +899,7 @@ type CityLayer = {
   mist?: string;
   mistOp?: number;
   spire?: number;
+  turret?: number;
 };
 function capital(
   P: Pic,
@@ -920,12 +920,14 @@ function capital(
     if (o.tower && o.tower.at === k) {
       const T = o.tower;
       s += archive(P, cx, T.base, T.top, { ...T, left: light < 0 });
+      const H = T.base - T.top;
+      s += ell(cx, T.base - H * 0.12, H * 0.45, H * 0.1, P.glow(o.layers[k].mist ?? T.mid), 0.7);
     }
     const c = cityD(r, -60, 1660, (x) => L.y - L.hill * Math.exp(-(((x - cx) / spread) ** 2)) + Math.sin(x / 110 + k * 2) * 5 + Math.sin(x / 37 + k) * 3, {
       h: L.h,
       w: L.w,
       spire: L.spire ?? 0.05,
-      turret: 0.1,
+      turret: L.turret ?? 0.1,
       dome: 0.03,
       win: L.win,
       winMax: 4,
@@ -965,6 +967,7 @@ function sTitle(): string {
   P.add(ring(P, r, { a: [1760, 700], c: [1230, 30], b: [520, -150], w: 100, n: 1300, glow: 1.2, fs, bright: 8 }));
   // city glow on the horizon
   P.add(ell(950, 640, 900, 200, P.glow("#7b8ee0"), 0.5));
+  P.add(ell(950, 330, 130, 380, P.glow("#8ea4ff"), 0.35));
   const mistC = "#5a6cc0";
   P.add(
     capital(P, r, {
@@ -972,12 +975,12 @@ function sTitle(): string {
       light: -1,
       spread: 560,
       layers: [
-        { y: 610, hill: 70, h: [14, 42], w: [12, 26], c: "#3a4a94", lit: "#6f82cc", litOp: 0.6, mist: mistC, mistOp: 0.5, win: 0.05, winOp: 0.5, winS: 0.7 },
-        { y: 668, hill: 85, h: [24, 64], w: [16, 38], c: "#222d6c", lit: "#6275c4", litOp: 0.55, win: 0.14, winOp: 0.8, winS: 0.9, mist: "#4a5cb0", mistOp: 0.38 },
-        { y: 750, hill: 70, h: [34, 96], w: [24, 56], c: "#111842", lit: "#40519c", litOp: 0.55, win: 0.12, winOp: 0.9, mist: "#2c3a80", mistOp: 0.3 },
-        { y: 860, hill: 30, h: [40, 120], w: [34, 80], c: "#070b24", lit: "#27346e", litOp: 0.5, win: 0.07, winOp: 0.8, winS: 1.3 },
+        { y: 612, hill: 80, h: [8, 26], w: [22, 44], c: "#3a4a94", lit: "#7084cc", litOp: 0.5, mist: mistC, mistOp: 0.5, win: 0.05, winOp: 0.5, winS: 0.7 },
+        { y: 672, hill: 110, h: [16, 46], w: [30, 60], c: "#222d6c", lit: "#6275c4", litOp: 0.45, win: 0.2, winOp: 0.85, winS: 0.9, mist: "#4a5cb0", mistOp: 0.4 },
+        { y: 755, hill: 80, h: [26, 70], w: [44, 86], spire: 0.025, turret: 0.04, c: "#111842", lit: "#40519c", litOp: 0.45, win: 0.16, winOp: 0.9, mist: "#2c3a80", mistOp: 0.3 },
+        { y: 865, hill: 30, h: [34, 90], w: [70, 130], spire: 0, turret: 0, c: "#070b24", lit: "#27346e", litOp: 0.4, win: 0.05, winOp: 0.8, winS: 1.3 },
       ],
-      tower: { at: 1, base: 690, top: 118, lit: "#f7f8ff", mid: "#c3ccef", shade: "#5967ad", win: "#a8c8ff", rim: "#ffffff", glow: "#a9baff" },
+      tower: { at: 1, base: 640, top: 84, lit: "#f7f8ff", mid: "#c3ccef", shade: "#5967ad", win: "#a8c8ff", rim: "#ffffff", glow: "#a9baff" },
     }),
   );
   // falling star — head glows over the tower's shoulder
@@ -990,12 +993,8 @@ function sTitle(): string {
   P.add(flare(P, fs, HX, HY, 2.2, P.tw(2.6, 0, 0.7)));
   // foreground moonflowers
   const mf = moonflowerDef(P, { hi: "#ffffff", mid: "#e2e7f8", edge: "#7282c6", heart: "#fffbe8" });
-  const fb: Blob[] = [
-    ...blobs(r, 90, 800, 260, 140, 26, 40, 80),
-    ...blobs(r, 1530, 790, 260, 150, 26, 40, 80),
-  ];
-  const fbl = [...blobLight(fb.slice(0, 26), 90, 800, 260, 140, -0.6, -0.8, 0.1, 0.62), ...blobLight(fb.slice(26), 1530, 790, 260, 150, -0.6, -0.8, 0.1, 0.62)];
-  P.add(path(blobsD(fb), "#060a22"), path(blobsD(fbl), "#1a2658", 0.9));
+  P.add(foliage(P, r, 90, 810, 270, 140, 34, 36, 76, -0.6, -0.8, ["#060a22", "#0c1336", "#4a5cac"], 1, 4));
+  P.add(foliage(P, r, 1530, 800, 270, 150, 34, 36, 76, -0.6, -0.8, ["#060a22", "#0c1336", "#4a5cac"], 1, 4));
   const fl: [number, number, number][] = [];
   for (let k = 0; k < 18; k++) {
     const left = k % 2 === 0;
@@ -1039,11 +1038,11 @@ function sStarfall(): string {
     capital(P, r, {
       light: -1,
       layers: [
-        { y: 668, hill: 60, h: [14, 42], w: [12, 26], c: "#342c7a", lit: "#6d60c0", litOp: 0.6, mist: "#5244a0", mistOp: 0.45 },
-        { y: 740, hill: 70, h: [24, 64], w: [16, 38], c: "#1e1850", lit: "#5a4eb0", litOp: 0.5, win: 0.12, winOp: 0.8, mist: "#3a2e80", mistOp: 0.3 },
-        { y: 830, hill: 40, h: [40, 110], w: [28, 60], c: "#0a0822", lit: "#302a70", litOp: 0.5, win: 0.1, winOp: 0.85 },
+        { y: 668, hill: 70, h: [8, 26], w: [22, 44], c: "#342c7a", lit: "#6d60c0", litOp: 0.5, mist: "#5244a0", mistOp: 0.45 },
+        { y: 745, hill: 90, h: [16, 46], w: [30, 60], c: "#1e1850", lit: "#5a4eb0", litOp: 0.45, win: 0.12, winOp: 0.8, mist: "#3a2e80", mistOp: 0.3 },
+        { y: 840, hill: 40, h: [30, 80], w: [50, 100], spire: 0.02, turret: 0.04, c: "#0a0822", lit: "#302a70", litOp: 0.45, win: 0.08, winOp: 0.85 },
       ],
-      tower: { at: 1, base: 740, top: 300, lit: "#efedff", mid: "#b2acec", shade: "#463e96", win: "#aac4ff", rim: "#ffffff", glow: "#9f94ff" },
+      tower: { at: 1, base: 700, top: 290, lit: "#efedff", mid: "#b2acec", shade: "#463e96", win: "#aac4ff", rim: "#ffffff", glow: "#9f94ff" },
     }),
   );
   P.add(bottomShade(P, "#03031a", 0.6, 0.62));
@@ -1071,22 +1070,19 @@ function sDawn(): string {
   P.add(`<g filter="${rb}">${path(rays, P.rad([[0, "#fff2d0", 0.5], [0.6, "#fff2d0", 0.12], [1, "#fff2d0", 0]], 800, 650, 800, true))}</g>`);
   // cloud banks: lavender tops, gold undersides lit from below
   const bank = (cx: number, cy: number, rx: number, ry: number, n: number, rmax: number) => {
-    const b = blobs(r, cx, cy, rx, ry, n, rmax * 0.45, rmax);
-    const lit = blobLight(b, cx, cy, rx, ry, 0, 1, 0.05, 0.78);
-    const core = blobLight(b, cx, cy, rx, ry, 0, 1, 0.55, 0.55);
-    return path(blobsD(b, 0.45), "#8c6c9c", 0.8) + path(blobsD(lit, 0.42), "#e6a09a", 0.75) + path(blobsD(core, 0.38), "#ffe0a8", 0.85);
+    return `<g opacity=".85">${foliage(P, r, cx, cy, rx, ry, n, rmax * 0.4, rmax, 0, 1, ["#8e6e9e", "#9a76a4", "#ffd9a0"], 0.3, 3)}</g>`;
   };
-  P.add(bank(250, 430, 330, 26, 22, 60), bank(1320, 400, 360, 28, 24, 64), bank(760, 330, 260, 18, 14, 46), bank(1480, 520, 200, 16, 12, 44), bank(90, 540, 200, 14, 12, 40));
+  P.add(bank(250, 430, 420, 20, 34, 56), bank(1320, 400, 440, 22, 36, 60), bank(760, 330, 300, 14, 20, 42), bank(1480, 520, 260, 12, 16, 40), bank(90, 540, 260, 10, 16, 36));
   P.add(`<g ${P.pulse(10, 0)}>${ell(800, 600, 700, 200, P.glow("#fff0c8"), 0.3)}</g>`);
   P.add(
     capital(P, r, {
       layers: [
-        { y: 650, hill: 55, h: [14, 42], w: [12, 26], c: "#bb8aa0", lit: "#f7c4a0", litOp: 0.5, mist: "#f4c4a8", mistOp: 0.55 },
-        { y: 725, hill: 70, h: [24, 64], w: [16, 38], c: "#7a5282", lit: "#e8a890", litOp: 0.45, win: 0.05, winOp: 0.6, mist: "#d99aa0", mistOp: 0.35 },
-        { y: 820, hill: 40, h: [40, 110], w: [28, 60], c: "#33234e", lit: "#8a5a78", litOp: 0.5, win: 0.04, winOp: 0.7 },
+        { y: 650, hill: 60, h: [8, 26], w: [22, 44], c: "#bb8aa0", lit: "#f7c4a0", litOp: 0.45, mist: "#f4c4a8", mistOp: 0.55 },
+        { y: 728, hill: 90, h: [16, 46], w: [30, 60], c: "#7a5282", lit: "#e8a890", litOp: 0.4, win: 0.05, winOp: 0.6, mist: "#d99aa0", mistOp: 0.35 },
+        { y: 830, hill: 40, h: [30, 80], w: [50, 100], spire: 0.02, turret: 0.04, c: "#33234e", lit: "#8a5a78", litOp: 0.45, win: 0.04, winOp: 0.7 },
       ],
       light: 1,
-      tower: { at: 1, base: 725, top: 240, lit: "#ffe6c4", mid: "#c792a0", shade: "#56406e", win: "#fff2d0", rim: "#fff4dc", glow: "#ffe6b8" },
+      tower: { at: 1, base: 690, top: 236, lit: "#ffe6c4", mid: "#c792a0", shade: "#56406e", win: "#fff2d0", rim: "#fff4dc", glow: "#ffe6b8" },
     }),
   );
   P.add(bottomShade(P, "#1c1030", 0.55, 0.64));
