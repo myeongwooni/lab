@@ -1240,7 +1240,7 @@ function tavern(): string {
     s += A.path(frontZ(P, z0 - 0.35, x0, x1, 0.95, 1.05), "#4a2c1a") + A.path(flatY(P, 0.95, x0, x1, z0 - 0.35, z0 - 0.1), "#7a4a2c");
     for (let m = 0; m < mugs; m++) {
       const [qx, qy] = P(x0 + ((x1 - x0) * (m + 0.7)) / (mugs + 0.6), ty, z0 + 0.25);
-      s += mug(A, qx, qy, 180 / z0 * 0.2);
+      s += mug(A, qx, qy, (0.17 * 700) / z0);
     }
     return s;
   };
@@ -1297,7 +1297,12 @@ function inn(): string {
   A.add(A.path(flatY(P, BY, bx0, bx1, bz0, bz1), "#d8d4e4") + A.path(frontZ(P, bz0, bx0, bx1, BY, BY + 0.12), "#b0aac8") + A.path(wallX(P, bx0, BY, BY + 0.12, bz0, bz1), "#9a94b4"));
   A.add(A.path(flatY(P, BY - 0.02, bx0, bx1, bz0, bz1 - 0.6), "#6a7aa8") + A.path(wallX(P, bx0 - 0.01, BY - 0.02, BY + 0.3, bz0, bz1 - 0.6), "#4a5680") + A.path(frontZ(P, bz0 - 0.01, bx0, bx1, BY - 0.02, BY + 0.3), "#56628e"));
   A.add(A.path(flatY(P, BY - 0.08, bx0 + 0.2, bx1 - 0.15, bz1 - 0.5, bz1 - 0.1), "#f0eef8"));
-  A.add(A.path(frontZ(P, bz1, bx0, bx1, BY - 0.6, FL), "#3a2420"));
+  A.add(A.path(frontZ(P, bz1, bx0, bx1, BY - 0.35, BY), "#4a2e24"));
+  // 둥근 깔개와 의자
+  const [ux, uy] = P(-0.3, FL, 1.9);
+  A.add(A.ell(ux, uy, 260, 50, "#6a3a3a", 0.8) + A.ell(ux, uy, 220, 40, "none", 1, 'stroke="#c9a060" stroke-width="3" opacity=".5"'));
+  const [chx, chy] = P(-1.7, FL, 2.2);
+  A.add(A.line(`M${i0(chx - 40)} ${i0(chy)}v-110M${i0(chx + 40)} ${i0(chy)}v-110M${i0(chx - 40)} ${i0(chy - 110)}v-120`, "#3a2420", 8) + A.rect(chx - 48, chy - 118, 96, 14, "#5a3a2a") + A.line(`M${i0(chx - 40)} ${i0(chy - 180)}h80M${i0(chx - 40)} ${i0(chy - 220)}h80`, "#3a2420", 7));
   // 탁자 + 촛불 (창 왼쪽)
   const tx0 = -1.5, tx1 = -0.9, tz = 2.8, ty = 0.6;
   A.add(A.path(flatY(P, ty, tx0, tx1, tz - 0.4, tz), "#8a5a3a") + A.path(frontZ(P, tz - 0.4, tx0, tx1, ty, FL), "#4a2e24"));
@@ -1421,9 +1426,9 @@ function sewer(): string {
   // 터널 벽 (각 구간을 두꺼운 테 모양으로 채움)
   for (const z of zs) {
     const t = Math.min(1, (z - 1) / (ZE - 1));
-    const col = mix("#4a4e58", "#1a1c24", t);
+    const col = mix("#30323c", "#0e1016", t);
     A.add(`<path d="${ringD(z, R)}" fill="none" stroke="${col}" stroke-width="${f((0.9 * 700) / z)}"/>`);
-    A.add(`<path d="${ringD(z, R - 0.06)}" fill="none" stroke="${mix("#8a8e98", "#2a2c34", t)}" stroke-width="${f(Math.max(1, 40 / z))}" opacity=".7"/>`);
+    A.add(`<path d="${ringD(z, R - 0.06)}" fill="none" stroke="${mix("#5a5e6a", "#1a1c24", t)}" stroke-width="${f(Math.max(1, 40 / z))}" opacity=".7"/>`);
   }
   // 벽돌 줄 (가까운 구간만)
   let br = "";
@@ -1435,7 +1440,7 @@ function sewer(): string {
   A.add(A.line(br, "#6a6e7a", 1.2, 'opacity=".25"'));
   // 보도 (양옆)
   for (const sd of [-1, 1]) {
-    A.add(A.path(flatY(P, FL, sd * 1.0, sd * R, 1, ZE), A.v("walk" + sd, 420, 900, [[0, "#3a3e48"], [1, "#5a5e68"]])));
+    A.add(A.path(flatY(P, FL, sd * 1.0, sd * R, 1, ZE), A.v("walk" + sd, 420, 900, [[0, "#22252e"], [1, "#3a3e48"]])));
     A.add(A.path(wallX(P, sd * 1.0, FL, WY + 0.1, 1, ZE), "#22242c"));
   }
   // 물
@@ -1453,16 +1458,16 @@ function sewer(): string {
     const [cx, cy] = P(Math.cos(a) * R * 0.95, Math.sin(a) * R * 0.95, z), s = 700 / z;
     A.add(A.ell(cx, cy, 0.9 * s, 0.9 * s, cg, 0.5, anim-- > 0 ? A.a("br", z, 5 + z * 0.3) : ""));
     let lit = "", sh = "";
-    const n = 5 + Math.floor(r() * 3);
+    const n = 7 + Math.floor(r() * 4);
     for (let k = 0; k < n; k++) {
-      const ang = a + Math.PI + (r() - 0.5) * 1.6, L = (0.25 + r() * 0.45) * s, w = (0.06 + r() * 0.05) * s;
+      const ang = a + Math.PI + (r() - 0.5) * 2.2, L = (0.12 + r() * 0.3) * s, w = (0.035 + r() * 0.035) * s;
       const dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
       const bx = cx + (r() - 0.5) * 0.2 * s, by = cy + (r() - 0.5) * 0.2 * s;
       const tip: P2 = [bx + dx * L, by + dy * L];
       lit += pr([[bx + nx * w, by + ny * w], [bx + dx * L * 0.8 + nx * w, by + dy * L * 0.8 + ny * w], tip, [bx + dx * L * 0.8, by + dy * L * 0.8], [bx, by]]);
       sh += pr([[bx, by], [bx + dx * L * 0.8, by + dy * L * 0.8], tip, [bx + dx * L * 0.8 - nx * w, by + dy * L * 0.8 - ny * w], [bx - nx * w, by - ny * w]]);
     }
-    A.add(A.path(sh, "#8a8784") + A.path(lit, "#e4e2e0"));
+    A.add(A.path(sh, "#6e6c70") + A.path(lit, "#c9c6c4"));
     const [rx, ry] = P(Math.cos(a) * 0.9, WY, z);
     refl += ep(rx, ry + 6, 0.4 * s, 0.05 * s);
   }

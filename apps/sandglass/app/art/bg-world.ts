@@ -1332,7 +1332,7 @@ function sWorkshop(): string {
   P.add(path("M634 400h20v4h-20Z M664 392h16v4h-16Z", "#e8c98a", 0.8));
   P.add(path("M900 440v-30q0-10 12-10h20q12 0 12 10v30Z", "#6f8fa0", 0.8));
   P.add(path("M906 412h8v24h-8Z", "#ffffff", 0.5));
-  P.add(hourglass(P, 800, 355, 150, true));
+  P.add(hourglass(P, 800, 340, 190, true));
   // light beams from window
   P.add(beam(P, [[360, 80], [360, 320], [1300, 900], [1600, 900], [1600, 700]], "#fff1c4", 0.18));
   P.add(beam(P, [[360, 330], [360, 520], [900, 900], [1150, 900]], "#fff1c4", 0.14));
@@ -1513,21 +1513,24 @@ function sVillaHall(): string {
   P.add(path(`M${SX - 14} 0H${SX + 14}V760H${SX - 14}Z`, "#2a1e1a"));
   let steps = "";
   let lit = "";
-  for (let k = 0; k < 16; k++) {
-    const a = k * 0.62;
-    const y = 740 - k * 46;
-    const x1 = SX + Math.cos(a) * 170;
-    const d = Math.sin(a);
-    steps += `M${SX} ${y}L${q(x1)} ${q(y - 10 + d * 16)}l0 16L${SX} ${y + 14}Z`;
-    if (d > 0) lit += `M${SX} ${y}L${q(x1)} ${q(y - 10 + d * 16)}l0 4L${SX} ${y + 4}Z`;
+  let risers = "";
+  for (let k = 0; k < 18; k++) {
+    const a0 = k * 0.62;
+    const a1 = a0 + 0.62;
+    const y = 760 - k * 42;
+    const P0 = (a: number): string => `${q(SX + Math.cos(a) * 170)} ${q(y + Math.sin(a) * 22)}`;
+    steps += `M${SX} ${y}L${P0(a0)}L${P0(a1)}Z`;
+    risers += `M${P0(a0)}l0 14L${SX} ${y + 14}L${SX} ${y}Z`;
+    if (Math.sin(a0 + 0.3) > 0) lit += `M${SX} ${y}L${P0(a0)}L${P0(a1)}Z`;
   }
-  P.add(path(steps, "#5a4032"));
-  P.add(path(lit, "#e8b878", 0.6));
+  P.add(path(risers, "#2e201a"));
+  P.add(path(steps, "#6a4a38"));
+  P.add(path(lit, "#e8b878", 0.35));
   let rail = "";
-  for (let k = 0; k <= 60; k++) {
-    const a = k * 0.165;
-    const y = 700 - k * 12.3;
-    rail += `${k ? "L" : "M"}${q(SX + Math.cos(a) * 170)} ${q(y - 60 + Math.sin(a) * 16)}`;
+  for (let k = 0; k <= 72; k++) {
+    const a = k * 0.155;
+    const y = 760 - (k * 0.155 / 0.62) * 42;
+    rail += `${k ? "L" : "M"}${q(SX + Math.cos(a) * 170)} ${q(y - 70 + Math.sin(a) * 22)}`;
   }
   P.add(stroke(rail, "#1a1210", 6));
   P.add(stroke(rail, "#c8a060", 1.5, 0.6));
@@ -1537,8 +1540,9 @@ function sVillaHall(): string {
   for (let k = -6; k <= 6; k++) ft += `M${VX + k * 40} 620L${VX + k * 260} 900`;
   P.add(stroke(ft, "#1e1614", 2, 0.6));
   // long table in perspective
-  P.add(path("M740 600H860L1180 900H420Z", "#f0e6d4"));
-  P.add(path("M740 600H860L1180 900H420Z", P.lin([[0, "#3a2e2a", 0.55], [0.5, "#3a2e2a", 0.1], [1, "#3a2e2a", 0]])));
+  P.add(path("M740 600H860L1180 900H420Z", "#d8c6a6"));
+  P.add(path("M740 600H860L1180 900H420Z", P.lin([[0, "#2a201c", 0.7], [0.45, "#2a201c", 0.25], [1, "#2a201c", 0.35]])));
+  P.add(path("M770 600H830L950 900H650Z", "#6a2a26", 0.8));
   P.add(path("M420 900L740 600V612L436 900Z M1180 900L860 600V612L1164 900Z", "#c8b89e"));
   // chairs (high backs) along the table
   let ch = "";
@@ -1548,8 +1552,8 @@ function sVillaHall(): string {
     const s = 0.4 + t * 1.3;
     const xl = 740 - (y - 600) * 1.07 - 30 * s;
     const xr = 860 + (y - 600) * 1.07 + 30 * s;
-    ch += `M${q(xl)} ${q(y)}V${q(y - 110 * s)}q${q(-12 * s)} ${q(-18 * s)} ${q(-24 * s)} 0V${q(y)}Z`;
-    ch += `M${q(xr)} ${q(y)}V${q(y - 110 * s)}q${q(12 * s)} ${q(-18 * s)} ${q(24 * s)} 0V${q(y)}Z`;
+    ch += `M${q(xl)} ${q(y)}V${q(y - 110 * s)}q${q(-22 * s)} ${q(-26 * s)} ${q(-44 * s)} 0V${q(y)}Z`;
+    ch += `M${q(xr)} ${q(y)}V${q(y - 110 * s)}q${q(22 * s)} ${q(-26 * s)} ${q(44 * s)} 0V${q(y)}Z`;
   }
   P.add(path(ch, "#1e1412"));
   // candelabras on the table
@@ -1589,6 +1593,21 @@ function sKingRoom(): string {
   const dm: Pt[] = [];
   for (let x = 30; x < 1600; x += 60) for (let y = 30; y < 600; y += 70) dm.push([x + ((y / 70) % 2) * 30, y]);
   P.add(dots(dm, 6, "#3a2e3a", 0.5));
+  // wall mouldings
+  P.add(stroke("M40 120H340V600H40Z M1260 120H1560V600H1260Z", "#3a2e3e", 4, 0.8));
+  P.add(stroke("M60 140H320V580H60Z M1280 140H1540V580H1280Z", "#2a2230", 2, 0.8));
+  // royal portrait (left) and tall wardrobe (right)
+  P.add(path("M110 180H290V420H110Z", "#8a6a45"));
+  P.add(path("M122 192H278V408H122Z", "#2a2030"));
+  P.add(path("M200 250a30 34 0 1 0 0.1 0Z M150 408Q160 320 200 316Q240 320 250 408Z", "#4a3a4a"));
+  P.add(path("M180 240l20-22 20 22-8-4-12 8-12-8Z", "#c8a060", 0.8));
+  P.add(stroke("M110 180H290", "#e8c98a", 2, 0.6));
+  P.add(path("M1300 160H1500V720H1300Z", "#241a1c"));
+  P.add(path("M1310 180H1395V700H1310Z M1405 180H1490V700H1405Z", "#2e2224"));
+  P.add(circ(1388, 440, 6, "#c8a060") + circ(1412, 440, 6, "#c8a060"));
+  P.add(path("M1290 150H1510V170H1290Z", "#3a2a2c"));
+  // wall sconce glow, dim
+  P.add(circ(200, 520, 120, P.glow("#ff9a50"), 0.25));
   // window with heavy curtains, a thin gap
   P.add(path("M560 60H1040V560H560Z", "#2a3450"));
   P.add(path("M780 60H830V560H780Z", P.lin([[0, "#c9d8f0"], [1, "#6f86b0"]])));
