@@ -339,13 +339,13 @@ const IR_ASH: Iris = { dark: "#3a3638", mid: "#8a8486", light: "#dcd8d8" };
 const IR_ASHRED: Iris = { dark: "#3e2a2c", mid: "#8e6a6c", light: "#e0cccc" };
 
 // ── hair shapes (local head coords) ──
-const CROWN = "C86 -10 86 -64 58 -96C28 -126 -36 -126 -62 -94C-76 -76 -74 -50 -64 -34";
+const CROWN = "C86 -60 78 -84 58 -96C28 -126 -36 -126 -62 -94C-76 -76 -74 -50 -64 -34";
 /** Seoha: black shoulder bob, loosely tied low, stray locks */
 const SEOHA_BACK =
   "M-60 -64C-80 -34 -82 16 -76 56C-72 86 -66 104 -54 118C-46 110 -40 102 -36 94L-30 112C-14 104 -4 92 2 80L50 86C62 94 74 102 88 100C82 88 84 68 86 48C90 8 88 -42 62 -80C32 -120 -36 -108 -60 -64Z";
 const SEOHA_FRONT = bangs(
   [[-64, -34], [-54, 6], [-44, -52], [-30, -8], [-22, -60], [-8, 0], [-2, -62], [12, -10], [18, -64], [30, 2], [38, -60], [52, -14], [58, -52], [70, 14], [76, -30]],
-  CROWN.replace("C86 -10", "C84 -12"),
+  CROWN,
 );
 const SEOHA_SIDE = lock([-52, -40], [-62, 0], [-64, 50], [-50, 96], 20) + lock([58, -30], [66, 10], [68, 60], [60, 104], 22);
 /** Elios: black, tied at the nape, bangs brushing the eyes */
