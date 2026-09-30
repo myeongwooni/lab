@@ -15,7 +15,6 @@ export interface Host {
   ctx: BaseAudioContext;
   bank: Bank;
   wave(name: WaveName): PeriodicWave;
-  vib: AudioNode[]; // shared vibrato LFOs (output in cents)
   noise: AudioBuffer; // white, looped-safe
   pink: AudioBuffer;
   brown: AudioBuffer;
@@ -68,6 +67,29 @@ function stopAll(nodes: (AudioScheduledSourceNode | null)[], t: number): void {
     } catch {
       /* already stopped */
     }
+  }
+}
+
+/**
+ * Per-voice vibrato written as a detune automation curve (no LFO nodes, so
+ * nothing stays connected after the voice ends).
+ */
+function vibrato(p: AudioParam, t: number, dur: number, o: { base?: number; depth: number; rate: number; delay: number; scoop?: number; phase?: number }): void {
+  const d = Math.max(0.05, dur);
+  const n = Math.max(2, Math.min(4000, Math.ceil(d * 60)));
+  const c = new Float32Array(n);
+  const ph = o.phase ?? 0;
+  for (let i = 0; i < n; i++) {
+    const tt = (i / (n - 1)) * d;
+    const ramp = Math.max(0, Math.min(1, (tt - o.delay) / 0.45));
+    let x = (o.base ?? 0) + o.depth * ramp * Math.sin(2 * Math.PI * o.rate * tt + ph);
+    if (o.scoop && tt < 0.07) x += o.scoop * (1 - tt / 0.07);
+    c[i] = x;
+  }
+  try {
+    p.setValueCurveAtTime(c, t, d);
+  } catch {
+    p.value = o.base ?? 0;
   }
 }
 
@@ -187,7 +209,6 @@ function strings(h: Host, dest: AudioNode, t: number, d: number, m: number, v: n
     osc.setPeriodicWave(h.wave("bow"));
     osc.frequency.value = f;
     osc.detune.value = c;
-    h.vib[i % h.vib.length].connect(osc.detune);
     osc.connect(lp);
     oscs.push(osc);
   });
@@ -214,20 +235,12 @@ function strings(h: Host, dest: AudioNode, t: number, d: number, m: number, v: n
       lp.frequency.linearRampToValueAtTime(cut * 1.2, t + Math.max(0.1, d * 0.9));
     }
   }
-  for (const osc of oscs) {
+  oscs.forEach((osc, i) => {
+    if (!short) vibrato(osc.detune, t, end - t, { base: dets[i], depth: 7 + i * 2, rate: 4.9 + i * 0.55 + (m % 3) * 0.07, delay: 0.15, phase: i * 1.7 });
     osc.start(t);
     osc.stop(end);
-  }
-  oscs[0].onended = () => {
-    oscs.forEach((osc, i) => {
-      try {
-        h.vib[i % h.vib.length].disconnect(osc.detune);
-      } catch {
-        /* ignore */
-      }
-    });
-    g.disconnect();
-  };
+  });
+  oscs[0].onended = () => g.disconnect();
   return { start: t, end, prio, kill: killer(g, oscs) };
 }
 
@@ -243,19 +256,7 @@ function cello(h: Host, dest: AudioNode, t: number, d: number, m: number, v: num
   b.setPeriodicWave(h.wave("bow"));
   a.frequency.value = f;
   b.frequency.value = f;
-  b.detune.value = 3;
-  const lfo = ctx.createOscillator();
-  lfo.frequency.value = 5.1 + ((m * 7) % 5) * 0.08;
-  const vd = ctx.createGain();
-  vd.gain.setValueAtTime(0, t);
-  vd.gain.linearRampToValueAtTime(0, t + Math.min(0.35, d * 0.4));
-  vd.gain.linearRampToValueAtTime(14, t + Math.min(0.9, d * 0.8));
-  lfo.connect(vd);
-  vd.connect(a.detune);
-  vd.connect(b.detune);
-  // slight pitch settle at the bow change
-  a.detune.setValueAtTime(-12, t);
-  a.detune.linearRampToValueAtTime(0, t + 0.06);
+  const vrate = 5.1 + ((m * 7) % 5) * 0.08;
   a.connect(lp);
   b.connect(lp);
   lp.connect(g);
@@ -277,10 +278,12 @@ function cello(h: Host, dest: AudioNode, t: number, d: number, m: number, v: num
   g.connect(dest);
   const amp = 0.16 * Math.pow(v, 1.1);
   const end = env(g.gain, t, d, amp, o.att ?? 0.13, o.rel ?? 0.45, sh);
-  const srcs = [a, b, lfo, nz];
+  const srcs = [a, b, nz];
+  // delayed vibrato; a slight pitch settle at the bow change
+  vibrato(a.detune, t, end - t, { depth: 14, rate: vrate, delay: Math.min(0.3, d * 0.4), scoop: -12 });
+  vibrato(b.detune, t, end - t, { base: 3, depth: 14, rate: vrate, delay: Math.min(0.3, d * 0.4), phase: 0.3 });
   a.start(t);
   b.start(t);
-  lfo.start(t);
   nz.start(t, Math.random() * 1.5);
   stopAll(srcs, end);
   a.onended = () => g.disconnect();
@@ -296,18 +299,6 @@ function flute(h: Host, dest: AudioNode, t: number, d: number, m: number, v: num
   if (whistle) osc.type = "sine";
   else osc.setPeriodicWave(h.wave("flute"));
   osc.frequency.value = f;
-  const lfo = ctx.createOscillator();
-  lfo.frequency.value = whistle ? 5.6 : 4.9;
-  const vd = ctx.createGain();
-  vd.gain.setValueAtTime(0, t);
-  vd.gain.linearRampToValueAtTime(0, t + Math.min(0.3, d * 0.4));
-  vd.gain.linearRampToValueAtTime(whistle ? 16 : 11, t + Math.min(0.8, d * 0.8));
-  lfo.connect(vd);
-  vd.connect(osc.detune);
-  if (whistle) {
-    osc.detune.setValueAtTime(-40, t);
-    osc.detune.linearRampToValueAtTime(0, t + 0.07);
-  }
   const tone = ctx.createGain();
   tone.gain.value = 1;
   osc.connect(tone);
@@ -332,9 +323,9 @@ function flute(h: Host, dest: AudioNode, t: number, d: number, m: number, v: num
   g.connect(dest);
   const amp = (whistle ? 0.11 : 0.14) * Math.pow(v, 0.9);
   const end = env(g.gain, t, d, amp, o.att ?? 0.06, o.rel ?? 0.25, sh);
-  const srcs = [osc, lfo, nz];
+  const srcs = [osc, nz];
+  vibrato(osc.detune, t, end - t, { depth: whistle ? 16 : 11, rate: whistle ? 5.6 : 4.9, delay: Math.min(0.28, d * 0.4), scoop: whistle ? -40 : 0 });
   osc.start(t);
-  lfo.start(t);
   nz.start(t, Math.random() * 1.5);
   stopAll(srcs, end);
   osc.onended = () => g.disconnect();
@@ -404,7 +395,6 @@ function stack(h: Host, dest: AudioNode, t: number, d: number, m: number, v: num
     osc.setPeriodicWave(h.wave(wave));
     osc.frequency.value = f;
     osc.detune.value = c;
-    if (useVib) h.vib[(i + 1) % h.vib.length].connect(osc.detune);
     osc.connect(lp);
     oscs.push(osc);
   });
@@ -422,21 +412,12 @@ function stack(h: Host, dest: AudioNode, t: number, d: number, m: number, v: num
       lp.frequency.setTargetAtTime(c * 0.7, t + 0.2, 0.4);
     }
   }
-  for (const osc of oscs) {
+  oscs.forEach((osc, i) => {
+    if (useVib) vibrato(osc.detune, t, end - t, { base: dets[i], depth: kind === "choir" ? 10 : kind === "brass" ? 5 : 6, rate: (kind === "choir" ? 4.6 : 5.2) + i * 0.4, delay: 0.25, phase: i * 2.1 });
     osc.start(t);
     osc.stop(end);
-  }
-  oscs[0].onended = () => {
-    if (useVib)
-      oscs.forEach((osc, i) => {
-        try {
-          h.vib[(i + 1) % h.vib.length].disconnect(osc.detune);
-        } catch {
-          /* ignore */
-        }
-      });
-    g.disconnect();
-  };
+  });
+  oscs[0].onended = () => g.disconnect();
   return { start: t, end, prio, kill: killer(g, oscs) };
 }
 

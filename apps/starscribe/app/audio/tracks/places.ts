@@ -65,6 +65,7 @@ export function archive(): Track {
     bpm: 104,
     len: 144,
     ev: s.ev,
+    gain: 1.26,
     ch: {
       cel: { inst: "celesta", pan: 0.15, rev: 0.4, prio: 2, gain: 1.1 },
       fl: { inst: "flute", pan: 0.25, rev: 0.4, prio: 2, gain: 0.85 },
@@ -143,6 +144,7 @@ export function tower(): Track {
     bpm: 58,
     len: 112,
     ev: s.ev,
+    gain: 1.19,
     ch: {
       pnoR: { inst: "piano", pan: 0.05, rev: 0.45, prio: 2 },
       pnoL: { inst: "piano", pan: -0.1, rev: 0.4, gain: 0.9 },
@@ -243,7 +245,7 @@ export function sea(): Track {
     bpm: 60,
     len: 96,
     ev: s.ev,
-    gain: 1.05,
+    gain: 2.5,
     ch: {
       choir: { inst: "choir", fx: "ah", pan: 0.2, rev: 0.8, gain: 0.75, att: 3, rel: 3, prio: 1 },
       choirLo: { inst: "choir", fx: "oo", pan: -0.25, rev: 0.7, gain: 0.7, att: 3, rel: 3, prio: 1 },

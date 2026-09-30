@@ -127,6 +127,7 @@ export function title(): Track {
     bpm: 72,
     len: 144,
     ev: s.ev,
+    gain: 1.06,
     ch: {
       pnoR: { inst: "piano", pan: -0.05, rev: 0.32, prio: 2 },
       pnoL: { inst: "piano", pan: -0.15, rev: 0.32, gain: 0.85 },
@@ -202,12 +203,15 @@ export function lullaby(): Track {
   s.n("mbacc", 107.7, 4, 53, 0.24);
   s.n("mbacc", 107.75, 4, 60, 0.16);
   s.n("mbacc", 110.6, 3, 65, 0.1);
+  s.n("cel", 112.4, 2.5, 72, 0.14);
+  s.n("harp", 112.9, 2, 53, 0.12);
 
   return {
     id: "lullaby",
     bpm: 63,
     len: 114,
     ev: s.ev,
+    gain: 1.5,
     ch: {
       mb: { inst: "mbox", pan: 0.05, rev: 0.4, prio: 2 },
       mbacc: { inst: "mbox", pan: -0.15, rev: 0.4, gain: 0.8 },
@@ -312,7 +316,7 @@ export function climax(): Track {
     bpm: 138,
     len: 168,
     ev: s.ev,
-    gain: 0.9,
+    gain: 0.82,
     ch: {
       ost: { inst: "strs", pan: -0.1, rev: 0.25, fx: "body", gain: 1 },
       ostlo: { inst: "strs", pan: 0.1, rev: 0.2, gain: 0.9, bright: 0.7 },

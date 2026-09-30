@@ -184,6 +184,7 @@ export function tension(): Track {
     bpm: 92,
     len: 128,
     ev: s.ev,
+    gain: 0.81,
     ch: {
       ost: { inst: "strs", pan: -0.15, rev: 0.25, fx: "body" },
       ostlo: { inst: "strs", pan: 0.15, rev: 0.2, gain: 0.9, bright: 0.6 },
@@ -232,6 +233,7 @@ export function sorrow(): Track {
     bpm: 56,
     len: 96,
     ev: s.ev,
+    gain: 1.33,
     ch: {
       pnoR: { inst: "piano", pan: 0.05, rev: 0.42, prio: 2 },
       pnoL: { inst: "piano", pan: -0.1, rev: 0.4, gain: 0.9 },
@@ -281,6 +283,7 @@ export function villain(): Track {
     bpm: 56,
     len: 96,
     ev: s.ev,
+    gain: 0.92,
     ch: {
       org: { inst: "organ", pan: -0.15, rev: 0.6, gain: 0.9, prio: 1 },
       ped: { inst: "organ", pan: 0, rev: 0.5, gain: 1.0, bright: 0.5 },

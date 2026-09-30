@@ -239,7 +239,6 @@ class Player {
 export class Engine implements Host {
   ctx: BaseAudioContext;
   bank: Bank;
-  vib: AudioNode[] = [];
   noise: AudioBuffer;
   pink: AudioBuffer;
   brown: AudioBuffer;
@@ -273,7 +272,7 @@ export class Engine implements Host {
     comp.attack.value = 0.02;
     comp.release.value = 0.35;
     const lim = ctx.createDynamicsCompressor();
-    lim.threshold.value = -6;
+    lim.threshold.value = -4;
     lim.knee.value = 0;
     lim.ratio.value = 20;
     lim.attack.value = 0.001;
@@ -282,10 +281,26 @@ export class Engine implements Host {
     out.gain.value = 1.35;
     this.master = ctx.createGain();
     this.master.gain.value = 0.8;
+    // final safety: soft clip that can never exceed ~0.98 (linear below 0.6)
+    const pre = ctx.createGain();
+    pre.gain.value = 0.5;
+    const shaper = ctx.createWaveShaper();
+    const N = 2048;
+    const curve = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      const x = ((i / (N - 1)) * 2 - 1) * 2; // shaper input u in [-1,1] represents x in [-2,2]
+      const ax = Math.abs(x);
+      const y = ax <= 0.6 ? ax : 0.6 + 0.38 * Math.tanh((ax - 0.6) / 0.38);
+      curve[i] = Math.sign(x) * y;
+    }
+    shaper.curve = curve;
+    shaper.oversample = "2x";
     this.master.connect(comp);
     comp.connect(lim);
     lim.connect(out);
-    out.connect(ctx.destination);
+    out.connect(pre);
+    pre.connect(shaper);
+    shaper.connect(ctx.destination);
 
     // shared reverb
     const conv = ctx.createConvolver();
@@ -312,16 +327,6 @@ export class Engine implements Host {
     this.buses = { bgm: mk(), se: mk(), amb: mk() };
     (Object.keys(this.buses) as Kind[]).forEach((k) => this.applyVol(k, 0));
 
-    // shared vibrato LFOs (cents)
-    [4.7, 5.25, 5.8].forEach((hz, i) => {
-      const o = ctx.createOscillator();
-      o.frequency.value = hz;
-      const g = ctx.createGain();
-      g.gain.value = 7 + i * 1.5;
-      o.connect(g);
-      o.start(0);
-      this.vib.push(g);
-    });
   }
 
   wave(name: WaveName): PeriodicWave {
