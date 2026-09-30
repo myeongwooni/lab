@@ -113,7 +113,7 @@ function piano(sr: number, midi: number, rnd: () => number): Rendered {
   const f0 = mtof(midi);
   const dur = Math.max(1.5, Math.min(5.5, 5.5 - (midi - 36) * 0.07));
   const out = new Float64Array(Math.floor(dur * sr));
-  const B = Math.min(0.004, 0.00012 * Math.pow(2, (midi - 33) / 14));
+  const B = Math.min(0.002, 0.00006 * Math.pow(2, (midi - 33) / 14));
   const strings = midi < 35 ? 1 : midi < 47 ? 2 : 3;
   const det = [0, 0.85, -1.05];
   const pos = 1 / 8.3;
@@ -135,7 +135,8 @@ function piano(sr: number, midi: number, rnd: () => number): Rendered {
   // hammer knock
   noiseBurst(out, sr, 0.05, 0.006, 1800 + f0 * 1.5, rnd, 120);
   noiseBurst(out, sr, 0.03, 0.02, 300, rnd);
-  return { data: finish(out, sr, 1.2), f0 };
+  // report the perceived (slightly stretched) pitch so playback lands in tune
+  return { data: finish(out, sr, 1.2), f0: f0 * Math.sqrt(1 + B * 9) };
 }
 
 // ---------------------------------------------------------------- Karplus-Strong

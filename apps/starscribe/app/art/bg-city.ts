@@ -1167,7 +1167,11 @@ function room(): string {
   const quilt = [A.lin("q1", 0, 0, 1, 1, [[0, "#8a3a3a"], [1, "#4a1e2a"]]), A.lin("q2", 0, 0, 1, 1, [[0, "#3a4a7a"], [1, "#1e2446"]])];
   for (const s of [-1, 1]) {
     const x0 = s * Wd, x1 = s * 1.45, za = 2.0, zb = 4.8, top = 2.05;
-    A.add(A.path(q([x0, FL, zb], [x0, 0.6, zb], [x1, 0.6, zb], [x1, FL, zb]), "#2a1a18"));
+    A.add(A.path(q([x0, FL, zb], [x0, 1.25, zb], [x1, 1.25, zb], [x1, FL, zb]), "#3a2420"), `<path d="M${i0(X(x0, zb))} ${i0(Y(1.25, zb))}H${i0(X(x1, zb))}" stroke="#b07a58" stroke-width="3" opacity=".5"/>`);
+    // 무릎벽 선반과 책
+    const sy = Y(0.55, 5.6);
+    A.add(A.path(q([x0, 0.55, 5.4], [x0 * 0.62, 0.55, 5.4], [x0 * 0.62, 0.62, 5.4], [x0, 0.62, 5.4]), "#5a3c2c"));
+    A.add(bookStack(r, X(x0 * 0.8, 5.4), sy - 2, 0.5, 4, ["#7c3a36", "#3d4d6e", "#6d5a38", "#2f5249"]));
     A.add(A.path(q([x0, top, za], [x0, top, zb], [x1, top, zb], [x1, top, za]), s < 0 ? quilt[0] : quilt[1]));
     A.add(A.path(q([x1, top, za], [x1, top, zb], [x1, FL - 0.2, zb], [x1, FL - 0.2, za]), s < 0 ? "#5a2426" : "#262c52"));
     A.add(A.path(q([x0, top, za], [x1, top, za], [x1, FL, za], [x0, FL, za]), "#1a0e10"));
@@ -1179,7 +1183,7 @@ function room(): string {
   }
   // 협탁 + 촛불 + 책
   const cg = A.glowG("cand", "#f6c070", "#fff1c4");
-  A.add(A.ell(800, 520, 520, 380, cg, 0.35));
+  A.add(A.ell(820, 540, 700, 460, cg, 0.45));
   A.add(A.path(q([-0.6, 1.95, 5.6], [0.6, 1.95, 5.6], [0.6, 1.95, 5.0], [-0.6, 1.95, 5.0]), "#6a4634"), A.path(q([-0.6, 1.95, 5.0], [0.6, 1.95, 5.0], [0.6, FL, 5.0], [-0.6, FL, 5.0]), "#2e1c1a"));
   const ty = Y(1.95, 5.0);
   A.add(bookStack(r, 750, ty, 0.55, 3, ["#7c3a36", "#3d4d6e", "#6d5a38"]));
@@ -1189,7 +1193,7 @@ function room(): string {
   A.add(bookStack(r, 470, Y(FL, 3.3), 1, 6, bc), bookStack(r, 1150, Y(FL, 3.0), 1.1, 4, bc), bookStack(r, 1215, Y(FL, 3.0), 0.9, 7, bc));
   // 따뜻한 빛이 닿는 가장자리
   A.add(A.ell(830, ty - 30, 90, 90, cg, 0.6, A.a("fl", 0.6, 3.1)));
-  A.add(A.rect(0, 0, 1600, 900, A.rad("warm", [[0, "#f6a860", 0.14], [0.5, "#f6a860", 0.04], [1, "#f6a860", 0]], 'cx=".52" cy=".58" r=".5"')));
+  A.add(A.rect(0, 0, 1600, 900, A.rad("warm", [[0, "#f6a860", 0.22], [0.5, "#f6a860", 0.07], [1, "#f6a860", 0]], 'cx=".52" cy=".62" r=".55"')));
   finish(A, "#06030a", 0.7, 0.5);
   return A.svg();
 }
@@ -1318,6 +1322,7 @@ function register(): string {
       if (back ? sn > 0 : sn <= 0.25) continue;
       const depth = (1 - sn) / 2; // 0 가까이, 1 멀리
       const x = OX + Math.cos(a) * 760 * (1 - depth * 0.35), sc = 1.5 - depth * 1.0;
+      if (!back && Math.abs(x - OX) < 420) continue;
       const yb = 560 + (1 - depth) * 250, h = 520 * sc, w = 48 * sc;
       const lit = mix("#34448a", "#0b1030", depth * 0.4), dk = mix("#0e1434", "#0b1030", depth * 0.4);
       s += A.rect(x - w / 2, yb - h, w / 2, h, back ? mix(lit, "#1a2456", 0.5) : lit) + A.rect(x, yb - h, w / 2, h, dk);
@@ -1344,7 +1349,7 @@ function register(): string {
   for (let i = 0; i < 6; i++) { lines += `M${690 + i * 3} ${538 + i * 5}q50-14 98-6M${812} ${528 + i * 5}q50-6 ${96 - i * 3} ${8 + i}`; }
   A.add(`<path d="${lines}" stroke="#5e8fe8" stroke-width="1.6" fill="none" opacity=".75"/>`);
   const bk = A.glowG("book", "#8fb8ff", "#eef4ff");
-  A.add(A.ell(800, 530, 330, 170, bk, 0.7), A.ell(800, 535, 130, 50, bk, 0.9, A.a("br", 1, 5)));
+  A.add(A.ell(800, 530, 420, 220, bk, 0.75), A.ell(800, 535, 150, 60, bk, 0.9, A.a("br", 1, 5)));
   // 떠오르는 성묵 글자
   let gl = "";
   const gd: string[] = [];

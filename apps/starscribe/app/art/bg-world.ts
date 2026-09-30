@@ -60,8 +60,6 @@ class Pic {
     this.d.push(s);
   }
   add(...s: string[]): void {
-    const D = (globalThis as { __bgw?: [string, number, string][] }).__bgw; // DEBUG
-    if (D) for (const x of s) D.push([this.p, x.length, x.slice(0, 70)]); // DEBUG
     this.b.push(...s);
   }
   private uid(): string {
@@ -736,7 +734,7 @@ function sGarden(): string {
   P.add(rect(P.lin([[0, "#050820"], [0.3, "#0e1644"], [0.52, "#27397e"], [0.62, "#4458a4"]])));
   P.add(ell(MX, MY, 820, 560, P.glow("#5d74d0"), 0.6));
   P.add(ell(MX, MY, 330, 300, P.glow("#c3d0ff"), 0.4));
-  P.add(starField(P, r, { n: 180, box: [0, 0, 1600, 470], keep: (x, y) => Math.min(1, Math.hypot(x - MX, y - MY) / 420) * (1 - y / 560) }));
+  P.add(starField(P, r, { n: 140, box: [0, 0, 1600, 470], keep: (x, y) => Math.min(1, Math.hypot(x - MX, y - MY) / 420) * (1 - y / 560) }));
   P.add(ring(P, r, { a: [-160, 520], c: [640, -140], b: [1760, 260], w: 66, n: 440, glow: 0.8, fs, bright: 6 }));
   // moon
   P.add(ell(MX, MY, 110, 110, P.glow("#f0f4ff", true), 0.7));

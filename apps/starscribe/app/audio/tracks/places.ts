@@ -99,7 +99,6 @@ export function tower(): Track {
   };
 
   // intro (0-8)
-  const hi = harm("Am:4 Am:4", 0, 4);
   s.n("pnoL", 0, 8.5, 33, 0.4);
   s.n("pnoL", 0.05, 8.5, 40, 0.3);
   s.seq("pnoR", 2, "E6:2 r:1.5 B5:1.5 C6:3", { v: 0.6 });
@@ -138,7 +137,6 @@ export function tower(): Track {
   lhOpen(hc, 0.3);
   s.seq("pnoR", 105, "B5:1 E6:2 r:1 | A5:3", { v: 0.55 });
 
-  void hi;
   return {
     id: "tower",
     bpm: 58,
@@ -218,7 +216,8 @@ export function sea(): Track {
   const r = rng(4242);
   const prog = harm("Ebmaj7:8 F/Eb:8 Cm9:8 Abmaj7#11:8 Ebmaj7:8 F/Eb:8 Gm7:8 Bb7sus4:8 Bmaj7:8 C#/B:8 Abmaj9:8 Bb7sus4:8", 0, 8);
   s.pad("choir", prog, 55, 4, 0.34, { sh: 1, over: 1.2 });
-  s.pad("choirLo", prog, 39, 2, 0.3, { over: 1.2 });
+  s.bass("choirLo", prog.map((x) => ({ ...x, d: x.d + 1.2 })), 39, 0.3);
+  s.pad("choirLo", prog, 46, 1, 0.24, { over: 1.2 });
   s.pad("harm", prog, 79, 2, 0.16, { sh: 1, over: 1 });
   // bells: irregular, drawn from each chord plus the lydian 4th
   for (const seg of prog) {
