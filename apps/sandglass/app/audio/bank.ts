@@ -18,7 +18,9 @@ export type SampleInst =
   | "fslap"
   | "tamb"
   | "bdrum"
-  | "heart";
+  | "heart"
+  | "tick"
+  | "rglass";
 
 type Rendered = { data: Float32Array; f0: number };
 type Spec = { sr: number; notes: number[]; render: (sr: number, midi: number, rnd: () => number) => Rendered };
@@ -239,6 +241,49 @@ function tamb(sr: number, rnd: () => number): Float32Array {
   return finish(out, sr, 0.3, 0.8);
 }
 
+/** clock escapement tick: a tiny bright click with a woody body (m=60 native; higher = tick, lower = tock) */
+function tick(sr: number, rnd: () => number): Float32Array {
+  const out = new Float64Array(Math.floor(0.14 * sr));
+  const f = 2350;
+  for (const [r, a, t] of [
+    [1, 1, 0.045],
+    [1.63, 0.6, 0.03],
+    [2.71, 0.45, 0.02],
+    [4.12, 0.25, 0.012],
+  ] as Mode[]) {
+    const tau = t / 6.91;
+    partial(out, sr, f * r, a, tau, tau, 1, rnd() * 6.283);
+  }
+  partial(out, sr, 780, 0.35, 0.012, 0.012, 1, 0);
+  noiseBurst(out, sr, 0.5, 0.0015, 9000, rnd, 2500);
+  return finish(out, sr, 0.15, 0.9);
+}
+
+/** reversed glass bell: swells up and stops dead on the beat (length is fixed at 1.4 s) */
+function rglass(sr: number, m: number, rnd: () => number): Rendered {
+  const fwd = modal(
+    sr,
+    mtof(m),
+    [
+      [1, 1, 4.5],
+      [1.0021, 0.35, 4],
+      [2.756, 0.3, 1.6],
+      [5.404, 0.12, 0.6],
+    ],
+    1.4,
+    rnd,
+    { attack: 1.5, t60scale: Math.pow(2, -(m - 72) / 36) },
+  );
+  const n = fwd.length;
+  const o = new Float32Array(n);
+  for (let i = 0; i < n; i++) o[i] = fwd[n - 1 - i];
+  const fi = Math.floor(0.3 * sr);
+  for (let i = 0; i < fi; i++) o[i] *= i / fi;
+  const fo = Math.floor(0.004 * sr);
+  for (let i = 0; i < fo; i++) o[n - 1 - i] *= i / fo;
+  return { data: o, f0: mtof(m) };
+}
+
 const SPECS: Record<SampleInst, Spec> = {
   piano: { sr: 32000, notes: range(28, 100, 4), render: piano },
   celesta: {
@@ -424,6 +469,8 @@ const SPECS: Record<SampleInst, Spec> = {
       ),
     }),
   },
+  tick: { sr: 32000, notes: [60], render: (sr, _m, r) => ({ f0: mtof(60), data: tick(sr, r) }) },
+  rglass: { sr: 32000, notes: range(60, 100, 5), render: rglass },
   heart: {
     sr: 24000,
     notes: [60],

@@ -2,11 +2,14 @@
 
 // 게임 전체의 흐름: 시작 화면 → 타이틀 → 본편(대사·선택지·장 전환) → 엔딩과 크레딧.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { artCharId, bgImage, cgImage, charImage, hasBackground, preloadImages } from "../art";
 import { TRACKS, audio } from "../audio/director";
-import { CHARACTER_NAMES, ENDINGS, chapterInfo, endingInfo } from "../engine/catalog";
+import { CHARACTER_NAMES, ENDINGS, chapterInfo, deathInfo, endingInfo } from "../engine/catalog";
 import { advance, buildStory, choose, enterChapter, newGame, pushNvl, run, type Beat, type GameState, type StepResult } from "../engine/runtime";
 import {
   DEFAULT_SETTINGS,
+  DEFAULT_VARS,
+  PREFIX,
   addLetter,
   addUnique,
   flushGlobal,
@@ -27,7 +30,9 @@ import { parseScript, type Option } from "../engine/script";
 import { plain } from "../engine/text";
 import { SOURCES } from "../story";
 import { Choices, DayCard, LetterCard, NvlPage, TextBox, TitleCard } from "./Dialogue";
-import { Backlog, ChapterSelect, Gallery, Letters, MusicRoom, SaveLoad, SettingsPanel } from "./Menus";
+import { DeathSequence, RewindSequence } from "./Loop";
+import { Backlog, ChapterSelect, DeathRecord, Extras, Gallery, MusicRoom, Records, SaveLoad, SettingsPanel } from "./Menus";
+import { Particles } from "./Particles";
 import { Stage, type Pulse } from "./Stage";
 
 const STORY = buildStory(SOURCES, parseScript);
@@ -36,7 +41,7 @@ const MS_PER_CHAR = [0, 58, 40, 27, 14, 0];
 const AUTO_BASE = [0, 700, 1100, 1600, 2200, 3000];
 
 type Screen = "splash" | "title" | "game" | "ending";
-type Overlay = null | "save" | "load" | "settings" | "log" | "gallery" | "music" | "letters" | "chapters" | "confirmTitle";
+type Overlay = null | "save" | "load" | "settings" | "log" | "extras" | "gallery" | "endings" | "deaths" | "music" | "letters" | "chapters" | "confirmTitle";
 
 function extraVars() {
   return { true_unlocked: trueUnlocked() };
@@ -46,9 +51,33 @@ function beatPreview(b: Beat | null): string {
   if (!b) return "";
   if (b.kind === "say") return (b.who ? `${b.who} — ` : "") + plain(b.text);
   if (b.kind === "choice") return "◇ 선택의 갈림길";
-  if (b.kind === "letter") return `편지 「${b.head}」`;
+  if (b.kind === "letter") return `기록 「${b.head}」`;
+  if (b.kind === "death") return `사망 — ${deathInfo(b.id)?.title ?? ""}`;
+  if (b.kind === "rewind") return `모래가 거꾸로 흐른다 — 제${b.loop}회차`;
+  if (b.kind === "day") return `새벽제 제${b.n}일`;
   return "";
 }
+
+// 저장할 자리. 되감기 박자는 state.i가 라벨 바로 앞을 가리키므로, 불러오면 라벨부터 읽도록 한 칸 옮깁니다.
+function snapshot(st: GameState, b: Beat | null): GameState {
+  return b?.kind === "rewind" ? { ...st, i: st.i + 1 } : st;
+}
+
+// 곧 나올 배경·CG·스탠딩 그림 파일을 미리 받아 둡니다(그림 슬롯이 있을 때만 의미가 있습니다).
+function preloadAhead(st: GameState) {
+  const cmds = STORY.chapters[st.ch]?.cmds;
+  if (!cmds) return;
+  const urls: (string | null)[] = [];
+  for (let k = Math.max(0, st.i); k < Math.min(cmds.length, st.i + 30); k++) {
+    const c = cmds[k];
+    if (c.t === "bg") urls.push(bgImage(c.id));
+    else if (c.t === "cg" && c.id) urls.push(cgImage(c.id));
+    else if (c.t === "show") urls.push(charImage(artCharId(c.id, st.vars), c.expr ?? "normal"));
+  }
+  preloadImages(urls);
+}
+
+const TITLE_BG = ["dawntower", "ashfall", "dawn"].find((id) => hasBackground(id)) ?? null;
 
 export default function Game() {
   const [screen, setScreen] = useState<Screen>("splash");
@@ -73,6 +102,8 @@ export default function Game() {
   const [toast, setToast] = useState<{ seq: number; text: string } | null>(null);
   const [hasSave, setHasSave] = useState(false);
   const [unlockedTrue, setUnlockedTrue] = useState(false);
+  const [deathFirst, setDeathFirst] = useState(false);
+  const [nudge, setNudge] = useState(0);
 
   const live = useRef({ gs, beat, beatSeq, typed, overlay, screen, hideUi, log, auto, skip });
   live.current = { gs, beat, beatSeq, typed, overlay, screen, hideUi, log, auto, skip };
@@ -108,6 +139,10 @@ export default function Game() {
       else if (e.t === "flash") setPulse({ seq: Math.random(), kind: "flash", color: e.color });
       else if (e.t === "place") setPlace({ seq: Math.random(), text: e.text });
       else if (e.t === "unlockCg") addUnique("cgs", e.id);
+      else if (e.t === "unlockDeath") {
+        setDeathFirst(!loadGlobal().deaths.includes(e.id));
+        addUnique("deaths", e.id);
+      }
     }
     const b = r.beat;
     if (b.kind === "say") {
@@ -122,7 +157,15 @@ export default function Game() {
     } else if (b.kind === "choice") {
       setSkip(false);
       writeSlot("auto", makeSave(r.state, live.current.log, beatPreview(b)));
+    } else if (b.kind === "rewind") {
+      // 되감을 때마다 자동 기록
+      writeSlot("auto", makeSave(snapshot(r.state, b), live.current.log, beatPreview(b)));
+      flushGlobal();
+    } else if (b.kind === "death") {
+      setAuto(false);
+      flushGlobal();
     }
+    preloadAhead(r.state);
     seqRef.current += 1;
     setBeatSeq(seqRef.current);
     setBeat(b);
@@ -176,7 +219,7 @@ export default function Game() {
   };
 
   const saveTo = (slot: number | "quick") => {
-    writeSlot(slot, makeSave(live.current.gs, live.current.log, beatPreview(live.current.beat)));
+    writeSlot(slot, makeSave(snapshot(live.current.gs, live.current.beat), live.current.log, beatPreview(live.current.beat)));
     setHasSave(true);
     notify(slot === "quick" ? "빠른 기록에 적었습니다" : `${slot}번 페이지에 적었습니다`);
   };
@@ -279,7 +322,7 @@ export default function Game() {
     const onHide = () => {
       if (document.visibilityState === "hidden") {
         if (live.current.screen === "game" && live.current.beat) {
-          writeSlot("auto", makeSave(live.current.gs, live.current.log, beatPreview(live.current.beat)));
+          writeSlot("auto", makeSave(snapshot(live.current.gs, live.current.beat), live.current.log, beatPreview(live.current.beat)));
         }
         flushGlobal();
       }
@@ -307,6 +350,8 @@ export default function Game() {
       else continueFrom(seq);
     } else if (b.kind === "title" || b.kind === "day") {
       continueFrom(seq);
+    } else if (b.kind === "death" || b.kind === "rewind") {
+      setNudge((n) => n + 1);
     }
   }, [continueFrom]);
 
@@ -374,7 +419,7 @@ export default function Game() {
           onReset={() => {
             try {
               Object.keys(localStorage)
-                .filter((k) => k.startsWith("starscribe:"))
+                .filter((k) => k.startsWith(PREFIX))
                 .forEach((k) => localStorage.removeItem(k));
             } catch {}
             window.location.reload();
@@ -382,21 +427,24 @@ export default function Game() {
         />
       )}
       {overlay === "log" && <Backlog log={log} onClose={() => setOverlay(null)} />}
-      {overlay === "gallery" && <Gallery onClose={() => setOverlay(null)} />}
+      {overlay === "extras" && <Extras onClose={() => setOverlay(null)} onOpen={(id) => setOverlay(id === "endings" ? "endings" : id)} />}
+      {overlay === "gallery" && <Gallery onClose={() => setOverlay(screen === "title" ? "extras" : null)} />}
+      {overlay === "endings" && <Gallery initialTab="end" onClose={() => setOverlay(screen === "title" ? "extras" : null)} />}
+      {overlay === "deaths" && <DeathRecord onClose={() => setOverlay(screen === "title" ? "extras" : null)} />}
       {overlay === "music" && (
         <MusicRoom
           onClose={() => {
-            setOverlay(null);
+            setOverlay(screen === "title" ? "extras" : null);
             if (screen === "title") audio.playBgm("title", 1500);
           }}
         />
       )}
-      {overlay === "letters" && <Letters onClose={() => setOverlay(null)} onRead={(head, paras) => setReading({ head, paras })} />}
+      {overlay === "letters" && <Records onClose={() => setOverlay(screen === "title" ? "extras" : null)} onRead={(head, paras) => setReading({ head, paras })} />}
       {overlay === "chapters" && (
         <ChapterSelect
-          onClose={() => setOverlay(null)}
+          onClose={() => setOverlay(screen === "title" ? "extras" : null)}
           onPick={(ch) => {
-            const vars = loadGlobal().chapterVars[ch] ?? { c: 0, l: 0 };
+            const vars = loadGlobal().chapterVars[ch] ?? { ...DEFAULT_VARS };
             startAt(newGame(ch, vars));
           }}
         />
@@ -410,7 +458,7 @@ export default function Game() {
               <button
                 className="btn"
                 onClick={() => {
-                  writeSlot("auto", makeSave(gs, log, beatPreview(beat)));
+                  writeSlot("auto", makeSave(snapshot(gs, beat), log, beatPreview(beat)));
                   flushGlobal();
                   setOverlay(null);
                   setScreen("title");
@@ -447,10 +495,10 @@ export default function Game() {
           setScreen("title");
         }}
       >
-        <div className="splash-ring" aria-hidden />
-        <p className="splash-title">이름을 잃은 별에게</p>
-        <p className="splash-tap">화면을 눌러 이야기를 펼치세요</p>
-        <p className="splash-note">소리와 함께 읽기를 권합니다 · 약 6~8시간 분량</p>
+        <TitleHourglass className="splash-glass" />
+        <p className="splash-title">천 번째 새벽, 당신에게</p>
+        <p className="splash-tap">화면을 눌러 모래를 뒤집으세요</p>
+        <p className="splash-note">소리와 함께 읽기를 권합니다 · 죽음과 상실을 다루는 장면이 있습니다</p>
       </main>
     );
   }
@@ -458,18 +506,27 @@ export default function Game() {
   if (screen === "title") {
     return (
       <main className="app">
-        <Stage key="title" stage={{ bg: "title", bgTrans: "cut", bgMs: 0, bgSeq: 0, cg: null, actors: [], bgm: "title", amb: null, fx: "petals", filter: null, nvl: false, nvlLines: [] }} pulse={null}>
-          <div className="title-screen">
+        <Stage
+          key="title"
+          stage={{ bg: TITLE_BG ?? "black", bgTrans: "cut", bgMs: 0, bgSeq: 0, cg: null, actors: [], bgm: "title", amb: null, fx: "sand", filter: null, nvl: false, nvlLines: [] }}
+          pulse={null}
+        >
+          <div className={`title-screen${TITLE_BG ? " has-art" : " no-art"}`}>
+            <div className="title-sky" aria-hidden />
+            <Particles kind="ash" />
             <div className="logo">
-              <span className="logo-sub">To a Star That Lost Its Name</span>
+              <TitleHourglass className="logo-glass" />
+              <span className="logo-sub">To You, on the Thousandth Dawn</span>
               <h1>
-                <span>이름을 잃은</span>
-                <span>별에게</span>
+                <span>천 번째 새벽,</span>
+                <span>당신에게</span>
               </h1>
               <span className="logo-rule" aria-hidden>
-                <i />✦<i />
+                <i />
+                <b />
+                <i />
               </span>
-              {unlockedTrue && <span className="logo-true">진실의 장이 열렸습니다</span>}
+              {unlockedTrue && <span className="logo-true">재의 왕에게 가는 길이 열렸습니다</span>}
             </div>
             <nav className="title-menu">
               <button onClick={newRun}>처음부터</button>
@@ -479,15 +536,10 @@ export default function Game() {
               <button onClick={() => setOverlay("load")} disabled={!hasSave}>
                 불러오기
               </button>
-              <button onClick={() => setOverlay("chapters")} disabled={loadGlobal().chapters.length < 2}>
-                장 고르기
-              </button>
-              <button onClick={() => setOverlay("gallery")}>회상록</button>
-              <button onClick={() => setOverlay("music")}>음악실</button>
-              <button onClick={() => setOverlay("letters")}>편지함</button>
+              <button onClick={() => setOverlay("extras")}>특별 수록</button>
               <button onClick={() => setOverlay("settings")}>설정</button>
             </nav>
-            <footer className="title-foot">판타지 로맨스 비주얼 노벨 · 각본 · 그림 · 음악 전부 코드로 · lab</footer>
+            <footer className="title-foot">사망 회귀 판타지 로맨스 비주얼 노벨 · 각본 · 그림 · 음악 전부 코드로 · lab</footer>
           </div>
         </Stage>
         {panels}
@@ -507,7 +559,7 @@ export default function Game() {
   const speaker = say?.char;
   return (
     <main className="app" onWheel={onWheel}>
-      <Stage key={session} stage={gs.stage} speaker={speaker} pulse={pulse}>
+      <Stage key={session} stage={gs.stage} speaker={speaker} pulse={pulse} unmasked={!!gs.vars.unmasked}>
         <div
           className={`play${hideUi ? " ui-hidden" : ""}`}
           onClick={proceed}
@@ -521,7 +573,11 @@ export default function Game() {
               <span>{place.text}</span>
             </div>
           )}
-          {gs.day !== null && !hideUi && <div className="day-chip">백일서 · 제{gs.day}일</div>}
+          {gs.day !== null && !hideUi && (
+            <div className="day-chip">
+              새벽제 제{gs.day}일 <span>· 제{Number(gs.vars.loop ?? 1)}회차</span>
+            </div>
+          )}
 
           {gs.stage.nvl && (say || beat?.kind === "choice" || gs.stage.nvlLines.length > 0) ? (
             <NvlPage
@@ -586,12 +642,22 @@ export default function Game() {
         )}
         {beat?.kind === "day" && (
           <div className="card-layer soft" onClick={proceed}>
-            <DayCard n={beat.n} />
+            <DayCard n={beat.n} loop={Number(gs.vars.loop ?? 1)} />
           </div>
         )}
         {beat?.kind === "letter" && (
           <div className="card-layer letter-layer">
             <LetterCard key={beatSeq} head={beat.head} paras={beat.paras} onClose={() => continueFrom(beatSeq)} />
+          </div>
+        )}
+        {beat?.kind === "death" && (
+          <div className="card-layer loop-layer">
+            <DeathSequence key={beatSeq} id={beat.id} first={deathFirst} fast={skip} nudge={nudge} onDone={() => continueFrom(beatSeq)} />
+          </div>
+        )}
+        {beat?.kind === "rewind" && (
+          <div className="card-layer loop-layer">
+            <RewindSequence key={beatSeq} loop={beat.loop} fast={skip} nudge={nudge} onDone={() => continueFrom(beatSeq)} />
           </div>
         )}
         <div className={`veil${veil ? " on" : ""}`} />
@@ -610,7 +676,7 @@ function EndingRoll({ id, onDone }: { id: string; onDone: () => void }) {
 
   useEffect(() => {
     audio.setAmbient(null);
-    audio.playBgm(info.kind === "TRUE" || info.kind === "GOOD" ? "ending" : info.kind === "NORMAL" ? "lullaby" : "sorrow", 2500);
+    audio.playBgm(info.kind === "TRUE" || info.kind === "GOOD" ? "ending" : info.kind === "ANOTHER" ? "seoul" : info.kind === "NORMAL" ? "sorrow" : "between", 2500);
   }, [info.kind]);
 
   useEffect(() => {
@@ -630,7 +696,8 @@ function EndingRoll({ id, onDone }: { id: string; onDone: () => void }) {
     else onDone();
   };
 
-  const got = loadGlobal().endings.length;
+  const g = loadGlobal();
+  const got = g.endings.length;
   return (
     <div className={`ending ending-${info.kind.toLowerCase()}`} onClick={next}>
       {phase === "card" && (
@@ -642,8 +709,8 @@ function EndingRoll({ id, onDone }: { id: string; onDone: () => void }) {
       {phase === "roll" && (
         <div className="credits">
           <div className="credits-scroll">
-            <p className="cr-logo">이름을 잃은 별에게</p>
-            <p className="cr-sub">To a Star That Lost Its Name</p>
+            <p className="cr-logo">천 번째 새벽, 당신에게</p>
+            <p className="cr-sub">To You, on the Thousandth Dawn</p>
             <p className="cr-gap" />
             <p className="cr-role">각본 · 연출</p>
             <p className="cr-name">Claude</p>
@@ -655,7 +722,7 @@ function EndingRoll({ id, onDone }: { id: string; onDone: () => void }) {
             <p className="cr-name">Claude</p>
             <p className="cr-gap" />
             <p className="cr-role">등장인물</p>
-            {["에스텔", ...Object.values(CHARACTER_NAMES).filter((n) => n !== "소년 기사")].map((n) => (
+            {["한서하", ...Object.values(CHARACTER_NAMES)].map((n) => (
               <p key={n} className="cr-name small">
                 {n}
               </p>
@@ -669,7 +736,7 @@ function EndingRoll({ id, onDone }: { id: string; onDone: () => void }) {
             ))}
             <p className="cr-gap" />
             <p className="cr-role">그리고</p>
-            <p className="cr-name small">끝까지 읽어 준 당신에게</p>
+            <p className="cr-name small">천 번을 되돌아와 끝까지 읽어 준 당신에게</p>
             <p className="cr-gap" />
             <p className="cr-end">lab · 2026</p>
           </div>
@@ -680,12 +747,52 @@ function EndingRoll({ id, onDone }: { id: string; onDone: () => void }) {
           <span className="ending-kind">{info.kind} END</span>
           <span className="ending-title">{info.title}</span>
           <p className="ending-note">
-            {firstTime.current ? "회상록에 새 엔딩이 기록되었습니다." : "이미 기록된 엔딩입니다."} ({got}/{ENDINGS.length})
+            {firstTime.current ? "엔딩 도감에 새 새벽이 기록되었습니다." : "이미 기록된 엔딩입니다."} ({got}/{ENDINGS.length}) · 사망 기록 {g.deaths.length}
           </p>
-          {trueUnlocked() && id !== "true" && <p className="ending-note gold">두 사람의 이야기를 모두 보았습니다. 제5장의 마지막 갈림길에, 새로운 길이 열렸습니다.</p>}
+          {trueUnlocked() && id !== "true" && id !== "return" && (
+            <p className="ending-note gold">세 사람의 새벽을 모두 보았습니다. 제5장의 마지막 갈림길에, 재의 왕에게 가는 길이 열렸습니다.</p>
+          )}
           <p className="ending-tap">눌러서 타이틀로</p>
         </div>
       )}
     </div>
+  );
+}
+
+// 거꾸로 선 금빛 모래시계: 아래 방울의 모래가 가는 줄기로 위 방울에 쌓입니다.
+function TitleHourglass({ className }: { className?: string }) {
+  return (
+    <svg className={`hourglass ${className ?? ""}`} viewBox="0 0 200 320" aria-hidden>
+      <defs>
+        <linearGradient id="hg-frame" x1="0" x2="1">
+          <stop offset="0" stopColor="#a8742e" />
+          <stop offset="0.5" stopColor="#ffe3a1" />
+          <stop offset="1" stopColor="#a8742e" />
+        </linearGradient>
+        <linearGradient id="hg-sand" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fff1c4" />
+          <stop offset="1" stopColor="#f5b04a" />
+        </linearGradient>
+        <clipPath id="hg-top">
+          <path d="M44 28 C44 96 94 124 98 158 L102 158 C106 124 156 96 156 28 Z" />
+        </clipPath>
+        <clipPath id="hg-bot">
+          <path d="M98 162 C94 196 44 224 44 292 L156 292 C156 224 106 196 102 162 Z" />
+        </clipPath>
+      </defs>
+      <path className="hg-glass" d="M44 28 C44 96 94 124 98 160 C94 196 44 224 44 292 L156 292 C156 224 106 196 102 160 C106 124 156 96 156 28 Z" />
+      {/* 위 방울: 거꾸로 흘러 쌓이는 모래 (윗면에 붙음) */}
+      <g clipPath="url(#hg-top)">
+        <rect className="hg-fill-top" x="30" y="28" width="140" height="130" fill="url(#hg-sand)" />
+      </g>
+      {/* 아래 방울: 줄어드는 모래 */}
+      <g clipPath="url(#hg-bot)">
+        <rect className="hg-fill-bot" x="30" y="162" width="140" height="130" fill="url(#hg-sand)" />
+      </g>
+      <line className="hg-stream" x1="100" y1="236" x2="100" y2="40" />
+      <rect x="22" y="14" width="156" height="14" rx="4" fill="url(#hg-frame)" />
+      <rect x="22" y="292" width="156" height="14" rx="4" fill="url(#hg-frame)" />
+      <path d="M30 28 V292 M170 28 V292" stroke="url(#hg-frame)" strokeWidth="4" />
+    </svg>
   );
 }

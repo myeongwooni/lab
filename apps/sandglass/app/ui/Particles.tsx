@@ -1,6 +1,6 @@
 "use client";
 
-// 눈·비·꽃잎·유성 같은 입자를 캔버스 한 장에 그립니다. 효과가 바뀌면 이전 효과는 서서히 사라집니다.
+// 모래·재·불씨·비·등불 같은 입자를 캔버스 한 장에 그립니다. 효과가 바뀌면 이전 효과는 서서히 사라집니다.
 import { useEffect, useRef } from "react";
 
 type P = {
@@ -14,69 +14,62 @@ type P = {
   r: number; // 회전
   vr: number;
   life?: number;
-  glyph?: [number, number][];
 };
 
-type Emitter = { kind: string; ps: P[]; alpha: number; target: number; timer: number };
+type Emitter = { kind: string; ps: P[]; alpha: number; target: number };
 
 const COUNTS: Record<string, number> = {
-  snow: 140,
+  sand: 120,
+  ash: 110,
+  embers: 70,
   rain: 220,
+  lanterns: 26,
+  dust: 60,
+  sparks: 60,
   petals: 28,
   stars: 70,
-  embers: 70,
-  lanterns: 26,
-  meteors: 0,
-  letters: 46,
-  dust: 60,
+  leaves: 26,
 };
 
 function rnd(a: number, b: number) {
   return a + Math.random() * (b - a);
 }
 
-function glyph(): [number, number][] {
-  // 필기체 획처럼 보이는 짧은 곡선 점들
-  const pts: [number, number][] = [];
-  let x = rnd(-0.5, 0.5);
-  let y = rnd(-0.5, 0.5);
-  const n = 4 + Math.floor(Math.random() * 4);
-  for (let i = 0; i < n; i++) {
-    pts.push([x, y]);
-    x += rnd(-0.7, 0.7);
-    y += rnd(-0.6, 0.6);
-  }
-  return pts;
-}
-
 function spawn(kind: string, w: number, h: number, initial: boolean): P {
   const y0 = initial ? rnd(0, h) : undefined;
   switch (kind) {
-    case "snow": {
-      const s = Math.random() < 0.12 ? rnd(3.5, 6) : rnd(1, 3);
-      return { x: rnd(0, w), y: y0 ?? rnd(-40, -5), vx: rnd(-12, 12), vy: s * rnd(12, 20), s, a: s > 3.5 ? 0.45 : rnd(0.5, 0.95), ph: rnd(0, 6.28), r: 0, vr: rnd(0.4, 1.2) };
+    case "sand": {
+      // 위로 떠오르는 금빛 모래. 가끔 큰 알갱이.
+      const big = Math.random() < 0.1;
+      const s = big ? rnd(1.8, 2.8) : rnd(0.6, 1.6);
+      return { x: rnd(0, w), y: y0 ?? rnd(h, h + 40), vx: rnd(-6, 6), vy: -rnd(18, 46) * (big ? 1.3 : 1), s, a: rnd(0.45, 1), ph: rnd(0, 6.28), r: 0, vr: rnd(1.5, 4) };
+    }
+    case "ash": {
+      const s = Math.random() < 0.15 ? rnd(3, 5.5) : rnd(1.2, 3);
+      return { x: rnd(-w * 0.1, w * 1.05), y: y0 ?? rnd(-40, -5), vx: rnd(4, 18), vy: s * rnd(7, 12), s, a: rnd(0.35, 0.8), ph: rnd(0, 6.28), r: rnd(0, 6.28), vr: rnd(-1.4, 1.4) };
     }
     case "rain":
       return { x: rnd(-w * 0.1, w * 1.1), y: y0 ?? rnd(-h * 0.3, -10), vx: -120, vy: rnd(900, 1400), s: rnd(12, 26), a: rnd(0.12, 0.32), ph: 0, r: 0, vr: 0 };
     case "petals":
       return { x: rnd(-w * 0.2, w), y: y0 ?? rnd(-60, -10), vx: rnd(18, 50), vy: rnd(22, 48), s: rnd(5, 11), a: rnd(0.55, 0.95), ph: rnd(0, 6.28), r: rnd(0, 6.28), vr: rnd(-1.2, 1.2) };
+    case "leaves":
+      return { x: rnd(-w * 0.2, w), y: y0 ?? rnd(-60, -10), vx: rnd(24, 70), vy: rnd(30, 60), s: rnd(7, 13), a: rnd(0.7, 1), ph: rnd(0, 6.28), r: rnd(0, 6.28), vr: rnd(-2, 2) };
     case "stars":
       return { x: rnd(0, w), y: rnd(0, h * 0.85), vx: 0, vy: rnd(-6, -2), s: rnd(1.5, 4.2), a: rnd(0.35, 1), ph: rnd(0, 6.28), r: 0, vr: rnd(0.8, 2.4) };
     case "embers":
       return { x: rnd(0, w), y: y0 ?? rnd(h, h + 40), vx: rnd(-10, 10), vy: -rnd(30, 90), s: rnd(1, 3), a: rnd(0.4, 1), ph: rnd(0, 6.28), r: 0, vr: rnd(2, 6) };
+    case "sparks": {
+      // 술식 불꽃: 화면 가운데 아래쪽에서 튀어 오르며 금방 사라집니다.
+      const ang = rnd(-Math.PI * 0.95, -Math.PI * 0.05);
+      const sp = rnd(80, 260);
+      return { x: rnd(w * 0.2, w * 0.8), y: initial ? rnd(h * 0.2, h * 0.8) : rnd(h * 0.45, h * 0.8), vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, s: rnd(1, 2.4), a: rnd(0.6, 1), ph: rnd(0, 6.28), r: 0, vr: 0, life: rnd(0.5, 1.6) };
+    }
     case "lanterns": {
       const s = rnd(6, 20);
       return { x: rnd(0, w), y: y0 ?? rnd(h, h + 80), vx: rnd(-4, 4), vy: -s * rnd(1.4, 2.4), s, a: rnd(0.6, 1), ph: rnd(0, 6.28), r: 0, vr: rnd(0.5, 1.2) };
     }
-    case "letters":
-      return { x: rnd(0, w), y: y0 ?? rnd(h * 0.2, h + 40), vx: rnd(-6, 6), vy: -rnd(6, 20), s: rnd(8, 20), a: rnd(0.3, 0.85), ph: rnd(0, 6.28), r: rnd(-0.5, 0.5), vr: rnd(0.6, 1.4), glyph: glyph() };
     case "dust":
       return { x: rnd(0, w), y: rnd(0, h), vx: rnd(-6, 6), vy: rnd(-5, 3), s: rnd(0.8, 2.2), a: rnd(0.2, 0.7), ph: rnd(0, 6.28), r: 0, vr: rnd(0.3, 1) };
-    case "meteor": {
-      const x = rnd(w * 0.2, w * 1.2);
-      const sp = rnd(900, 1500);
-      return { x, y: rnd(-40, h * 0.25), vx: -sp * 0.82, vy: sp * 0.5, s: rnd(90, 220), a: rnd(0.6, 1), ph: 0, r: 0, vr: 0, life: rnd(0.6, 1.2) };
-    }
     default:
       return { x: 0, y: 0, vx: 0, vy: 0, s: 0, a: 0, ph: 0, r: 0, vr: 0 };
   }
@@ -84,12 +77,36 @@ function spawn(kind: string, w: number, h: number, initial: boolean): P {
 
 function draw(ctx: CanvasRenderingContext2D, kind: string, p: P, t: number, k: number) {
   switch (kind) {
-    case "snow": {
-      ctx.globalAlpha = p.a * k;
-      ctx.fillStyle = "#f2f5ff";
+    case "sand": {
+      const tw = 0.55 + 0.45 * Math.sin(t * p.vr + p.ph);
+      ctx.globalAlpha = p.a * tw * k;
+      ctx.fillStyle = tw > 0.85 ? "#fff1c4" : "#ffd27a";
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.s, 0, Math.PI * 2);
       ctx.fill();
+      if (p.s > 1.8) {
+        ctx.globalAlpha = p.a * tw * k * 0.25;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.s * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      break;
+    }
+    case "ash": {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.r);
+      ctx.globalAlpha = p.a * k;
+      ctx.fillStyle = p.s > 3 ? "#8a8784" : "#c9c4bc";
+      ctx.beginPath();
+      // 부서진 잿조각: 찌그러진 사각형
+      ctx.moveTo(-p.s, -p.s * 0.5);
+      ctx.lineTo(p.s * 0.7, -p.s * 0.8);
+      ctx.lineTo(p.s, p.s * 0.4);
+      ctx.lineTo(-p.s * 0.4, p.s * 0.7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
       break;
     }
     case "rain": {
@@ -109,7 +126,7 @@ function draw(ctx: CanvasRenderingContext2D, kind: string, p: P, t: number, k: n
       ctx.scale(1, Math.abs(Math.cos(t * p.vr + p.ph)) * 0.8 + 0.2);
       ctx.globalAlpha = p.a * k;
       ctx.fillStyle = "#f7f3ea";
-      ctx.shadowColor = "rgba(230,236,255,0.8)";
+      ctx.shadowColor = "rgba(255,240,220,0.8)";
       ctx.shadowBlur = 6;
       ctx.beginPath();
       ctx.ellipse(0, 0, p.s, p.s * 0.45, 0, 0, Math.PI * 2);
@@ -117,10 +134,32 @@ function draw(ctx: CanvasRenderingContext2D, kind: string, p: P, t: number, k: n
       ctx.restore();
       break;
     }
+    case "leaves": {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.r);
+      ctx.scale(Math.abs(Math.cos(t * 1.3 + p.ph)) * 0.7 + 0.3, 1);
+      ctx.globalAlpha = p.a * k;
+      const hue = p.ph % 3;
+      ctx.fillStyle = hue < 1 ? "#d9772f" : hue < 2 ? "#c9542a" : "#e0a53a";
+      ctx.beginPath();
+      ctx.moveTo(0, -p.s);
+      ctx.quadraticCurveTo(p.s * 0.8, 0, 0, p.s);
+      ctx.quadraticCurveTo(-p.s * 0.8, 0, 0, -p.s);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(90,40,10,0.5)";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(0, -p.s);
+      ctx.lineTo(0, p.s * 1.25);
+      ctx.stroke();
+      ctx.restore();
+      break;
+    }
     case "stars": {
       const tw = 0.5 + 0.5 * Math.sin(t * p.vr + p.ph);
       ctx.globalAlpha = p.a * tw * k;
-      ctx.fillStyle = "#e8eeff";
+      ctx.fillStyle = "#fff4dc";
       const s = p.s * (0.7 + tw * 0.5);
       ctx.beginPath();
       ctx.moveTo(p.x, p.y - s * 2.2);
@@ -147,6 +186,22 @@ function draw(ctx: CanvasRenderingContext2D, kind: string, p: P, t: number, k: n
       ctx.shadowBlur = 0;
       break;
     }
+    case "sparks": {
+      const life = Math.max(0, Math.min(1, p.life ?? 0));
+      ctx.globalAlpha = p.a * life * k;
+      ctx.strokeStyle = "#bfe0ff";
+      ctx.lineWidth = p.s;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 0.04, p.y - p.vy * 0.04);
+      ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.s * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      break;
+    }
     case "lanterns": {
       const fl = 0.85 + 0.15 * Math.sin(t * 3 * p.vr + p.ph);
       const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.s * 2.6);
@@ -169,30 +224,6 @@ function draw(ctx: CanvasRenderingContext2D, kind: string, p: P, t: number, k: n
       ctx.fill();
       break;
     }
-    case "letters": {
-      if (!p.glyph) break;
-      const pulse = 0.6 + 0.4 * Math.sin(t * p.vr + p.ph);
-      ctx.save();
-      ctx.translate(p.x, p.y);
-      ctx.rotate(p.r);
-      ctx.globalAlpha = p.a * pulse * k;
-      ctx.strokeStyle = "#a9c8ff";
-      ctx.shadowColor = "#6f9cff";
-      ctx.shadowBlur = 10;
-      ctx.lineWidth = Math.max(1, p.s / 9);
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      const g = p.glyph;
-      ctx.moveTo(g[0][0] * p.s, g[0][1] * p.s);
-      for (let i = 1; i < g.length - 1; i++) {
-        const mx = ((g[i][0] + g[i + 1][0]) / 2) * p.s;
-        const my = ((g[i][1] + g[i + 1][1]) / 2) * p.s;
-        ctx.quadraticCurveTo(g[i][0] * p.s, g[i][1] * p.s, mx, my);
-      }
-      ctx.stroke();
-      ctx.restore();
-      break;
-    }
     case "dust": {
       const tw = 0.5 + 0.5 * Math.sin(t * p.vr + p.ph);
       ctx.globalAlpha = p.a * tw * k;
@@ -202,41 +233,27 @@ function draw(ctx: CanvasRenderingContext2D, kind: string, p: P, t: number, k: n
       ctx.fill();
       break;
     }
-    case "meteor": {
-      const life = p.life ?? 0;
-      const fade = Math.min(1, life * 3);
-      const len = p.s;
-      const nx = -p.vx / Math.hypot(p.vx, p.vy);
-      const ny = -p.vy / Math.hypot(p.vx, p.vy);
-      const g = ctx.createLinearGradient(p.x, p.y, p.x + nx * len, p.y + ny * len);
-      g.addColorStop(0, `rgba(255,255,255,${p.a * fade})`);
-      g.addColorStop(0.2, `rgba(190,215,255,${0.6 * p.a * fade})`);
-      g.addColorStop(1, "rgba(150,180,255,0)");
-      ctx.globalAlpha = k;
-      ctx.strokeStyle = g;
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      ctx.lineTo(p.x + nx * len, p.y + ny * len);
-      ctx.stroke();
-      ctx.fillStyle = `rgba(255,255,255,${p.a * fade})`;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 1.8, 0, Math.PI * 2);
-      ctx.fill();
-      break;
-    }
   }
 }
 
 function step(kind: string, p: P, dt: number, t: number) {
   switch (kind) {
-    case "snow":
-      p.x += (p.vx + Math.sin(t * p.vr + p.ph) * 14) * dt;
+    case "sand":
+      p.x += (p.vx + Math.sin(t * 0.9 + p.ph) * 10) * dt;
       p.y += p.vy * dt;
+      break;
+    case "ash":
+      p.x += (p.vx + Math.sin(t * 0.7 + p.ph) * 12) * dt;
+      p.y += p.vy * dt;
+      p.r += p.vr * dt;
       break;
     case "petals":
       p.x += (p.vx + Math.sin(t * 0.8 + p.ph) * 20) * dt;
+      p.y += p.vy * dt;
+      p.r += p.vr * dt;
+      break;
+    case "leaves":
+      p.x += (p.vx + Math.sin(t * 1.1 + p.ph) * 34) * dt;
       p.y += p.vy * dt;
       p.r += p.vr * dt;
       break;
@@ -244,12 +261,9 @@ function step(kind: string, p: P, dt: number, t: number) {
       p.x += (p.vx + Math.sin(t * p.vr + p.ph) * 5) * dt;
       p.y += p.vy * dt;
       break;
-    case "letters":
-      p.x += (p.vx + Math.sin(t * 0.5 + p.ph) * 6) * dt;
-      p.y += p.vy * dt;
-      p.r += Math.sin(t + p.ph) * 0.1 * dt;
-      break;
-    case "meteor":
+    case "sparks":
+      p.vy += 160 * dt;
+      p.vx *= 1 - dt * 0.8;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.life = (p.life ?? 0) - dt;
@@ -261,7 +275,7 @@ function step(kind: string, p: P, dt: number, t: number) {
 }
 
 function dead(kind: string, p: P, w: number, h: number) {
-  if (kind === "meteor") return (p.life ?? 0) <= 0;
+  if (kind === "sparks") return (p.life ?? 0) <= 0;
   if (kind === "stars" || kind === "dust") return p.y < -20 || p.x < -20 || p.x > w + 20 || p.y > h + 20;
   return p.y > h + 40 || p.y < -120 || p.x < -w * 0.3 || p.x > w * 1.3;
 }
@@ -279,7 +293,7 @@ export function Particles({ kind }: { kind: string | null }) {
       const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       const mobile = w < 700;
       const n = Math.round((COUNTS[kind] ?? 40) * (mobile ? 0.55 : 1) * (reduced ? 0.3 : 1));
-      list.push({ kind, ps: Array.from({ length: n }, () => spawn(kind, w || 1600, h || 900, true)), alpha: 0, target: 1, timer: 0 });
+      list.push({ kind, ps: Array.from({ length: n }, () => spawn(kind, w || 1600, h || 900, true)), alpha: 0, target: 1 });
     }
   }, [kind]);
 
@@ -319,21 +333,13 @@ export function Particles({ kind }: { kind: string | null }) {
           list.splice(ei, 1);
           continue;
         }
-        const kindName = e.kind === "meteors" ? "meteor" : e.kind;
-        if (e.kind === "meteors" && e.target > 0) {
-          e.timer -= dt;
-          if (e.timer <= 0) {
-            e.ps.push(spawn("meteor", w, h, false));
-            e.timer = rnd(0.15, 0.9);
-          }
-        }
-        ctx.globalCompositeOperation = e.kind === "rain" || e.kind === "snow" ? "source-over" : "lighter";
+        const kindName = e.kind;
+        ctx.globalCompositeOperation = e.kind === "rain" || e.kind === "ash" || e.kind === "leaves" ? "source-over" : "lighter";
         for (let i = e.ps.length - 1; i >= 0; i--) {
           const p = e.ps[i];
           step(kindName, p, dt, t);
           if (dead(kindName, p, w, h)) {
-            if (kindName === "meteor") e.ps.splice(i, 1);
-            else e.ps[i] = spawn(kindName, w, h, false);
+            e.ps[i] = spawn(kindName, w, h, false);
             continue;
           }
           draw(ctx, kindName, p, t, e.alpha);

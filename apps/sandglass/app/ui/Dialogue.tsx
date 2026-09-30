@@ -1,6 +1,6 @@
 "use client";
 
-// 대사창(ADV), 소설식 화면(NVL), 선택지, 장 제목·날짜 카드, 편지.
+// 대사창(ADV), 소설식 화면(NVL), 선택지, 장 제목·날짜 카드, 기록 카드.
 import { useEffect, useState } from "react";
 import { SPEAKER_COLORS } from "../engine/catalog";
 import type { NvlLine } from "../engine/runtime";
@@ -8,7 +8,7 @@ import type { Option } from "../engine/script";
 import { Rich, Typed } from "./Text";
 
 export function speakerColor(who: string | null) {
-  return (who && SPEAKER_COLORS[who]) || "#dcd8ee";
+  return (who && SPEAKER_COLORS[who]) || "#e2ddd2";
 }
 
 function Quote({ who, quiet, children }: { who: string | null; quiet?: boolean; children: React.ReactNode }) {
@@ -167,21 +167,23 @@ export function TitleCard({ small, big }: { small: string; big: string }) {
   );
 }
 
-export function DayCard({ n }: { n: number }) {
+export function DayCard({ n, loop }: { n: number; loop: number }) {
   return (
     <div className="day-card">
       <span className="day-ring" aria-hidden />
-      <span className="day-label">백일서</span>
+      <span className="day-label">새벽제</span>
       <span className="day-n">
         제 <b>{n}</b> 일
       </span>
+      <span className="day-loop">제 {loop}회차</span>
     </div>
   );
 }
 
 export function LetterCard({ head, paras, onClose }: { head: string; paras: string[]; onClose: () => void }) {
   const [shown, setShown] = useState(1);
-  const journal = /일지|기록|쪽지/.test(head);
+  const journal = /일지|쪽지/.test(head);
+  const kind = /서하/.test(head) ? " seoha" : /재의/.test(head) ? " ash" : "";
   useEffect(() => {
     if (shown >= paras.length) return;
     const t = setTimeout(() => setShown((s) => s + 1), 1100);
@@ -196,7 +198,7 @@ export function LetterCard({ head, paras, onClose }: { head: string; paras: stri
         else onClose();
       }}
     >
-      <article className={`letter${journal ? " journal" : ""}`}>
+      <article className={`letter${journal ? " journal" : ""}${kind}`}>
         <header className="letter-headline">{head}</header>
         {paras.map((p, i) => (
           <p key={i} className={i < shown ? "on" : ""}>

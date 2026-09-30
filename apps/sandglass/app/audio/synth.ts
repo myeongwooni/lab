@@ -143,6 +143,8 @@ const SAMPLE_GAIN: Partial<Record<SampleInst, number>> = {
   tamb: 0.22,
   bdrum: 0.9,
   heart: 1.0,
+  tick: 0.3,
+  rglass: 0.2,
 };
 
 export function playSample(h: Host, inst: SampleInst, dest: AudioNode, t: number, d: number, m: number, v: number, prio: number): Voice {
@@ -167,7 +169,7 @@ export function playSample(h: Host, inst: SampleInst, dest: AudioNode, t: number
   out.connect(g);
   g.connect(dest);
   const bufDur = s.buf.duration / rate;
-  const rel = inst === "piano" ? 0.35 : inst === "pizz" ? 0.12 : inst === "timp" || inst === "cbell" || inst === "glass" ? 1.2 : 0.5;
+  const rel = inst === "piano" ? 0.35 : inst === "pizz" || inst === "tick" ? 0.12 : inst === "rglass" ? 0.05 : inst === "timp" || inst === "cbell" || inst === "glass" ? 1.2 : 0.5;
   g.gain.setValueAtTime(amp, t);
   let end = t + bufDur;
   if (t + d < end) {
@@ -459,7 +461,7 @@ function swell(h: Host, dest: AudioNode, t: number, d: number, v: number, sh: nu
   return { start: t, end, prio, kill: killer(g, [nz]) };
 }
 
-const SAMPLE_SET = new Set<string>(["piano", "celesta", "mbox", "harp", "pizz", "lute", "glass", "cbell", "timp", "fdrum", "fslap", "tamb", "bdrum", "heart"]);
+const SAMPLE_SET = new Set<string>(["piano", "celesta", "mbox", "harp", "pizz", "lute", "glass", "cbell", "timp", "fdrum", "fslap", "tamb", "bdrum", "heart", "tick", "rglass"]);
 export const isSampleInst = (i: Inst): i is SampleInst => SAMPLE_SET.has(i);
 
 export function playNote(h: Host, inst: Inst, dest: AudioNode, t: number, d: number, m: number, v: number, sh: number, prio: number, o: LiveOpt = {}): Voice {

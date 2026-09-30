@@ -2,7 +2,7 @@
 // 사생활 보호 모드 등에서 저장소를 못 쓰면 조용히 메모리로만 동작합니다.
 import type { GameState } from "./runtime";
 
-const PREFIX = "starscribe:";
+export const PREFIX = "sandglass:";
 export const SLOT_COUNT = 18;
 
 export type LogLine = { who: string | null; text: string; choice?: boolean };
@@ -32,15 +32,16 @@ export type GlobalData = {
   seen: Record<string, number[]>; // 장 → 본 명령 번호
   endings: string[];
   cgs: string[];
+  deaths: string[]; // 사망 기록 도감
   tracks: string[];
-  letters: { head: string; paras: string[]; ch: string }[];
+  letters: { head: string; paras: string[]; ch: string }[]; // 기록함(재의 기록·서하의 기록)
   chapters: string[]; // 들어가 본 장
   chapterVars: Record<string, Record<string, number | boolean>>; // 장 시작 시점 변수(챕터 다시 보기용)
   settings: Settings;
 };
 
 function emptyGlobal(): GlobalData {
-  return { seen: {}, endings: [], cgs: [], tracks: [], letters: [], chapters: [], chapterVars: {}, settings: { ...DEFAULT_SETTINGS } };
+  return { seen: {}, endings: [], cgs: [], deaths: [], tracks: [], letters: [], chapters: [], chapterVars: {}, settings: { ...DEFAULT_SETTINGS } };
 }
 
 const memory = new Map<string, string>();
@@ -116,7 +117,7 @@ export function isSeen(key: string): boolean {
   return loadGlobal().seen[ch]?.includes(Number(n)) ?? false;
 }
 
-export function addUnique(list: "endings" | "cgs" | "tracks" | "chapters", id: string) {
+export function addUnique(list: "endings" | "cgs" | "deaths" | "tracks" | "chapters", id: string) {
   const g = loadGlobal();
   if (!g[list].includes(id)) updateGlobal((x) => x[list].push(id));
 }
@@ -160,11 +161,14 @@ export function latestSave(): { slot: number | "auto" | "quick"; data: SaveData 
   return best;
 }
 
+// 새 게임의 기본 변수. 호감도 e·r·s와 회차 loop.
+export const DEFAULT_VARS = { e: 0, r: 0, s: 0, loop: 1 } as const;
+
 export function makeSave(state: GameState, log: LogLine[], preview: string): SaveData {
   return { v: 1, at: Date.now(), state, log: log.slice(-80), preview: preview.slice(0, 80), chapter: state.ch };
 }
 
 export function trueUnlocked(g: GlobalData = loadGlobal()): boolean {
   const e = g.endings;
-  return (e.includes("c_good") || e.includes("c_bad")) && (e.includes("l_good") || e.includes("l_bad"));
+  return e.includes("e_good") && e.includes("r_good") && e.includes("s_good");
 }

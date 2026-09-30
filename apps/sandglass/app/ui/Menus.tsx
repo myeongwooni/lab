@@ -1,12 +1,13 @@
 "use client";
 
-// 저장·불러오기, 설정, 대사 기록, 갤러리, 음악실, 편지함, 챕터 선택.
+// 저장·불러오기, 설정, 대사 기록, 특별 수록(회상록·엔딩 도감·사망 기록·음악실·기록함·장 고르기).
 import { useEffect, useMemo, useState } from "react";
-import { cgSvg } from "../art";
 import { TRACKS, audio } from "../audio/director";
-import { CG_ORDER, CG_TITLES, CHAPTERS, ENDINGS, ROUTE_NAMES, SPEAKER_COLORS, chapterInfo, type Route } from "../engine/catalog";
+import { CG_ORDER, CG_TITLES, CHAPTERS, DEATHS, ENDINGS, ROUTE_NAMES, ROUTE_ORDER, SPEAKER_COLORS, chapterInfo } from "../engine/catalog";
 import { SLOT_COUNT, deleteSlot, loadGlobal, loadSlot, type LogLine, type SaveData, type Settings } from "../engine/save";
 import { plain } from "../engine/text";
+import { HourglassGlyph } from "./Loop";
+import { CgArt } from "./Stage";
 import { Rich } from "./Text";
 
 export function Panel({ title, onClose, children, wide }: { title: string; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
@@ -89,7 +90,13 @@ export function SaveLoad({
                   <span className="slot-info">
                     <span className="slot-ch">
                       {ch.route !== "common" && <em>{ROUTE_NAMES[ch.route]} · </em>}
-                      {ch.label} 「{ch.title}」{d.state.day ? ` · 제${d.state.day}일` : ""}
+                      {ch.label} 「{ch.title}」
+                    </span>
+                    <span className="slot-meta">
+                      {d.state.day ? <span>새벽제 제{d.state.day}일</span> : null}
+                      <span className="slot-loop">
+                        <HourglassGlyph className="slot-glyph" />제{Number(d.state.vars.loop ?? 1)}회차
+                      </span>
                     </span>
                     <span className="slot-prev">{plain(d.preview)}</span>
                     <span className="slot-date">{formatDate(d.at)}</span>
@@ -195,7 +202,7 @@ export function Backlog({ log, onClose }: { log: LogLine[]; onClose: () => void 
           ) : (
             <p key={i} className={l.who ? "log-say" : "log-narr"}>
               {l.who && (
-                <span className="log-who" style={{ color: SPEAKER_COLORS[l.who] ?? "#d8d4ec" }}>
+                <span className="log-who" style={{ color: SPEAKER_COLORS[l.who] ?? "#e2ddd2" }}>
                   {l.who}
                 </span>
               )}
@@ -208,14 +215,14 @@ export function Backlog({ log, onClose }: { log: LogLine[]; onClose: () => void 
   );
 }
 
-export function Gallery({ onClose }: { onClose: () => void }) {
+export function Gallery({ onClose, initialTab = "cg" }: { onClose: () => void; initialTab?: "cg" | "end" }) {
   const g = loadGlobal();
-  const [tab, setTab] = useState<"cg" | "end">("cg");
+  const [tab, setTab] = useState<"cg" | "end">(initialTab);
   const [view, setView] = useState<string | null>(null);
   const got = new Set(g.cgs);
   const ends = new Set(g.endings);
   return (
-    <Panel title="회상록" onClose={onClose} wide>
+    <Panel title={tab === "cg" ? "회상록" : "엔딩 도감"} onClose={onClose} wide>
       <div className="tabs">
         <button className={tab === "cg" ? "on" : ""} onClick={() => setTab("cg")}>
           그림 {got.size}/{CG_ORDER.length}
@@ -229,7 +236,9 @@ export function Gallery({ onClose }: { onClose: () => void }) {
           {CG_ORDER.map((id) =>
             got.has(id) ? (
               <button key={id} className="cg-thumb" onClick={() => setView(id)}>
-                <div className="thumb-art" dangerouslySetInnerHTML={{ __html: cgSvg(id) }} />
+                <div className="thumb-art">
+                  <CgArt id={id} className="thumb-inner" />
+                </div>
                 <span>{CG_TITLES[id]}</span>
               </button>
             ) : (
@@ -254,10 +263,42 @@ export function Gallery({ onClose }: { onClose: () => void }) {
       )}
       {view && (
         <div className="cg-view" onClick={() => setView(null)}>
-          <div className="bg-art" dangerouslySetInnerHTML={{ __html: cgSvg(view) }} />
+          <CgArt id={view} />
           <span className="cg-view-title">{CG_TITLES[view]}</span>
         </div>
       )}
+    </Panel>
+  );
+}
+
+export function DeathRecord({ onClose }: { onClose: () => void }) {
+  const g = loadGlobal();
+  const got = new Set(g.deaths);
+  return (
+    <Panel title="사망 기록" onClose={onClose} wide>
+      <p className="death-intro">
+        죽은 만큼 알게 된다. <b>{got.size}</b> / {DEATHS.length}
+      </p>
+      <ol className="death-grid">
+        {DEATHS.map((d, i) => {
+          const has = got.has(d.id);
+          const ch = chapterInfo(d.chapter);
+          return (
+            <li key={d.id} className={`death-slot${has ? " got" : " locked"}`}>
+              <div className="ds-inner">
+                <span className="ds-no">{String(i + 1).padStart(2, "0")}</span>
+                <span className="ds-title">{has ? d.title : "? ? ?"}</span>
+                <span className="ds-ch">
+                  {ch.route !== "common" ? `${ROUTE_NAMES[ch.route]} · ` : ""}
+                  {ch.label}
+                  {d.kind === "choice" && has ? " · 선택" : ""}
+                </span>
+                <span className={has ? "ds-epitaph" : "ds-hint"}>{has ? d.epitaph : d.hint}</span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
     </Panel>
   );
 }
@@ -294,14 +335,28 @@ export function MusicRoom({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function Letters({ onClose, onRead }: { onClose: () => void; onRead: (head: string, paras: string[]) => void }) {
+export function Records({ onClose, onRead }: { onClose: () => void; onRead: (head: string, paras: string[]) => void }) {
   const g = loadGlobal();
   const order = (ch: string) => CHAPTERS.findIndex((c) => c.id === ch);
-  const list = [...g.letters].sort((a, b) => order(a.ch) - order(b.ch));
+  const all = [...g.letters].sort((a, b) => order(a.ch) - order(b.ch));
+  const ash = all.filter((l) => !/서하/.test(l.head));
+  const seoha = all.filter((l) => /서하/.test(l.head));
+  const [tab, setTab] = useState<"ash" | "seoha">("ash");
+  const list = tab === "ash" ? ash : seoha;
   return (
-    <Panel title="편지함" onClose={onClose}>
+    <Panel title="기록함" onClose={onClose}>
+      <div className="tabs">
+        <button className={tab === "ash" ? "on" : ""} onClick={() => setTab("ash")}>
+          재의 기록 {ash.length}
+        </button>
+        {(seoha.length > 0 || tab === "seoha") && (
+          <button className={tab === "seoha" ? "on" : ""} onClick={() => setTab("seoha")}>
+            서하의 기록 {seoha.length}
+          </button>
+        )}
+      </div>
       {list.length === 0 ? (
-        <p className="muted">아직 받은 편지가 없습니다.</p>
+        <p className="muted">아직 아무 기록도 모이지 않았습니다.</p>
       ) : (
         <ol className="letter-list">
           {list.map((l, i) => {
@@ -325,10 +380,37 @@ export function Letters({ onClose, onRead }: { onClose: () => void; onRead: (hea
   );
 }
 
+export type ExtraId = "gallery" | "endings" | "deaths" | "music" | "letters" | "chapters";
+
+export function Extras({ onClose, onOpen }: { onClose: () => void; onOpen: (id: ExtraId) => void }) {
+  const g = loadGlobal();
+  const items: { id: ExtraId; name: string; note: string; count?: string; disabled?: boolean }[] = [
+    { id: "gallery", name: "회상록", note: "이야기 속 한 장면들", count: `${g.cgs.length}/${CG_ORDER.length}` },
+    { id: "endings", name: "엔딩 도감", note: "당신이 맞은 새벽들", count: `${g.endings.length}/${ENDINGS.length}` },
+    { id: "deaths", name: "사망 기록", note: "되돌아오기 전의 마지막 순간", count: `${g.deaths.length}/${DEATHS.length}` },
+    { id: "music", name: "음악실", note: "들어 본 곡을 다시", count: `${g.tracks.length}/${TRACKS.length}` },
+    { id: "letters", name: "기록함", note: "재의 기록 · 서하의 기록", count: `${g.letters.length}` },
+    { id: "chapters", name: "장 고르기", note: "지나온 장을 다시 읽기", disabled: g.chapters.length < 2 },
+  ];
+  return (
+    <Panel title="특별 수록" onClose={onClose}>
+      <div className="extras">
+        {items.map((it) => (
+          <button key={it.id} className={`extra-card extra-${it.id}`} disabled={it.disabled} onClick={() => onOpen(it.id)}>
+            <span className="extra-name">{it.name}</span>
+            <span className="extra-note">{it.note}</span>
+            {it.count && <span className="extra-count">{it.count}</span>}
+          </button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
 export function ChapterSelect({ onClose, onPick }: { onClose: () => void; onPick: (ch: string) => void }) {
   const g = loadGlobal();
   const reached = new Set(g.chapters);
-  const groups: Route[] = ["common", "cassian", "lucien", "true"];
+  const groups = ROUTE_ORDER;
   return (
     <Panel title="장 고르기" onClose={onClose} wide>
       <div className="chapters">
