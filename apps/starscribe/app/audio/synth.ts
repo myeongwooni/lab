@@ -181,7 +181,7 @@ function strings(h: Host, dest: AudioNode, t: number, d: number, m: number, v: n
   const bright = o.bright ?? 1;
   const cut = Math.min(9000, (320 + f * (2.2 + 3.5 * v)) * bright);
   const oscs: OscillatorNode[] = [];
-  const dets = short ? [-5, 6] : [-7, 0, 7.5];
+  const dets = short ? [-5, 6] : [-7, 7.5];
   dets.forEach((c, i) => {
     const osc = ctx.createOscillator();
     osc.setPeriodicWave(h.wave("bow"));
@@ -193,7 +193,7 @@ function strings(h: Host, dest: AudioNode, t: number, d: number, m: number, v: n
   });
   lp.connect(g);
   g.connect(dest);
-  const amp = (short ? 0.16 : 0.1) * Math.pow(v, 1.2) * (dets.length === 3 ? 0.85 : 1);
+  const amp = (short ? 0.16 : 0.115) * Math.pow(v, 1.2);
   let end: number;
   if (short) {
     const dd = Math.min(d, 0.35);

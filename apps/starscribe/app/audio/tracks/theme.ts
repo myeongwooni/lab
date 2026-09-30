@@ -236,7 +236,7 @@ function ostinato(s: Score, segs: Seg[], lo: number, v: number, hi = false): voi
     if (hi) {
       const vs = voicing(seg.c, 69, 3);
       const pat = [0, 1, 2, 1];
-      for (let i = 0; i < seg.d * 4; i++) s.n("vhi", seg.t + i * 0.25, 0.2, vs[pat[i % 4]], v * (i % 4 === 0 ? 0.75 : 0.5));
+      for (let i = 0; i < seg.d * 2; i++) s.n("vhi", seg.t + i * 0.5, 0.3, vs[pat[i % 4]], v * (i % 4 === 0 ? 0.75 : 0.55));
     }
   }
 }

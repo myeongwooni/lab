@@ -169,7 +169,7 @@ export function north(): Track {
   // A (0-32)
   const MA = "r:2 A4:1 D5:1 | E5:3 D5:.5 E5:.5 | F5:2 E5:1 C5:1 | D5:4 | A4:1 D5:1 F5:1 G5:1 | A5:3 G5:.5 F5:.5 | G5:2 E5:2 | D5:4";
   s.seq("fl", 0, MA, { v: 1.0 });
-  [0, 8, 16, 24].forEach((t) => roll(t, [50, 57, 64, 69], 0.3));
+  [0, 8, 16, 24].forEach((t) => roll(t, [50, 57, 62, 69], 0.3));
 
   // B (32-64): noble parallel fifths
   const hb = harm("Bb5:4 C5:4 F5:4 G5:4 Bb5:4 C5:4 Dm:4 Asus4:2 A:2", 32, 4);
@@ -189,7 +189,7 @@ export function north(): Track {
     v: 0.95,
   });
   s.seq("fl", 80, "F4:4 | D4:2 F4:2 | G4:2 A4:2 | F4:4", { v: 0.5 });
-  [64, 72, 80, 88].forEach((t) => roll(t + 0.5, [45, 52, 57, 62, 64], 0.26));
+  [64, 72, 80, 88].forEach((t) => roll(t + 0.5, [45, 50, 57, 62, 69], 0.26));
   s.pad("str", harm("Dm:8 Gm/D:8 Bb/D:8 Dsus4:4 Dm:4", 64, 8), 50, 3, 0.2);
 
   return {

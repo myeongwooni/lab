@@ -279,7 +279,7 @@ export class Engine implements Host {
     lim.attack.value = 0.001;
     lim.release.value = 0.12;
     const out = ctx.createGain();
-    out.gain.value = 0.62;
+    out.gain.value = 1.35;
     this.master = ctx.createGain();
     this.master.gain.value = 0.8;
     this.master.connect(comp);
