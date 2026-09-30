@@ -1207,6 +1207,449 @@ function sVilla(): string {
   return P.svg();
 }
 
+/** a small, cheap wall clock (for walls of hundreds) */
+function miniClock(r: Rng, x: number, y: number, rr: number, rim: string, face: string, ink: string, hi: string): string {
+  const ha = r.r(0, TAU);
+  const ma = r.r(0, TAU);
+  const kind = r.n();
+  let s = "";
+  if (kind < 0.18) {
+    // square case
+    s += rect(rim, undefined, x - rr * 1.05, y - rr * 1.05, rr * 2.1, rr * 2.1);
+    s += rect(hi, 0.5, x - rr * 1.05, y - rr * 1.05, rr * 2.1, Math.max(2, rr * 0.12));
+  } else if (kind < 0.3) {
+    // cuckoo house roof
+    s += path(`M${f(x - rr * 1.3)} ${f(y - rr * 0.6)}L${f(x)} ${f(y - rr * 1.7)}L${f(x + rr * 1.3)} ${f(y - rr * 0.6)}Z`, rim);
+    s += rect(rim, undefined, x - rr, y - rr * 0.8, rr * 2, rr * 1.9);
+  }
+  s += circ(x, y, rr, kind < 0.3 ? mix(rim, "#000000", 0.2) : rim);
+  s += circ(x, y, rr * 0.82, face);
+  s += stroke(`M${f(x + Math.cos(ha) * rr * 0.45)} ${f(y + Math.sin(ha) * rr * 0.45)}L${f(x)} ${f(y)}L${f(x + Math.cos(ma) * rr * 0.68)} ${f(y + Math.sin(ma) * rr * 0.68)}`, ink, Math.max(1, rr * 0.08));
+  if (rr > 22) s += tickRing(x, y, rr * 0.62, rr * 0.74, 12, ink, Math.max(1, rr * 0.06), 0.7);
+  return s;
+}
+
+/** pack circles in a box avoiding holes */
+function packCircles(r: Rng, box: [number, number, number, number], n: number, rmin: number, rmax: number, avoid: (x: number, y: number, rr: number) => boolean): [number, number, number][] {
+  const out: [number, number, number][] = [];
+  for (let t = 0; t < n * 60 && out.length < n; t++) {
+    const rr = rmin + (rmax - rmin) * Math.pow(r.n(), 2.2);
+    const x = r.r(box[0] + rr, box[2] - rr);
+    const y = r.r(box[1] + rr, box[3] - rr);
+    if (avoid(x, y, rr)) continue;
+    if (out.some(([a, b, c]) => Math.hypot(a - x, b - y) < c + rr + 6)) continue;
+    out.push([x, y, rr]);
+  }
+  return out;
+}
+
+/** golden hourglass (optionally broken) */
+function hourglass(P: Pic, x: number, y: number, h: number, broken: boolean): string {
+  const w = h * 0.55;
+  const gold = "#f5b04a";
+  const goldHi = "#fff1c4";
+  const goldSh = "#b8792e";
+  let s = circ(x, y, h * 1.3, P.glow("#ffd27a"), 0.6);
+  // glass bulbs
+  const bulb = `M${f(x - w * 0.42)} ${f(y - h * 0.42)}C${f(x - w * 0.46)} ${f(y - h * 0.12)} ${f(x - w * 0.06)} ${f(y - h * 0.08)} ${f(x - w * 0.05)} ${f(y)}C${f(x - w * 0.06)} ${f(y + h * 0.08)} ${f(x - w * 0.46)} ${f(y + h * 0.12)} ${f(x - w * 0.42)} ${f(y + h * 0.42)}H${f(x + w * 0.42)}C${f(x + w * 0.46)} ${f(y + h * 0.12)} ${f(x + w * 0.06)} ${f(y + h * 0.08)} ${f(x + w * 0.05)} ${f(y)}C${f(x + w * 0.06)} ${f(y - h * 0.08)} ${f(x + w * 0.46)} ${f(y - h * 0.12)} ${f(x + w * 0.42)} ${f(y - h * 0.42)}Z`;
+  s += path(bulb, "#fff6df", 0.3);
+  // sand: bottom heap (and a little upside)
+  s += path(`M${f(x - w * 0.36)} ${f(y + h * 0.41)}Q${f(x)} ${f(y + h * 0.12)} ${f(x + w * 0.36)} ${f(y + h * 0.41)}Z`, "#ffd27a");
+  s += path(`M${f(x - w * 0.22)} ${f(y - h * 0.2)}Q${f(x)} ${f(y - h * 0.12)} ${f(x + w * 0.22)} ${f(y - h * 0.2)}Q${f(x)} ${f(y - h * 0.02)} ${f(x - w * 0.22)} ${f(y - h * 0.2)}Z`, "#ffd27a", 0.9);
+  s += stroke(bulb, goldHi, Math.max(1, h * 0.012), 0.8);
+  // highlights on glass
+  s += stroke(`M${f(x - w * 0.3)} ${f(y - h * 0.34)}Q${f(x - w * 0.34)} ${f(y - h * 0.2)} ${f(x - w * 0.16)} ${f(y - h * 0.1)}`, "#ffffff", Math.max(1.5, h * 0.02), 0.8);
+  if (broken) {
+    s += stroke(`M${f(x + w * 0.1)} ${f(y - h * 0.38)}L${f(x + w * 0.2)} ${f(y - h * 0.26)}L${f(x + w * 0.12)} ${f(y - h * 0.18)}L${f(x + w * 0.28)} ${f(y - h * 0.1)}M${f(x + w * 0.2)} ${f(y - h * 0.26)}L${f(x + w * 0.34)} ${f(y - h * 0.3)}`, "#ffffff", Math.max(1, h * 0.01), 0.9);
+    s += path(`M${f(x + w * 0.3)} ${f(y + h * 0.3)}l${f(w * 0.12)} ${f(-h * 0.08)}l${f(w * 0.02)} ${f(h * 0.12)}Z`, "#1a1410", 0.5);
+  }
+  // frame: plates and pillars
+  const plate = (yy: number): string => `M${f(x - w * 0.56)} ${f(yy - h * 0.04)}H${f(x + w * 0.56)}V${f(yy + h * 0.04)}H${f(x - w * 0.56)}Z`;
+  s += path(plate(y - h * 0.46) + plate(y + h * 0.46), gold);
+  s += path(`M${f(x - w * 0.56)} ${f(y - h * 0.5)}H${f(x + w * 0.56)}v${f(h * 0.02)}H${f(x - w * 0.56)}Z`, goldHi);
+  s += stroke(`M${f(x - w * 0.48)} ${f(y - h * 0.42)}V${f(y + h * 0.42)}M${f(x + w * 0.48)} ${f(y - h * 0.42)}V${f(y + h * 0.42)}`, gold, Math.max(2, h * 0.04));
+  s += stroke(`M${f(x + w * 0.48)} ${f(y - h * 0.42)}V${f(y + h * 0.42)}`, goldSh, Math.max(1, h * 0.015));
+  return s;
+}
+
+/* 공방 — clock workshop in morning light */
+function sWorkshop(): string {
+  const P = new Pic("workshop");
+  const r = new Rng(3131);
+  P.add(rect(P.lin([[0, "#9c7650"], [0.6, "#8a6a45"], [1, "#5e4530"]])));
+  // wood panel seams
+  let seam = "";
+  for (let x = 40; x < 1600; x += 120) seam += `M${x} 0V620`;
+  P.add(stroke(seam, "#6e5236", 3, 0.35));
+  P.add(path("M0 600H1600V624H0Z", "#5a4028"));
+  // morning light washing the wall from the left
+  P.add(ell(300, 300, 900, 600, P.glow("#ffe6b0"), 0.55));
+  // window (left)
+  P.add(path("M60 60H380V540H60Z", "#6a4a30"));
+  P.add(path("M80 80H360V520H80Z", P.lin([[0, "#8fc6f0"], [0.6, "#cfe8fb"], [1, "#fff6df"]])));
+  P.add(cloud(r, 200, 250, 200, 34, "#ffffff", "#ffffff", "#dbe8f4"));
+  P.add(path("M80 440L150 400L230 420L300 390L360 410V520H80Z", "#f3ede2"));
+  P.add(path("M90 440l30-30 30 30Z M170 425l35-30 35 30Z M260 410l30-28 30 28Z", "#e0764a"));
+  P.add(stroke("M220 80V520M80 300H360", "#6a4a30", 10));
+  P.add(circ(220, 300, 240, P.glow("#fffbe8"), 0.8));
+  // wall of clocks
+  const holes = (x: number, y: number, rr: number): boolean =>
+    (x + rr > 30 && x - rr < 410 && y - rr < 570) || (x + rr > 620 && x - rr < 980 && y + rr > 250 && y - rr < 440) || (y + rr > 590) || (x + rr > 1190 && x - rr < 1290 && y + rr > 150) || (x + rr > 470 && x - rr < 560 && y + rr > 200);
+  const cs = packCircles(r, [400, 20, 1590, 590], 72, 14, 54, holes);
+  const rims = ["#6e4a2e", "#8a6a45", "#5a3e2a", "#c8a060", "#7a5236", "#3a2e2a"];
+  const faces = ["#f6ecd6", "#fff6df", "#efe0c0", "#e8d8b8"];
+  let wallC = "";
+  const secs: [number, number, number][] = [];
+  cs.forEach(([x, y, rr], k) => {
+    const lit = Math.max(0, 1 - Math.hypot(x - 300, y - 300) / 1300);
+    wallC += miniClock(r, x, y, rr, mix(r.pick(rims), "#ffe6b0", lit * 0.25), r.pick(faces), "#3a2e2a", "#e8c98a");
+    if (k % 6 === 0 && rr > 24 && secs.length < 10) secs.push([x, y, rr]);
+  });
+  P.add(wallC);
+  for (const [x, y, rr] of secs) {
+    const L = rr * 0.72;
+    P.add(g(pivot(x, y, L) + stroke(`M${f(x)} ${f(y + L * 0.2)}L${f(x)} ${f(y - L)}`, "#b8402f", Math.max(1, rr * 0.05)), P.spin(60, r.r(0, 60), 60)));
+  }
+  // pendulum clocks (tall cases)
+  const tall = (x: number, top: number, h: number, delay: number): void => {
+    const w = 80;
+    P.add(path(`M${x - w / 2} ${top + 30}Q${x} ${top - 10} ${x + w / 2} ${top + 30}V${top + h}H${x - w / 2}Z`, "#4e3422"));
+    P.add(path(`M${x + w / 2 - 12} ${top + 26}V${top + h}H${x + w / 2}V${top + 30}Z`, "#3a2618"));
+    P.add(path(`M${x - w / 2} ${top + 30}Q${x} ${top - 10} ${x + w / 2} ${top + 30}`, "none", undefined, ` stroke="#c8a060" stroke-width="3"`));
+    P.add(clock(x, top + 60, 28, { rim: "#c8a060", rimHi: "#fff1c4", face: "#fff6df", h: delay * 80, m: delay * 170 }));
+    P.add(path(`M${x - 26} ${top + 100}H${x + 26}V${top + h - 16}H${x - 26}Z`, "#2a1c12"));
+    P.add(path(`M${x - 26} ${top + 100}H${x + 26}V${top + h - 16}H${x - 26}Z`, P.lin([[0, "#fff6df", 0.25], [1, "#fff6df", 0]], 0, 0, 1, 1)));
+    const L = h - 150;
+    P.add(g(pivot(x, top + 104, L + 12) + stroke(`M${x} ${top + 104}V${top + 104 + L}`, "#c8a060", 2.5) + circ(x, top + 104 + L, 11, "#f5b04a") + circ(x - 3, top + 101 + L, 4, "#fff1c4"), P.swing(2, delay, 10)));
+  };
+  tall(515, 210, 380, 0);
+  tall(1240, 160, 430, 0.9);
+  // shelf with the broken golden hourglass
+  P.add(path("M600 440H1000V458H600Z", "#5a3e26"));
+  P.add(path("M600 440H1000V444H600Z", "#d8b27a"));
+  P.add(path("M630 458l20 30h10l-12-30Z M950 458l-20 30h-10l12-30Z", "#4a3220"));
+  P.add(path("M630 440V400h28v40Z M662 440V392h20v48Z M686 440V408h16v32Z", "#7a3a2e"));
+  P.add(path("M634 400h20v4h-20Z M664 392h16v4h-16Z", "#e8c98a", 0.8));
+  P.add(path("M900 440v-30q0-10 12-10h20q12 0 12 10v30Z", "#6f8fa0", 0.8));
+  P.add(path("M906 412h8v24h-8Z", "#ffffff", 0.5));
+  P.add(hourglass(P, 800, 355, 150, true));
+  // light beams from window
+  P.add(beam(P, [[360, 80], [360, 320], [1300, 900], [1600, 900], [1600, 700]], "#fff1c4", 0.18));
+  P.add(beam(P, [[360, 330], [360, 520], [900, 900], [1150, 900]], "#fff1c4", 0.14));
+  // workbench (foreground)
+  P.add(path("M0 690H1600V900H0Z", "#3a2718"));
+  P.add(path("M0 660L1600 660L1600 700L0 700Z", "#9a7048"));
+  P.add(path("M0 660L1600 660L1600 666L0 666Z", "#e8c090"));
+  P.add(path("M0 700H1600V716H0Z", "#5a3c24"));
+  // tools and gears on the bench
+  P.add(gear(430, 650, 34, 14, "#c8a060", "#fff1c4", 0.2, 5));
+  P.add(gear(485, 660, 18, 10, "#a8844c", "#fff1c4", 0.5, 4));
+  P.add(gear(1120, 648, 42, 16, "#b89058", "#fff1c4", 0.1, 6));
+  P.add(gear(1185, 662, 16, 9, "#c8a060", "#fff1c4", 0.3, 4));
+  P.add(g(clock(0, 0, 40, { rim: "#8a6a45", face: "#fff6df", h: 70, m: 200, broken: 41 }), `transform="translate(760 668) scale(1 .45)"`));
+  P.add(stroke("M880 672L1000 650M600 670L680 640", "#6a6a74", 6));
+  P.add(stroke("M880 672L1000 650", "#cfd3dc", 2));
+  // brass magnifier lamp
+  P.add(stroke("M260 660L230 540L300 470", "#8a6a45", 6));
+  P.add(circ(310, 460, 30, "#c8a060"));
+  P.add(circ(310, 460, 24, "#dbeaf5", 0.7));
+  P.add(circ(302, 452, 8, "#ffffff", 0.8));
+  let screws: Pt[] = [];
+  for (let k = 0; k < 30; k++) screws.push([r.r(100, 1500), r.r(664, 690)]);
+  P.add(dots(screws, 3, "#e8c98a", 0.8));
+  // dust sparkles in the light
+  for (let k = 0; k < 10; k++) P.add(g(circ(r.r(450, 1300), r.r(150, 600), r.r(1.5, 3), "#fffbe8"), P.tw(r.r(3, 6), r.r(0, 6), 0.1)));
+  P.add(vignette(P, "#2a1a10", 0.5, 0.5));
+  return P.svg();
+}
+
+/* 객실 — cosy guest bedroom at morning. The save-point room: safe. */
+function sGuestroom(): string {
+  const P = new Pic("guestroom");
+  const r = new Rng(222);
+  // walls
+  P.add(rect(P.lin([[0, "#f3e6d2"], [1, "#e8d6bc"]])));
+  let stripes = "";
+  for (let x = 0; x < 1600; x += 46) stripes += `M${x} 0h14v560h-14Z`;
+  P.add(path(stripes, "#e6d2b6", 0.5));
+  // tiny floral dots on wallpaper
+  const fl: Pt[] = [];
+  for (let x = 23; x < 1600; x += 46) for (let y = 30; y < 540; y += 60) fl.push([x, y + ((x / 46) % 2) * 30]);
+  P.add(dots(fl, 4, "#d9a8a0", 0.45));
+  // wainscot
+  P.add(path("M0 560H1600V680H0Z", "#b48a60"));
+  P.add(path("M0 556H1600V566H0Z", "#d8b288"));
+  let pan = "";
+  for (let x = 20; x < 1600; x += 160) pan += `M${x} 580h130v80h-130Z`;
+  P.add(stroke(pan, "#8a6440", 2.5, 0.6));
+  // floor
+  P.add(path("M0 680H1600V900H0Z", P.lin([[0, "#a8764a"], [1, "#7a5232"]])));
+  let boards = "";
+  for (let k = -10; k <= 10; k++) boards += `M${800 + k * 60} 680L${800 + k * 160} 900`;
+  P.add(stroke(boards, "#6a4428", 2, 0.4));
+  // window
+  const WX = 520;
+  const WW = 330;
+  P.add(ell(WX + WW / 2, 320, 520, 420, P.glow("#fffbe8"), 0.8));
+  P.add(path(`M${WX - 20} 110H${WX + WW + 20}V540H${WX - 20}Z`, "#f8f1e4"));
+  P.add(path(`M${WX} 130H${WX + WW}V510H${WX}Z`, P.lin([[0, "#8fc6f0"], [0.55, "#cfe8fb"], [1, "#fff6df"]])));
+  P.add(cloud(r, WX + 110, 260, 160, 34, "#ffffff", "#ffffff", "#dceaf6"));
+  P.add(path(`M${WX} 440L${WX + 60} 420L${WX + 140} 430L${WX + 220} 400L${WX + WW} 420V510H${WX}Z`, "#f3ede2"));
+  P.add(path(`M${WX + 10} 440l26-24 26 24Z M${WX + 100} 432l30-26 30 26Z M${WX + 200} 410l34-30 34 30Z`, "#e0764a"));
+  P.add(path(`M${WX + 214} 300h10v110h-10Z`, "#f3ede2"));
+  P.add(path(`M${WX + 210} 300l9-24 9 24Z`, "#e0764a"));
+  P.add(stroke(`M${WX + WW / 2} 130V510M${WX} 320H${WX + WW}`, "#f8f1e4", 9));
+  P.add(path(`M${WX - 30} 536H${WX + WW + 30}V552H${WX - 30}Z`, "#e6d8c2"));
+  // pot of flowers on the sill
+  P.add(path(`M${WX + 40} 536l6-30h32l6 30Z`, "#c65a36"));
+  P.add(path(circD(WX + 52, 496, 10) + circD(WX + 68, 490, 11) + circD(WX + 60, 480, 9), "#f2a8b0"));
+  P.add(path(circD(WX + 52, 496, 4) + circD(WX + 68, 490, 4) + circD(WX + 60, 480, 3), "#ffe6a8"));
+  // sheer curtains and drapes
+  P.add(path(`M${WX - 10} 120Q${WX + 40} 300 ${WX + 20} 540H${WX - 10}Z`, "#ffffff", 0.55));
+  P.add(path(`M${WX + WW + 10} 120Q${WX + WW - 40} 300 ${WX + WW - 20} 540H${WX + WW + 10}Z`, "#ffffff", 0.55));
+  const drape = (x0: number, dir: 1 | -1): string => {
+    const x1 = x0 + dir * 120;
+    let s = path(`M${x0} 90H${x1}Q${x1 - dir * 10} 300 ${x1 - dir * 70} 360Q${x1 - dir * 20} 460 ${x1} 600H${x0}Z`, "#8fae94");
+    s += stroke(`M${x0 + dir * 30} 100Q${x0 + dir * 40} 300 ${x0 + dir * 20} 600M${x0 + dir * 70} 100Q${x0 + dir * 75} 250 ${x0 + dir * 50} 360`, "#6f8f76", 6, 0.8);
+    s += stroke(`M${x0 + dir * 90} 100Q${x0 + dir * 95} 250 ${x0 + dir * 60} 350`, "#bcd4bc", 5, 0.8);
+    s += path(`M${x1 - dir * 80} 350h${dir * 34}v14h${-dir * 34}Z`, "#e8c98a");
+    return s;
+  };
+  P.add(drape(WX - 20, -1));
+  P.add(drape(WX + WW + 20, 1));
+  P.add(path(`M${WX - 160} 84H${WX + WW + 160}V96H${WX - 160}Z`, "#8a6a45"));
+  P.add(circ(WX - 166, 90, 9, "#e8c98a") + circ(WX + WW + 166, 90, 9, "#e8c98a"));
+  // wall clock (safe, ticking)
+  P.add(circ(1000, 200, 80, P.glow("#fff1c4"), 0.35));
+  P.add(clock(1000, 200, 44, { rim: "#8a6a45", rimHi: "#fff1c4", face: "#fff6df", h: 240, m: 0, sec: P.spin(60, 0, 60), secC: "#c65a36", glass: true }));
+  // bed
+  P.add(path("M1010 330Q1180 270 1350 330V560H1010Z", "#8a5e3a"));
+  P.add(path("M1030 345Q1180 292 1330 345V560H1030Z", "#a8764a"));
+  P.add(path("M1010 330Q1180 270 1350 330", "none", undefined, ' stroke="#e8c090" stroke-width="4"'));
+  P.add(path(circD(1180, 318, 12), "#e8c98a"));
+  P.add(path("M1040 470Q1060 430 1120 440Q1160 448 1170 480L1160 520H1040Z", "#fffdf6"));
+  P.add(path("M1180 470Q1200 430 1260 440Q1300 448 1310 480L1300 520H1180Z", "#fffdf6"));
+  P.add(path("M1050 505Q1100 480 1165 500M1190 505Q1240 480 1305 500", "none", undefined, ' stroke="#e6dccc" stroke-width="4"'));
+  // duvet coming toward viewer
+  P.add(path("M990 520L1370 520L1480 760L900 760Z", "#fffaf0"));
+  P.add(path("M1000 580L1380 580L1480 760L900 760Z", "#9ec2e0"));
+  P.add(path("M1000 580L1380 580L1386 596L994 596Z", "#e4efff"));
+  let quilt = "";
+  for (let k = 1; k < 5; k++) quilt += `M${1000 - k * 25} ${580 + k * 45}H${1380 + k * 25}`;
+  for (let k = 1; k < 6; k++) quilt += `M${1000 + k * 63} 580L${900 + k * 97} 760`;
+  P.add(stroke(quilt, "#7ea4c6", 2, 0.7));
+  P.add(path("M1370 520L1480 760V800L1372 560Z", "#e6dccc"));
+  P.add(path("M900 760H1480V800H900Z", "#7a9cbc"));
+  P.add(path("M1440 760V860H1470V760Z M920 760V860H950V760Z", "#6a4428"));
+  // nightstand + lamp
+  P.add(path("M860 520H980V690H860Z", "#9a6e46"));
+  P.add(path("M860 520H980V530H860Z", "#d8b288"));
+  P.add(path("M872 560H968V600H872Z M872 612H968V652H872Z", "#8a5e3a"));
+  P.add(circ(920, 580, 4, "#e8c98a") + circ(920, 632, 4, "#e8c98a"));
+  P.add(circ(920, 450, 110, P.glow("#ffe0a0"), 0.5));
+  P.add(path("M912 520V480h16v40Z", "#e8c98a"));
+  P.add(path("M884 482L956 482L940 430L900 430Z", "#fff1d6"));
+  P.add(path("M884 482L956 482L952 470L888 470Z", "#f0d8b0"));
+  // rug
+  P.add(ell(700, 810, 360, 60, "#c98a7a"));
+  P.add(ell(700, 810, 320, 48, "#e0a898"));
+  P.add(`<ellipse cx="700" cy="810" rx="290" ry="40" fill="none" stroke="#fff1d6" stroke-width="3" stroke-dasharray="10 8" stroke-opacity=".7"/>`);
+  // sunbeam from the window across the room
+  P.add(beam(P, [[WX, 130], [WX + WW, 130], [1480, 780], [900, 900], [WX + 40, 900]], "#fff6d0", 0.22));
+  P.add(path(`M${WX + 60} 700L${WX + WW + 120} 700L${WX + WW + 260} 900L${WX - 20} 900Z`, "#fff1c4", 0.18));
+  // motes
+  for (let k = 0; k < 12; k++) P.add(g(circ(r.r(560, 1200), r.r(200, 700), r.r(1.5, 3.2), "#fffbe8"), P.drift(r.r(7, 12), r.r(0, 10), r.r(-14, -6), r.r(-6, 6))));
+  P.add(vignette(P, "#7a5a3a", 0.35, 0.5));
+  return P.svg();
+}
+
+/* 시계의 집 식당·나선 계단 — long table, candelabras, night */
+function sVillaHall(): string {
+  const P = new Pic("villa_hall");
+  const r = new Rng(909);
+  P.add(rect(P.lin([[0, "#1f1a1c"], [0.6, "#3a2e2a"], [1, "#2a201c"]])));
+  // back wall + receding side walls (one-point perspective)
+  const VX = 800;
+  const VY = 470;
+  P.add(path("M560 120H1040V620H560Z", "#4a3a32"));
+  P.add(path("M0 0L560 120V620L0 900Z", "#3a2e28"));
+  P.add(path("M1600 0L1040 120V620L1600 900Z", "#33282a"));
+  P.add(path("M0 0H1600L1040 120H560Z", "#1a1416"));
+  // panelling lines on side walls
+  let pl = "";
+  for (let k = 1; k < 6; k++) {
+    const t = k / 6;
+    const x = 560 * t;
+    pl += `M${q(x)} ${q(120 * t)}L${q(x)} ${q(900 - 280 * t)}`;
+    pl += `M${q(1600 - x)} ${q(120 * t)}L${q(1600 - x)} ${q(900 - 280 * t)}`;
+  }
+  P.add(stroke(pl, "#221a18", 3, 0.7));
+  // tall moonlit window on back wall
+  P.add(path("M700 480V230A100 100 0 0 1 900 230V480Z", "#1d2d4f"));
+  P.add(path("M712 470V232A88 88 0 0 1 888 232V470Z", P.lin([[0, "#2a3e70"], [1, "#6f8cc0"]])));
+  P.add(circ(770, 250, 26, "#e4efff"));
+  P.add(circ(770, 250, 90, P.glow("#9ec2f0"), 0.6));
+  P.add(stroke("M800 160V470M712 330H888", "#1f1714", 6));
+  P.add(beam(P, [[712, 470], [888, 470], [1050, 900], [560, 900]], "#9ec2f0", 0.12));
+  // clocks on the walls (side walls foreshortened)
+  const wc: [number, number, number, number][] = [
+    [640, 220, 34, 1],
+    [960, 220, 34, 1],
+    [620, 400, 22, 1],
+    [980, 400, 22, 1],
+    [380, 220, 60, 0.6],
+    [1220, 220, 60, 0.6],
+    [150, 260, 90, 0.5],
+    [1450, 260, 90, 0.5],
+    [440, 420, 40, 0.6],
+    [1160, 420, 40, 0.6],
+  ];
+  wc.forEach(([x, y, rr, sx], k) => {
+    const c = clock(0, 0, rr, { rim: "#8a6a45", rimHi: "#e8c98a", face: "#d8c8a8", ink: "#2a1e18", h: k * 47, m: k * 131, sec: k === 4 || k === 7 ? P.spin(60, k * 7, 60) : undefined });
+    P.add(g(c, `transform="translate(${x} ${y}) scale(${sx} 1)"`));
+  });
+  // spiral staircase (right)
+  const SX = 1340;
+  P.add(path(`M${SX - 14} 0H${SX + 14}V760H${SX - 14}Z`, "#2a1e1a"));
+  let steps = "";
+  let lit = "";
+  for (let k = 0; k < 16; k++) {
+    const a = k * 0.62;
+    const y = 740 - k * 46;
+    const x1 = SX + Math.cos(a) * 170;
+    const d = Math.sin(a);
+    steps += `M${SX} ${y}L${q(x1)} ${q(y - 10 + d * 16)}l0 16L${SX} ${y + 14}Z`;
+    if (d > 0) lit += `M${SX} ${y}L${q(x1)} ${q(y - 10 + d * 16)}l0 4L${SX} ${y + 4}Z`;
+  }
+  P.add(path(steps, "#5a4032"));
+  P.add(path(lit, "#e8b878", 0.6));
+  let rail = "";
+  for (let k = 0; k <= 60; k++) {
+    const a = k * 0.165;
+    const y = 700 - k * 12.3;
+    rail += `${k ? "L" : "M"}${q(SX + Math.cos(a) * 170)} ${q(y - 60 + Math.sin(a) * 16)}`;
+  }
+  P.add(stroke(rail, "#1a1210", 6));
+  P.add(stroke(rail, "#c8a060", 1.5, 0.6));
+  // floor
+  P.add(path("M0 900L560 620H1040L1600 900Z", "#2e221e"));
+  let ft = "";
+  for (let k = -6; k <= 6; k++) ft += `M${VX + k * 40} 620L${VX + k * 260} 900`;
+  P.add(stroke(ft, "#1e1614", 2, 0.6));
+  // long table in perspective
+  P.add(path("M740 600H860L1180 900H420Z", "#f0e6d4"));
+  P.add(path("M740 600H860L1180 900H420Z", P.lin([[0, "#3a2e2a", 0.55], [0.5, "#3a2e2a", 0.1], [1, "#3a2e2a", 0]])));
+  P.add(path("M420 900L740 600V612L436 900Z M1180 900L860 600V612L1164 900Z", "#c8b89e"));
+  // chairs (high backs) along the table
+  let ch = "";
+  for (let k = 0; k < 4; k++) {
+    const t = k / 4;
+    const y = 610 + t * 260 * (0.6 + t * 0.4);
+    const s = 0.4 + t * 1.3;
+    const xl = 740 - (y - 600) * 1.07 - 30 * s;
+    const xr = 860 + (y - 600) * 1.07 + 30 * s;
+    ch += `M${q(xl)} ${q(y)}V${q(y - 110 * s)}q${q(-12 * s)} ${q(-18 * s)} ${q(-24 * s)} 0V${q(y)}Z`;
+    ch += `M${q(xr)} ${q(y)}V${q(y - 110 * s)}q${q(12 * s)} ${q(-18 * s)} ${q(24 * s)} 0V${q(y)}Z`;
+  }
+  P.add(path(ch, "#1e1412"));
+  // candelabras on the table
+  const cand = (x: number, y: number, s: number, dl: number): void => {
+    P.add(circ(x, y - 70 * s, 200 * s, P.glow("#ffc56a"), 0.55));
+    P.add(stroke(`M${x} ${y}V${y - 40 * s}M${x - 40 * s} ${y - 40 * s}Q${x - 40 * s} ${y - 60 * s} ${x} ${y - 55 * s}Q${x + 40 * s} ${y - 60 * s} ${x + 40 * s} ${y - 40 * s}M${x} ${y - 55 * s}V${y - 62 * s}`, "#c8a060", 3.5 * s));
+    P.add(path(`M${x - 16 * s} ${y}h${32 * s}l${-6 * s} ${-8 * s}h${-20 * s}Z`, "#c8a060"));
+    P.add(candle(P, x - 40 * s, y - 40 * s, s, dl, 0.4));
+    P.add(candle(P, x, y - 62 * s, s, dl + 0.3, 0.4));
+    P.add(candle(P, x + 40 * s, y - 40 * s, s, dl + 0.6, 0.4));
+  };
+  cand(800, 628, 0.55, 0);
+  cand(800, 700, 0.9, 0.4);
+  cand(800, 830, 1.5, 0.8);
+  // table setting glints
+  const pl2: Pt[] = [];
+  for (let k = 0; k < 6; k++) {
+    const y = 640 + k * 42;
+    const hw = 60 + (y - 600) * 1.07 - 30;
+    pl2.push([800 - hw, y], [800 + hw, y]);
+  }
+  P.add(dots(pl2, 14, "#fffaf0", 0.9));
+  P.add(dots(pl2, 5, "#e8c98a", 0.8));
+  // hanging chandelier silhouette
+  P.add(stroke("M800 0V70M700 90Q800 140 900 90", "#1a1210", 4));
+  P.add(circ(800, 100, 140, P.glow("#ffc56a"), 0.3));
+  P.add(vignette(P, "#0a0608", 0.75, 0.4));
+  return P.svg();
+}
+
+/* 국왕 침실 — dark royal bedchamber, a thin blade of light */
+function sKingRoom(): string {
+  const P = new Pic("king_room");
+  const r = new Rng(88);
+  P.add(rect(P.lin([[0, "#15131c"], [0.6, "#221c26"], [1, "#120e14"]])));
+  // damask pattern hint
+  const dm: Pt[] = [];
+  for (let x = 30; x < 1600; x += 60) for (let y = 30; y < 600; y += 70) dm.push([x + ((y / 70) % 2) * 30, y]);
+  P.add(dots(dm, 6, "#3a2e3a", 0.5));
+  // window with heavy curtains, a thin gap
+  P.add(path("M560 60H1040V560H560Z", "#2a3450"));
+  P.add(path("M780 60H830V560H780Z", P.lin([[0, "#c9d8f0"], [1, "#6f86b0"]])));
+  const cur = (x0: number, gapX: number, fold: number): string => {
+    let s = path(`M${x0} 40H${gapX}Q${gapX + (x0 < gapX ? -30 : 30)} 300 ${gapX} 640H${x0}Z`, "#5a1a22");
+    let fl = "";
+    for (let k = 1; k < fold; k++) {
+      const x = x0 + ((gapX - x0) * k) / fold;
+      fl += `M${q(x)} 40Q${q(x + (gapX - x0) * 0.05)} 300 ${q(x)} 640`;
+    }
+    s += stroke(fl, "#3a0e14", 14, 0.8);
+    s += stroke(fl, "#8f1d24", 3, 0.6);
+    return s;
+  };
+  P.add(cur(420, 790, 6));
+  P.add(cur(1180, 820, 6));
+  P.add(path("M400 30H1200V70H400Z", "#3a0e14"));
+  P.add(path("M400 64Q500 100 600 64Q700 100 800 64Q900 100 1000 64Q1100 100 1200 64V70H400Z", "#8f1d24"));
+  P.add(stroke("M400 70Q500 106 600 70Q700 106 800 70Q900 106 1000 70Q1100 106 1200 70", "#c8a060", 2.5));
+  // blade of light
+  P.add(beam(P, [[782, 80], [828, 80], [1020, 900], [860, 900]], "#dbe6ff", 0.3));
+  P.add(ell(820, 540, 60, 300, P.glow("#c9d8f0"), 0.3));
+  // floor
+  P.add(path("M0 640H1600V900H0Z", P.lin([[0, "#221a20"], [1, "#0e0a0e"]])));
+  P.add(path("M300 700H1300L1500 900H100Z", "#3a1418"));
+  // canopy bed
+  P.add(path("M500 120H1100V160H500Z", "#3a0e14"));
+  P.add(path("M500 160Q800 200 1100 160V180Q800 220 500 180Z", "#8f1d24"));
+  P.add(stroke("M500 180Q800 220 1100 180", "#c8a060", 2.5));
+  P.add(path("M500 180Q470 420 520 700H560Q530 420 560 180Z M1100 180Q1130 420 1080 700H1040Q1070 420 1040 180Z", "#5a1a22"));
+  P.add(path("M512 190Q500 420 530 690H540Q515 420 530 190Z", "#8f1d24", 0.7));
+  // posts
+  P.add(path("M520 120V780H540V120Z M1060 120V780H1080V120Z", "#2a1c18"));
+  P.add(circ(530, 118, 12, "#c8a060") + circ(1070, 118, 12, "#c8a060"));
+  // headboard
+  P.add(path("M600 560V380Q800 320 1000 380V560Z", "#2e1e1a"));
+  P.add(path("M620 560V392Q800 338 980 392V560Z", "#3e2a22"));
+  P.add(path(sparkD(800, 400, 24), "#c8a060", 0.8));
+  // pillows and coverlet
+  P.add(path("M630 560Q640 510 720 520Q780 526 790 560Z M810 560Q820 510 900 520Q960 526 970 560Z", "#d8d0c4"));
+  P.add(path("M600 560H1000L1060 760H540Z", "#6a1a22"));
+  P.add(path("M600 560H1000L1004 580H596Z", "#e8e0d4"));
+  P.add(path("M600 600H1000", "none", undefined, ' stroke="#c8a060" stroke-width="3"'));
+  P.add(path("M820 560L860 760H900L850 560Z", "#c9d8f0", 0.25));
+  P.add(path("M540 760H1060V800H540Z", "#3a0e14"));
+  // bedside table with medicine bottles, a low candle
+  P.add(path("M300 560H460V760H300Z", "#2a1c18"));
+  P.add(path("M292 552H468V566H292Z", "#3e2a22"));
+  const bottle = (x: number, h: number, c: string): string =>
+    path(`M${x - 12} 552V${552 - h + 20}q0-8 8-10V${552 - h}h8v${8}q8 2 8 10V552Z`, c, 0.85) + path(`M${x - 8} ${552 - h + 24}h4v${h - 34}h-4Z`, "#ffffff", 0.5) + rect("#e8dcc0", 0.8, x - 12, 552 - h * 0.5, 24, 10);
+  P.add(bottle(330, 60, "#3f6b4a"));
+  P.add(bottle(362, 46, "#8a5a2a"));
+  P.add(bottle(430, 70, "#4a6fb5"));
+  P.add(path("M390 552a14 6 0 0 1 28 0Z", "#e8e0d4"));
+  P.add(candle(P, 404, 546, 0.9, 0.2, 0.5));
+  // cold dust in the beam
+  for (let k = 0; k < 8; k++) P.add(g(circ(r.r(800, 960), r.r(200, 800), r.r(1.2, 2.5), "#e4efff"), P.drift(r.r(8, 13), r.r(0, 10), r.r(-12, -5), r.r(-4, 4))));
+  P.add(vignette(P, "#050306", 0.85, 0.35));
+  return P.svg();
+}
+
 export const WORLD_BACKGROUNDS: Record<string, string> = {
   black: sBlack(),
   white: sWhite(),
@@ -1216,4 +1659,8 @@ export const WORLD_BACKGROUNDS: Record<string, string> = {
   villa_roof: sVillaRoof(),
   dawntower: sDawnTower(),
   villa: sVilla(),
+  workshop: sWorkshop(),
+  guestroom: sGuestroom(),
+  villa_hall: sVillaHall(),
+  king_room: sKingRoom(),
 };

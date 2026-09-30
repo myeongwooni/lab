@@ -349,7 +349,7 @@ function locks(ls: Lock[], rootY0: number, h: Hair, w = 2.2, shadeSide = 1): str
   let s = "";
   let sh = "";
   for (const [rx, tx, ty, wd, bend = 0] of ls) {
-    const rootY = rootY0 + Math.round(Math.min(1, (Math.abs(rx) + wd) / 70) ** 2 * 34);
+    const rootY = rootY0 + Math.round(Math.max(0, Math.abs(rx) + wd - 54) * 1.6);
     const my = (rootY + ty) / 2;
     const q = ty - rootY;
     const d = `M${n1(rx - wd)} ${rootY}C${n1(rx - wd + bend)} ${n1(my)} ${n1(tx + bend * 0.4 - wd * 0.2)} ${n1(ty - q * 0.25)} ${n1(tx)} ${n1(ty)}C${n1(tx + wd * 0.5 + bend * 0.4)} ${n1(ty - q * 0.3)} ${n1(rx + wd + bend)} ${n1(my)} ${n1(rx + wd)} ${rootY}`;
@@ -402,7 +402,7 @@ type HairSet = { back: string; front: string };
 function hairElios(o: { streaks: number; full?: boolean; horns?: boolean }): HairSet {
   const H = o.full ? HAIR_WHITE : HAIR_ELIOS;
   const back =
-    cel("M-60 -80L-70 -30C-80 10 -78 60 -68 96C-62 110 -52 118 -40 120L-30 92L60 92L64 124C76 116 82 100 82 80C86 40 82 0 70 -40L60 -80Z", H.s, H.l) +
+    cel("M-44 -90L-70 -30C-80 10 -78 60 -68 96C-62 110 -52 118 -40 120L-30 92L60 92L64 124C76 116 82 100 82 80C86 40 82 0 70 -40L44 -90Z", H.s, H.l) +
     cel("M52 96C66 110 76 134 72 162C68 178 60 188 50 192C56 172 56 150 48 128C46 116 46 106 52 96Z", H.s, H.l, 2.2);
   let front = cel("M-62 -40C-74 0 -72 44 -62 82C-57 70 -55 54 -54 40C-50 54 -46 62 -39 68C-46 40 -50 10 -48 -20Z", H.b, H.l, 2.2);
   front += cel("M50 -40C62 -10 66 22 61 60C58 48 55 38 50 32C50 46 48 56 44 64C46 30 44 0 40 -30Z", H.b, H.l, 2.2);
@@ -470,7 +470,7 @@ function razelMarks(): string {
 function hairSeoha(): HairSet {
   const H = HAIR_SEOHA;
   const back =
-    cel("M-60 -80L-72 -30C-84 20 -82 80 -72 124C-56 134 -32 130 -18 124L50 124C66 132 82 128 88 116C92 70 88 10 72 -40L60 -80Z", H.s, H.l) +
+    cel("M-44 -90L-72 -30C-84 20 -82 80 -72 124C-56 134 -32 130 -18 124L50 124C66 132 82 128 88 116C92 70 88 10 72 -40L44 -90Z", H.s, H.l) +
     cel("M50 108C62 120 71 140 67 166C65 176 59 184 52 187C54 170 52 150 44 132Z", H.s, H.l, 2.2);
   let front = cel("M-64 -40C-80 10 -80 70 -66 118C-60 108 -57 96 -57 84C-51 96 -43 106 -34 110C-45 80 -51 40 -50 0C-50 -14 -50 -26 -48 -36Z", H.b, H.l, 2.2);
   front += cel("M44 -44C62 -10 71 40 67 106C61 96 57 84 55 72C51 88 45 98 36 104C44 70 44 30 36 -20Z", H.b, H.l, 2.2);
@@ -492,7 +492,7 @@ function hairSeoha(): HairSet {
 function hairRazel(): HairSet {
   const H = HAIR_RAZEL;
   const back =
-    cel("M-56 -80L-66 -30C-74 10 -70 50 -60 70L60 70C72 40 74 0 66 -40L56 -80Z", H.s, H.l) +
+    cel("M-44 -90L-66 -30C-74 10 -70 50 -60 70L60 70C72 40 74 0 66 -40L44 -90Z", H.s, H.l) +
     cel("M50 40C70 50 86 70 90 96C92 110 88 122 82 128C80 110 72 96 60 88C62 100 60 110 56 116C52 96 46 70 40 50Z", H.s, H.l, 2.2);
   let front = cel("M-61 -30C-71 0 -69 20 -63 40C-59 26 -57 14 -55 -6Z", H.b, H.l, 2);
   front += cel("M55 -34C63 -10 65 10 61 30C57 18 53 6 49 -14Z", H.b, H.l, 2);
@@ -514,7 +514,7 @@ function hairRazel(): HairSet {
 /** 시안: 턱선 길이 은발, 왼쪽(가까운 쪽) 가는 땋은 머리 + 푸른 구슬 */
 function hairSian(o: { child?: boolean } = {}): HairSet {
   const H = HAIR_SIAN;
-  const back = cel("M-60 -80L-70 -30C-82 20 -80 70 -70 104C-52 112 -32 110 -20 106L50 106C66 112 80 106 86 96C90 60 86 10 72 -40L60 -80Z", H.s, H.l);
+  const back = cel("M-44 -90L-70 -30C-82 20 -80 70 -70 104C-52 112 -32 110 -20 106L50 106C66 112 80 106 86 96C90 60 86 10 72 -40L44 -90Z", H.s, H.l);
   let front = cel("M-62 -40C-77 10 -77 60 -67 104C-61 92 -59 80 -57 70C-53 84 -47 94 -38 98C-46 70 -50 30 -48 -10Z", H.b, H.l, 2.2);
   front += cel("M46 -44C62 -10 69 40 65 96C59 86 57 76 55 66C51 80 47 88 40 92C46 60 44 20 38 -20Z", H.b, H.l, 2.2);
   const L: Lock[] = [
@@ -544,7 +544,7 @@ function hairSian(o: { child?: boolean } = {}): HairSet {
 /** 재의 왕 맨얼굴: 새하얀 긴 머리, 흐트러짐, 부서지는 뿔 */
 function hairAged(): HairSet {
   const H = HAIR_WHITE;
-  const back = cel("M-62 -80L-74 -30C-90 40 -96 120 -90 220C-80 236 -60 240 -44 232L-30 120L60 120L70 240C88 246 104 236 108 220C108 130 96 30 74 -40L62 -80Z", H.s, H.l);
+  const back = cel("M-44 -90L-74 -30C-90 40 -96 120 -90 220C-80 236 -60 240 -44 232L-30 120L60 120L70 240C88 246 104 236 108 220C108 130 96 30 74 -40L44 -90Z", H.s, H.l);
   let front = cel("M-62 -40C-80 20 -84 100 -78 180C-70 160 -66 140 -64 120C-58 140 -50 154 -42 160C-52 110 -52 50 -48 -10Z", H.b, H.l, 2.2);
   front += cel("M48 -44C66 0 74 80 72 170C66 150 62 134 60 118C54 136 48 146 40 152C50 100 48 30 40 -20Z", H.b, H.l, 2.2);
   const L: Lock[] = [
@@ -568,7 +568,7 @@ function hairAged(): HairSet {
 
 function hairLiana(): HairSet {
   const H = HAIR_LIANA;
-  const back = cel("M-62 -80L-74 -30C-92 40 -96 140 -86 250C-66 262 -40 262 -26 250L60 250C82 262 104 256 110 240C114 140 100 30 76 -40L62 -80Z", H.s, H.l);
+  const back = cel("M-44 -90L-74 -30C-92 40 -96 140 -86 250C-66 262 -40 262 -26 250L60 250C82 262 104 256 110 240C114 140 100 30 76 -40L44 -90Z", H.s, H.l);
   let front = cel("M-64 -40C-82 20 -86 100 -80 190C-72 170 -68 150 -66 130C-60 150 -52 164 -44 170C-54 120 -54 60 -50 0Z", H.b, H.l, 2.2);
   front += cel("M48 -44C68 0 78 90 76 190C70 170 66 154 64 138C58 156 52 166 44 172C54 120 50 40 40 -20Z", H.b, H.l, 2.2);
   const L: Lock[] = [

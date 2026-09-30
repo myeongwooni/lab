@@ -666,8 +666,8 @@ const cecilia: Char = {
     if (ex.dk) faceDk(b, fid, HT, ex.dk);
     // 앞 곱슬(어깨 앞)
     const sides = [
-      b.pc(lock(wave(-58, -70, -84, 300, 8, 10), 36, 1, 0.9), CHR, "", HT),
-      b.pc(lock(wave(64, -70, 98, 330, 9, 10, 1), 40, 1, 0.9), CHR, sp([[80, -80], [140, -80], [140, 340], [96, 340], [90, 100]]), HT),
+      b.pc(lock(wave(-44, -112, -84, 300, 8, 11), 36, 1, 0.9), CHR, "", HT),
+      b.pc(lock(wave(50, -112, 98, 330, 9, 11, 1), 40, 1, 0.9), CHR, sp([[80, -80], [140, -80], [140, 340], [96, 340], [90, 100]]), HT),
     ];
     b.inside(sides, HT, pa(band(-100, 130, 60, 0, 5, 16), CHR.h!, op(0.8)));
     b.lines(sides, CHR.l);
