@@ -316,7 +316,7 @@ function drawBrows(b: B, fc: Face, ex: Ex, o = 0.95): void {
 }
 
 // ───────────────────────── 공통 부품 ─────────────────────────
-interface Tone { b: string; s: string; l: string; h?: string }
+interface Tone { b: string; s: string; l: string; h: string }
 
 /** 가닥 목록 → 그림(그림자 사본 + 본색 + 외곽선). 반환: 가닥 id 목록(마스크용) */
 function hairLocks(b: B, list: [Pt[], number, number?][], t: Tone, off = "2.5 2", w = 2): string[] {
@@ -411,7 +411,7 @@ function faceBase(b: B, fc: Face, outline: Pt[], earPts: Pt[] | null, extraShade
 const E_HAIR: Tone = { b: "#2a2839", s: "#15141f", l: "#0a0910", h: "#4a4f78" };
 const E_COAT: Tone = { b: "#2d3858", s: "#1c2340", l: "#0e1328", h: "#4a5a86" };
 const GLOVE: Tone = { b: "#23222b", s: "#131218", l: "#08080b", h: "#555466" };
-const SHIRT: Tone = { b: "#f7f7fc", s: "#cdd1e2", l: "#7d839c" };
+const SHIRT: Tone = { b: "#f7f7fc", s: "#cdd1e2", l: "#7d839c", h: "#fff" };
 
 const EYE_NEAR: EyeG = { ix: 6, iy: 2, ox: 41, oy: -3, h: 14.2, rx: 10, ry: 12.8, u: 0.44 };
 const EYE_FAR: EyeG = { ix: -16, iy: 2, ox: -42, oy: -2.5, h: 13.4, rx: 7.8, ry: 12.2, u: 0.45 };
@@ -483,10 +483,10 @@ function eliosHead(b: B, ex: Ex, o: EHead): void {
     [[[10, -94], [4, -60], [-2, -26], [-6, 10]], 22],
   ], H);
   b.add(P(sp([[-58, -44], [-50, -78], [-6, -99], [36, -93], [62, -70], [68, -44], [44, -68], [20, -76], [0, -78], [-22, -76], [-42, -64]]), H.b), S(sp([[-60, -40], [-50, -79], [-6, -100], [36, -94], [62, -71], [69, -42]], false), H.l, 2));
-  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 15, 24, 6.5), H.h!);
+  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 15, 24, 6.5), H.h);
   // 흰 가닥(인물의 오른쪽 = 관객 왼쪽 앞머리)
   if (!o.bare && !o.ash) {
-    const W: Tone = { b: "#eef0f8", s: "#b6bbd0", l: "#6f7590" };
+    const W: Tone = { b: "#eef0f8", s: "#b6bbd0", l: "#6f7590", h: "#fff" };
     hairLocks(b, [
       [[[-30, -82], [-40, -50], [-45, -20], [-44, 2]], 7],
       [[[-24, -84], [-32, -52], [-36, -24], [-34, -4]], 6],
@@ -594,7 +594,7 @@ const R_HAIR: Tone = { b: "#c39463", s: "#916538", l: "#553519", h: "#ecc796" };
 const LEATHER: Tone = { b: "#8a5a36", s: "#603b20", l: "#2e1b0c", h: "#b98253" };
 const FUR: Tone = { b: "#a7a7ae", s: "#76757e", l: "#3f3e47", h: "#d6d6dc" };
 const STEEL: Tone = { b: "#c9ccd6", s: "#8d92a2", l: "#454a58", h: "#f2f4f8" };
-const R_SLEEVE: Tone = { b: "#4f4038", s: "#382c26", l: "#1a1310" };
+const R_SLEEVE: Tone = { b: "#4f4038", s: "#382c26", l: "#1a1310", h: "#6a5a50" };
 const FACE_WIDE: Pt[] = [
   [-52, -40], [-54, -12], [-50, -2], [-51.5, 12], [-47, 32], [-37, 50], [-24, 62], [-12, 65.5, 1], [8, 62], [28, 50], [44, 32], [51, 10], [54, -18], [50, -46], [0, -62],
 ];
@@ -650,7 +650,7 @@ function razelHead(b: B, ex: Ex): void {
     [[[6, -60], [2, -42], [-2, -26]], 8],
     [[[34, -56], [44, -36], [48, -12]], 9],
   ], H, "1.5 1.2", 1.6);
-  sheen(b, "sh", [cap, ...fr], gleam(4, -20, 72, 205, 330, 13, 22, 6), H.h!);
+  sheen(b, "sh", [cap, ...fr], gleam(4, -20, 72, 205, 330, 13, 22, 6), H.h);
   drawBrows(b, fc, ex, 1);
 }
 
@@ -775,7 +775,7 @@ function sianHead(b: B, ex: Ex): void {
     [[[-2, -94], [-8, -62], [-12, -32], [-11, -6]], 22],
   ], H);
   b.add(P(sp([[-58, -44], [-50, -78], [-6, -99], [36, -93], [62, -70], [68, -44], [44, -68], [20, -76], [0, -78], [-22, -76], [-42, -64]]), H.b), S(sp([[-60, -40], [-50, -79], [-6, -100], [36, -94], [62, -71], [69, -42]], false), H.l, 2));
-  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 15, 24, 6.5), H.h!);
+  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 15, 24, 6.5), H.h);
   // 왼쪽(가까운 쪽) 가는 땋은 머리 + 푸른 구슬
   let br = "";
   for (let i = 0; i < 8; i++) {

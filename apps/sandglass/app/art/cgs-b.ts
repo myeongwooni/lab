@@ -335,7 +335,7 @@ function face(c: Ctx, o: FaceO): string {
   const te = o.tears ?? 0;
   if (te >= 2) {
     const tr = `M12 ${ey + 20}C9 ${ey + 34} 13 ${ey + 48} 10 ${ey + 64}C9 ${ey + 70} 13 ${ey + 72} 14 ${ey + 66}C16 ${ey + 50} 13 ${ey + 34} 15 ${ey + 20}Z`;
-    s += `<path d="${tr}" fill="#dff0ff" stroke="#8ab0dc" stroke-width="1" opacity=".75"/>` + ln(`M13 ${ey + 26}C12 ${ey + 38} 14 ${ey + 50} 12 ${ey + 60}`, "#ffffff", 1.2, 0.9);
+    s += `<path d="${tr}" fill="#dff0ff" stroke="#8ab0dc" stroke-width="1" opacity=".5"/>` + ln(`M13 ${ey + 26}C12 ${ey + 38} 14 ${ey + 50} 12 ${ey + 60}`, "#ffffff", 1.2, 0.9);
     s += `<path d="M-38 ${ey + 20}C-40 ${ey + 32} -38 ${ey + 42} -40 ${ey + 50}C-40 ${ey + 54} -37 ${ey + 54} -37 ${ey + 50}C-35 ${ey + 42} -37 ${ey + 32} -36 ${ey + 20}Z" fill="#dff0ff" stroke="#8ab0dc" stroke-width="0.8" opacity=".7"/>`;
   }
   if (te >= 1) s += `<path d="M30 ${ey + 14}c-3 5 -3 9 0 9s3 -4 0 -9z" fill="#f4faff" stroke="#8ab0dc" stroke-width="1"/>`;
@@ -345,10 +345,11 @@ function face(c: Ctx, o: FaceO): string {
 
 /** 머리 한 가닥 묶음: [뿌리x, 끝x, 끝y, 폭, 휨] 목록 → 셀 가닥들(뿌리 쪽은 선 없음). */
 type Lock = [number, number, number, number, number?];
-function locks(ls: Lock[], rootY: number, h: Hair, w = 2.2, shadeSide = 1): string {
+function locks(ls: Lock[], rootY0: number, h: Hair, w = 2.2, shadeSide = 1): string {
   let s = "";
   let sh = "";
   for (const [rx, tx, ty, wd, bend = 0] of ls) {
+    const rootY = rootY0 + Math.round(Math.min(1, (Math.abs(rx) + wd) / 70) ** 2 * 34);
     const my = (rootY + ty) / 2;
     const q = ty - rootY;
     const d = `M${n1(rx - wd)} ${rootY}C${n1(rx - wd + bend)} ${n1(my)} ${n1(tx + bend * 0.4 - wd * 0.2)} ${n1(ty - q * 0.25)} ${n1(tx)} ${n1(ty)}C${n1(tx + wd * 0.5 + bend * 0.4)} ${n1(ty - q * 0.3)} ${n1(rx + wd + bend)} ${n1(my)} ${n1(rx + wd)} ${rootY}`;
@@ -366,19 +367,20 @@ function crown(h: Hair, w = 2.6): string {
   return fl(CROWN_FILL, h.b) + ln(CROWN_LINE, h.l, w);
 }
 
-/** 정수리의 광택 띠(천사의 고리): 위는 매끈, 아래는 톱니. */
+/** 정수리의 광택(천사의 고리): 호를 따라 아래로 뾰족한 조각들, 군데군데 끊김. */
 function shine(cx: number, cy: number, rx: number, th: number, n: number, color: string, op = 0.9, tilt = 0): string {
-  let top = "";
-  let bot = "";
-  for (let i = 0; i <= n; i++) {
-    const t = -1 + (2 * i) / n;
-    const x = cx + t * rx;
-    const y = cy + t * t * rx * 0.3 + t * tilt;
-    top += `${i ? "L" : "M"}${n1(x)} ${n1(y)}`;
-    const yy = y + th * (i % 2 ? 1.3 : 0.3) * (1 - t * t * 0.6);
-    bot = `L${n1(x)} ${n1(yy)}` + bot;
+  let d = "";
+  const m = n * 2;
+  for (let i = 0; i < m; i++) {
+    if (i % 5 === 4) continue;
+    const t0 = -1 + (2 * i) / m;
+    const t1 = -1 + (2 * (i + 1)) / m;
+    const y = (t: number): number => cy + t * t * rx * 0.3 + t * tilt;
+    const tm = (t0 + t1) / 2;
+    const L = th * (1.1 + ((i * 7) % 5) * 0.25) * (1 - tm * tm * 0.5);
+    d += `M${n1(cx + t0 * rx)} ${n1(y(t0))}Q${n1(cx + tm * rx)} ${n1(y(tm) - 3)} ${n1(cx + t1 * rx)} ${n1(y(t1))}L${n1(cx + tm * rx + 1)} ${n1(y(tm) + L)}Z`;
   }
-  return fl(top + bot + "Z", color, op);
+  return fl(d, color, op);
 }
 
 /** 가는 잔머리(선) */
