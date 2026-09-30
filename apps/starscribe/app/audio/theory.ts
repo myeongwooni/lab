@@ -296,7 +296,7 @@ export class Score {
         const m = tones[Math.min(idx, tones.length - 1)] ?? bass;
         const t = s.t + i * step + (o.hum ? (this.rnd() - 0.5) * o.hum : 0);
         const accent = o.acc ? o.acc[i % o.acc.length] : i === 0 ? 1.25 : 1;
-        const ring = o.ring ?? s.d - i * step;
+        const ring = Math.min(o.ring ?? s.d - i * step, s.d - i * step + 0.12);
         this.n(ch, Math.max(s.t, t), Math.max(step, ring), m, (o.v ?? 0.4) * accent * (0.92 + this.rnd() * 0.16));
       }
     }

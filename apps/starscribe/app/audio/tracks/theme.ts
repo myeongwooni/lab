@@ -24,8 +24,8 @@ export const MAIN_HARM =
 
 /** cello counter-melody against the tune (F major, bar 1 at beat 0) */
 export const COUNTER =
-  "C4:2 A3:1 | D4:2 E4:1 | F4:1.5 E4:.5 D4:1 | C4:2 Bb3:1 | A3:2 C4:1 | E4:3 | D4:2 Bb3:1 | A3:2 Eb4:1 | " +
-  "D4:3 | E4:2 F#4:1 | G4:1.5 F4:.5 D4:1 | C4:1 Bb3:2 | A3:3 | F4:2 E4:1 | D4:2 E4:1 | F4:3";
+  "C4:2 A3:1 | D4:2 A3:1 | F4:1.5 E4:.5 D4:1 | C4:2 Bb3:1 | A3:2 C4:1 | E4:3 | D4:2 Bb3:1 | A3:2 C4:1 | " +
+  "D4:3 | E4:2 F#4:1 | G4:1.5 F4:.5 D4:1 | C4:1 Bb3:2 | A3:3 | F4:2 D4:1 | Bb3:1 D4:1 E4:1 | F4:3";
 
 /** the name motif (bars 8-9 of the tune): 아스-텔리아 */
 export const NAME = "C5:.5 D5 | F5:1.5 E5:.5 D5:1 | C5:3";
@@ -81,7 +81,7 @@ export function title(): Track {
   s.seq("cel", 57.5, "A5:.5 C6:.5 F6:1.5", { v: 0.6 });
 
   // bridge: cello sings in D minor
-  const hb = harm("Dm:3 Bb:3 Gm7:3 A7sus4:2 A7:1 Dm:3 Bbmaj7:3 Gm7:3 C7sus4:2 C7:1", 60);
+  const hb = harm("Dm:3 Bb:3 Gm7:3 A7sus4:2 A7:1 Dm:3 Bbmaj7:3 Gm7:3 C7sus4:1 C7:2", 60);
   s.seq("vc", 60, "A3:1 D4 E4 | F4:2 E4:.5 D4 | D4:1.5 C4:.5 Bb3:1 | D4:2 C#4:1 | A3:1 D4 F4 | A4:2 G4:.5 F4 | Bb4:1.5 A4:.5 G4:1 | F4:1 E4:1", {
     v: 1.1,
     leg: 0.98,
@@ -107,7 +107,7 @@ export function title(): Track {
   s.bass("cb", h2, 36, 0.32);
   h2.filter((x) => x.t >= 108 && x.d >= 2).forEach((seg) => {
     const vs = voicing(seg.c, 60, 3);
-    [0, 1, 2, 0, 1, 2].forEach((k, i) => s.n("harp", seg.t + i * 0.5, 1.5, vs[k] + (i >= 3 ? 12 : 0), 0.26));
+    [0, 1, 2, 0, 1, 2].forEach((k, i) => s.n("harp", seg.t + i * 0.5, Math.min(1.5, seg.d - i * 0.5 + 0.1), vs[k] + (i >= 3 ? 12 : 0), 0.26));
   });
   s.n("timp", 84, 2, 41, 0.45);
   s.n("swell", 105, 3, 60, 0.5, 1);
@@ -288,7 +288,7 @@ export function climax(): Track {
   augmented(s, "vln", 78, MAIN, 2, { tr: 12, v: 1.25, upto: 36, extendLast: 2, oct: [-12] });
   augmented(s, "brass", 78, MAIN, 2, { tr: 0, v: 1.0, upto: 36, extendLast: 2 });
   augmented(s, "choirM", 78, MAIN, 2, { tr: 0, v: 0.9, upto: 36, extendLast: 2 });
-  const hp = transposeSegs(harm(MAIN_HARM.split("| F:3 Dm:3 Bb:1")[0]), 0).map((x) => ({ ...x, t: 80 + x.t * 2, d: x.d * 2 }));
+  const hp = transposeSegs(harm(MAIN_HARM.split("| F:3 Dm:3 Bb:1")[0].replace("F:2 F7:1", "F:3")), 0).map((x) => ({ ...x, t: 80 + x.t * 2, d: x.d * 2 }));
   ostinato(s, hp, 41, 0.7, true);
   s.pad("choir", hp, 53, 3, 0.45);
   s.pad("pad", hp, 48, 4, 0.4);
@@ -360,7 +360,7 @@ export function ending(): Track {
   [12, 24, 36, 48].forEach((t) => s.n("timp", t, 2, t === 36 ? 43 : 38, 0.55));
 
   // bridge (60-84): 「눈을 뜨면 아침이 와」, turning toward E
-  const hb = harm("Gmaj7:3 A:3 F#m7:3 Bm7:3 Gmaj7:3 A/G:3 F#m7:2 B7:1 B7sus4:2 B7:1", 60);
+  const hb = harm("Gmaj7:3 A:3 F#m7:3 Bm7:3 Gmaj7:3 A/G:3 F#m7:2 B7:1 B7sus4:1 B7:2", 60);
   s.seq("vln", 60, "D5:1 G5:1.5 F#5:.5 | E5:1.5 D5:.5 C#5:1 | A5:2 F#5:1 | D5:3 | D5:1 G5:1.5 A5:.5 | C#6:2 B5:1 | A5:1.5 F#5:.5 D#5:1 | E5:1 D#5:1", {
     v: 1.1,
     dyn: (t) => 0.95 + t / 60,
@@ -384,7 +384,7 @@ export function ending(): Track {
   s.bass("cb", h2, 33, 0.4);
   h2.forEach((seg) => {
     const vs = voicing(seg.c, 64, 3);
-    [0, 1, 2, 0, 1, 2].slice(0, Math.round(seg.d * 2)).forEach((k, i) => s.n("harp", seg.t + i * 0.5, 1.4, vs[k] + (i >= 3 ? 12 : 0), 0.25));
+    [0, 1, 2, 0, 1, 2].slice(0, Math.round(seg.d * 2)).forEach((k, i) => s.n("harp", seg.t + i * 0.5, Math.min(1.4, seg.d - i * 0.5 + 0.1), vs[k] + (i >= 3 ? 12 : 0), 0.25));
   });
   [84, 96, 108, 120].forEach((t) => {
     s.n("timp", t, 2, t === 108 ? 45 : 40, 0.7);

@@ -38,7 +38,7 @@ export function warm(): Track {
   s.bass("cb", hb, 33, 0.3);
   hb.forEach((seg) => {
     const vs = voicing(seg.c, 66, 3);
-    [0, 1, 2, 1].forEach((k, i) => s.n("harp", seg.t + 2 + i * 0.5, 1.5, vs[k] + 12, 0.2));
+    if (seg.d >= 4) [0, 1, 2, 1].forEach((k, i) => s.n("harp", seg.t + 2 + i * 0.5, 2 - i * 0.5 + 0.1, vs[k] + 12, 0.2));
   });
 
   const h3 = harm(HA3, 96, 4);
@@ -210,7 +210,7 @@ export function sorrow(): Track {
   const MA = "G4:1 C5:1 Eb5:1.5 D5:.5 | C5:2 Eb5:1 G5:1 | Ab5:3 G5:.5 F5:.5 | C5:2 B4:2 | G4:1 C5:1 Eb5:1.5 D5:.5 | Eb5:1 G5:1 C6:2 | Ab5:2 G5:1 F5:1 | Eb5:2 D5:2";
   const MB = "Eb5:1 Ab5:1 C6:2 | Bb5:1.5 Ab5:.5 F5:2 | G5:1 Bb5:1 D6:2 | C6:1.5 Bb5:.5 G5:2 | Ab5:1 C6:1 F6:2 | Eb6:2 D6:2 | G6:2 Eb6:1 C6:1 | D6:1.5 C6:.5 B5:2";
   // the melody, erasing itself
-  const MA2 = "G4:1 C5:1 Eb5:1.5 D5:.5 | C5:4 | Ab4:1 C5:1 F5:1.5 Eb5:.5 | C5:2 B4:2 | G4:1 C5:1 Eb5:2 | r:2 D5:2 | r:4 | r:2 G5:1 r:1";
+  const MA2 = "G4:1 C5:1 Eb5:1.5 D5:.5 | C5:4 | Ab4:1 C5:1 F5:1.5 Eb5:.5 | C5:2 B4:2 | G4:1 C5:1 Eb5:2 | r:2 C5:2 | r:4 | r:2 G5:1 r:1";
 
   const h1 = harm(HA, 0, 4);
   s.seq("pnoR", 0, MA, { v: 0.95, hum: 0.03, dyn: (t) => (t < 16 ? 1 : 1.1) });

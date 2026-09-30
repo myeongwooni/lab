@@ -85,7 +85,8 @@ export function tower(): Track {
       for (let b = 0; b < seg.d; b += 2) {
         if (r() > dens) continue;
         const vs = voicing(seg.c, 76, 3);
-        s.n("pnoR", seg.t + b + 1.5 + (r() < 0.5 ? 0 : 1), 3, vs[Math.floor(r() * 3)], v * (0.8 + r() * 0.4));
+        const at = seg.t + b + 1.5 + (r() < 0.5 ? 0 : 1);
+        if (at < seg.t + seg.d) s.n("pnoR", at, Math.min(3, seg.t + seg.d - at + 0.3), vs[Math.floor(r() * 3)], v * (0.8 + r() * 0.4));
       }
     }
   };
@@ -105,7 +106,7 @@ export function tower(): Track {
 
   // A (8-40)
   const ha = harm("Am:4 Fmaj7:4 Dm7:4 E7sus4:2 E7:2 Am:4 Fmaj7:4 Dm7:2 G7:2 Cmaj7:4", 8, 4);
-  s.seq("vc", 8, "E4:3 D4:.5 C4:.5 | C4:2 B3:1 A3:1 | F4:3 E4:1 | A3:2 G#3:2 | E4:3 D4:.5 C4:.5 | A4:2 G4:1 F4:1 | F4:2 E4:1 D4:1 | E4:4", {
+  s.seq("vc", 8, "E4:3 D4:.5 C4:.5 | C4:2 A3:1 G3:1 | F4:3 E4:1 | A3:2 G#3:2 | E4:3 D4:.5 C4:.5 | A4:2 G4:1 F4:1 | F4:2 D4:1 B3:1 | E4:4", {
     v: 1.0,
     leg: 0.97,
   });
@@ -116,7 +117,7 @@ export function tower(): Track {
   // B (40-72): warmth; the piano remembers the lullaby, a whistle answers
   const hb = harm("Fmaj7:4 F:2 Dm7:2 Dm7:2 Bbmaj7:2 Gm7:4 C7sus4:2 C7:2 Fmaj7:4 Bm7b5:4 E7:4", 40, 4);
   s.seq("pnoR", 38, "C5:1 F5:1 | A5:3 G5:1 F5:1 G5:1 D6:4 C6:3", { v: 0.95, hum: 0.02 });
-  s.seq("vc", 40, "F2:4 | F2:2 D3:2 | D3:2 Bb2:2 | Bb3:2 A3:1 G3:1 | G3:2 E3:2 | A3:4 | F4:2 D4:1 B3:1 | B3:2 G#3:2", { v: 0.95, leg: 0.97 });
+  s.seq("vc", 40, "F2:4 | F2:2 D3:2 | D3:2 Bb2:2 | D4:2 Bb3:1 G3:1 | G3:2 E3:2 | A3:4 | F4:2 D4:1 B3:1 | B3:2 G#3:2", { v: 0.95, leg: 0.97 });
   s.arp("pnoL", hb, [0, 1, 2, 3], 1, { lo: 29, up: 41, v: 0.28, ring: 3, hum: 0.03 });
   s.seq("wh", 59, "C5:.5 F5:.5 | A5:1.5 G5:.5 F5:1 G5:1", { v: 0.75 });
   s.pad("pad", hb, 53, 3, 0.13);
@@ -124,7 +125,7 @@ export function tower(): Track {
 
   // A' (72-104)
   const ha2 = harm("Am:4 Fmaj7:4 Dm7:4 E7sus4:2 E7:2 Am:4 Fmaj7:4 Dm7:2 E7:2 Amadd9:4", 72, 4);
-  s.seq("vc", 72, "E4:3 D4:.5 C4:.5 | C4:2 B3:1 A3:1 | F4:3 E4:1 | A3:2 G#3:2 | E4:3 D4:.5 E4:.5 | C5:2 B4:1 A4:1 | F4:2 E4:1 G#3:1 | A3:4", {
+  s.seq("vc", 72, "E4:3 D4:.5 C4:.5 | C4:2 A3:1 G3:1 | F4:3 E4:1 | A3:2 G#3:2 | E4:3 D4:.5 E4:.5 | C5:2 A4:1 G4:1 | F4:2 E4:1 G#3:1 | A3:4", {
     v: 1.0,
     leg: 0.97,
   });
@@ -187,7 +188,7 @@ export function north(): Track {
   s.seq("wh", 64, "r:2 A4:1 D5:1 | E5:3 D5:.5 E5:.5 | F5:2 E5:1 C5:1 | D5:3 A4:.5 D5:.5 | F5:1.5 E5:.5 D5:.5 E5:.5 r:1 | Bb5:2 A5:2 | G5:1 F5:1 E5:2 | D5:4", {
     v: 0.95,
   });
-  s.seq("fl", 80, "D5:4 | D5:2 C#5:2 | Bb4:2 C5:2 | A4:4", { v: 0.5 });
+  s.seq("fl", 80, "F4:4 | D4:2 F4:2 | G4:2 A4:2 | F4:4", { v: 0.5 });
   [64, 72, 80, 88].forEach((t) => roll(t + 0.5, [45, 52, 57, 62, 64], 0.26));
   s.pad("str", harm("Dm:8 Gm/D:8 Bb/D:8 Dsus4:4 Dm:4", 64, 8), 50, 3, 0.2);
 
@@ -236,7 +237,7 @@ export function sea(): Track {
     s.seq("bellM", t, "Bb5:1 C6:1 | Eb6:2.5 D6:.8 C6:3", { tr, v: 1.0 });
   };
   name(34, 0);
-  name(66, 1);
+  name(66, -4);
   return {
     id: "sea",
     bpm: 60,
