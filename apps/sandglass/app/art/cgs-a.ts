@@ -145,6 +145,7 @@ interface HeadOpt {
   side?: string; // side locks in front of the face
   hi?: string; // angel-ring highlight colour
   strands?: string; // strand line colour
+  noFeatures?: boolean; // masked: skip eyes/brows/nose/mouth
   extraBack?: string; // drawn before back hair
 }
 
@@ -224,6 +225,13 @@ function head(o: HeadOpt): string {
   s += `</g>`;
   if (o.rim) s += ln(side === 1 ? "M-51 -30C-55 0 -56 18 -52 34C-48 52 -36 72 -22 88" : "M62 -26C64 4 60 28 52 42C42 62 24 80 6 90", o.rim, 3, 0.9);
   s += `<path d="${face}" fill="none" stroke="${sk.line}" stroke-width="2.4" stroke-linejoin="round"/>`;
+  if (o.noFeatures) {
+    s += o.extraUnder ?? "";
+    if (o.front) s += cel(o.front, o.frontFill ?? "#222", o.hairLine ?? "#000", 2.4);
+    if (o.hi) s += `<path d="${hiBand(-50, 64, -74, 12, 8, 11)}" fill="${o.hi}" opacity=".85"/>`;
+    if (o.side) s += cel(o.side, o.frontFill ?? "#222", o.hairLine ?? "#000", 2.2);
+    return s + (o.extraOver ?? "");
+  }
   // blush
   const bl = o.blush ?? 0.5;
   if (bl > 0)
@@ -369,10 +377,10 @@ const CECI_SIDE =
 const OLD_BACK =
   "M-62 -62C-86 -30 -88 30 -92 90C-96 150 -106 200 -98 250C-86 232 -78 220 -72 206C-68 236 -60 256 -46 270C-46 240 -42 214 -34 190L-22 230C-12 200 -8 170 -8 140L50 140C56 180 66 210 82 236C86 214 86 194 84 176C94 198 106 214 118 222C114 190 106 160 106 130C106 80 96 30 90 0C88 -46 72 -84 42 -102C6 -120 -42 -100 -62 -62Z";
 const OLD_FRONT = bangs(
-  [[-66, -26], [-62, 40], [-48, -40], [-38, 26], [-26, -54], [-14, 30], [-6, -58], [6, 14], [16, -60], [30, 34], [36, -52], [54, 20], [60, -40], [74, 50], [80, -20]],
+  [[-66, -26], [-62, 34], [-50, -44], [-44, 6], [-30, -60], [-24, -10], [-12, -64], [-8, -24], [4, -66], [16, -14], [24, -64], [36, 2], [44, -56], [60, 18], [66, -40], [78, 46], [80, -20]],
   CROWN,
 );
-const OLD_SIDE = lock([-56, -30], [-70, 30], [-72, 90], [-64, 170], 22) + lock([62, -20], [74, 40], [76, 110], [70, 180], 24) + lock([-20, -60], [-36, 0], [-30, 50], [-40, 110], 10);
+const OLD_SIDE = lock([-54, -30], [-74, 20], [-60, 80], [-78, 150], 18) + lock([62, -24], [82, 30], [68, 100], [88, 170], 20) + lock([-8, -40], [-20, -10], [-10, 20], [-22, 44], 8);
 
 /** horn (local coords, base at 0,0, pointing up/back) */
 function horn(fill: string, line: string, hi: string, s = 1, crumble = false): string {
@@ -420,12 +428,12 @@ function cgFall(): string {
 
   let b = `<rect width="1600" height="900" fill="url(#${p}-sky)"/>`;
   // grey dawn disk + halo (behind, upper right)
-  b += `<circle cx="1120" cy="250" r="420" fill="url(#${p}-cold)" opacity=".55"/>`;
-  b += `<circle cx="1120" cy="250" r="70" fill="#e9e6e4" opacity=".85"/>`;
+  b += `<circle cx="430" cy="250" r="420" fill="url(#${p}-cold)" opacity=".55"/>`;
+  b += `<circle cx="430" cy="250" r="70" fill="#e9e6e4" opacity=".85"/>`;
   // clouds: soft bands
   let cl = "";
-  for (let i = 0; i < 9; i++) {
-    const y = 120 + i * 70 + r() * 30;
+  for (let i = 0; i < 6; i++) {
+    const y = 120 + i * 100 + r() * 30;
     const x = r() * 1600 - 300;
     const w = 400 + r() * 500;
     cl += `M${n1(x)} ${n1(y)}q${n1(w * 0.25)} ${n1(-30 - r() * 20)} ${n1(w * 0.5)} -6q${n1(w * 0.25)} ${n1(-24 - r() * 20)} ${n1(w * 0.5)} 6q${n1(-w * 0.5)} 18 ${n1(-w)} 0Z`;
@@ -436,7 +444,7 @@ function cgFall(): string {
   b += `<rect y="560" width="1600" height="340" fill="url(#${p}-bot)"/>`;
 
   // cracks in the sky: glowing gold-white fracture lines radiating from a point
-  const cx0 = 560, cy0 = 170;
+  const cx0 = 1040, cy0 = 170;
   let cr = "";
   for (let i = 0; i < 11; i++) {
     const a = (i / 11) * Math.PI * 2 + r() * 0.4;
@@ -490,7 +498,7 @@ function cgFall(): string {
     o += ln("M-114 -56L96 -70", "#9aa3bc", 2);
     // crumble bits
     let bits = "";
-    for (let i = 0; i < 14; i++) {
+    for (let i = 0; i < 8; i++) {
       const bx = -120 + t() * 250, by = 40 + t() * 60;
       const bs = 4 + t() * 10;
       bits += `M${n1(bx)} ${n1(by)}l${n1(bs)} ${n1(bs * 0.3)}l${n1(-bs * 0.4)} ${n1(bs)}Z`;
@@ -505,7 +513,7 @@ function cgFall(): string {
   b += frag(820, -40, 0.7, 4, 13);
   // fragments dissolving into sand (dust trails upward from them)
   const dust: Pt[] = [];
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 90; i++) {
     const src = [[1280, 140], [300, 100], [820, 20]][i % 3];
     dust.push([src[0] + (r() - 0.5) * 260, src[1] - 10 + r() * 150]);
   }
@@ -522,7 +530,7 @@ function cgFall(): string {
   ];
   let sd1: Pt[] = [], sd2: Pt[] = [];
   streams.forEach(([xa, xb, ya, yb, sw], i) => {
-    sd1 = sd1.concat(sandStream(r, 130, xa, xb, ya, yb, sw, i));
+    sd1 = sd1.concat(sandStream(r, 85, xa, xb, ya, yb, sw, i));
     sd2 = sd2.concat(sandStream(r, 30, xa, xb, ya, yb, sw * 0.6, i));
   });
   let rib = "";
@@ -538,50 +546,22 @@ function cgFall(): string {
   b += ln(rib, "#fff1c4", 4, 0.3);
   b += dots(sd1, 2.4, "#ffd27a", 0.75) + dots(sd2, 4.2, "#fff6d8", 0.9);
 
+  b += `<g transform="translate(1550 0) scale(-1 1)">`;
   // ── Seoha, falling backwards through the light, reaching up-left ──
   b += `<ellipse cx="820" cy="480" rx="380" ry="340" fill="url(#${p}-sun)" opacity=".4"/>`;
   const lineN = "#141a38", lineG = "#4a4e5e", sk = SK_SEOHA;
   const HX = 796, HY = 372, HS = 1.5, HR = -16;
   // hair streaming upward (world coords, behind everything of her)
-  let hl = "";
-  const roots: [Pt, Pt, Pt, Pt, number][] = [
-    [[700, 360], [670, 300], [650, 250], [620, 200], 70],
-    [[730, 300], [714, 240], [700, 200], [676, 150], 80],
-    [[780, 280], [776, 220], [770, 180], [760, 120], 84],
-    [[840, 280], [850, 220], [866, 180], [880, 130], 84],
-    [[890, 300], [916, 250], [940, 220], [972, 190], 76],
-    [[920, 350], [950, 320], [980, 300], [1020, 290], 60],
-  ];
-  for (const [a0, c1, c2, e, w] of roots) hl += lock(a0, c1, c2, e, w, 0.8);
-  b += cel(hl, `url(#${p}-hair)`, "#0e0c14", 2.4);
-  b += ln("M730 290C716 240 700 200 684 170M790 270C788 220 782 180 772 140M850 270C860 220 868 190 878 150M900 310C930 270 950 240 970 214", "#5a5874", 2, 0.8);
+  const hl = "M700 450C670 400 650 340 634 280C664 300 690 312 708 318C700 280 700 240 700 196C730 226 752 250 770 266C776 226 786 196 800 162C820 196 836 226 848 256C870 226 900 204 934 190C930 226 930 254 936 280C962 276 990 282 1016 296C992 326 968 352 950 390Z";
+  b += cel(hl, `url(#${p}-hair)`, "#0e0c14", 2.6);
   // hood flapping up behind the neck
   b += cel("M760 540C720 500 700 440 730 400C770 430 810 460 860 460C910 460 950 440 980 420C1010 460 1000 520 960 560Z", "#9a9eab", lineG, 2.6);
   b += `<path d="M770 520C750 490 744 460 752 430C790 452 830 470 870 470C910 470 940 458 966 444C976 480 970 510 950 540Z" fill="#6b6f7d"/>`;
-  // trailing right arm (sleeve) flung out to the right and down
-  b += cel("M960 580C1010 590 1060 620 1110 670C1150 710 1180 750 1200 790L1150 820C1120 780 1090 740 1050 710C1010 680 970 660 930 650Z", `url(#${p}-hood)`, lineG, 2.6);
-  b += `<path d="M930 650C970 660 1010 680 1050 710C1090 740 1120 780 1150 820L1170 810C1140 760 1100 720 1060 690C1020 664 980 650 940 636Z" fill="#6f7382"/>`;
-  b += cel("M1160 800C1170 790 1190 786 1204 792L1236 790C1246 790 1246 802 1236 804L1212 808L1240 818C1250 822 1246 834 1236 830L1206 822L1226 840C1232 848 1224 856 1216 850L1190 832C1176 834 1162 826 1160 816Z", sk.base, sk.line, 2.2);
-  // torso: scrub top, tilted, narrowing to the waist, dissolving into the light below
-  const torso = "M740 548C770 530 820 524 870 530C930 538 980 560 1000 590C1010 640 1000 700 990 760C986 800 990 850 1000 900L760 900C752 850 744 800 738 750C730 680 720 600 740 548Z";
-  b += cel(torso, `url(#${p}-scrub)`, lineN, 2.8);
-  b += `<path d="M1000 590C1010 640 1000 700 990 760C986 800 990 850 1000 900L930 900C940 820 950 740 960 660C966 620 980 596 1000 590Z" fill="#161d3c" opacity=".75"/>`;
-  b += ln("M800 620C820 680 840 760 850 880M900 600C910 660 920 760 916 880", "#4a5c98", 2, 0.6);
-  // V-neck with skin
-  b += `<path d="M806 532C830 560 850 590 868 612C884 586 902 560 920 542C890 530 840 526 806 532Z" fill="${sk.base}" stroke="${sk.line}" stroke-width="2"/>`;
-  b += `<path d="M806 532C830 560 850 590 868 612C884 586 902 560 920 542L930 552C908 578 888 606 868 634C848 606 824 574 796 544Z" fill="#2a386a" stroke="${lineN}" stroke-width="2"/>`;
-  // open hoodie panels (billowing up and outward)
-  b += cel("M744 548C716 600 704 680 706 760C708 820 716 860 724 900L800 900C790 850 780 780 782 700C784 640 790 590 806 548C786 538 760 538 744 548Z", `url(#${p}-hood)`, lineG, 2.6);
-  b += cel("M930 546C960 560 990 580 1010 600C1030 660 1036 720 1040 780C1044 830 1054 870 1066 900L1010 900C1000 850 994 800 990 740C986 680 980 620 960 580C952 566 940 556 930 546Z", `url(#${p}-hood)`, lineG, 2.6);
-  b += `<path d="M1010 600C1030 660 1036 720 1040 780C1044 830 1054 870 1066 900L1040 900C1026 840 1020 770 1014 700C1010 660 1008 630 1010 600Z" fill="#6f7382"/>`;
-  b += ln("M760 600C748 660 744 740 752 840", "#c4c7cf", 2.4, 0.8);
-  // drawstrings floating up
-  b += ln("M812 552C800 520 796 490 804 460M912 552C930 520 940 490 936 456", "#e6e8ee", 3.4);
   // ID lanyard floating upward, card turning
-  b += ln("M826 540C806 500 780 460 740 420M902 546C920 500 930 460 916 420", "#2f6fb8", 5);
-  b += `<g transform="translate(724 392) rotate(-30)"><rect x="-36" y="-50" width="72" height="100" rx="8" fill="#f4f7fb" stroke="#2a3048" stroke-width="3"/><rect x="-36" y="-50" width="72" height="22" rx="8" fill="#2f6fb8"/><rect x="-24" y="-16" width="28" height="34" rx="3" fill="#c9d0dc"/><path d="M12 -10h14M12 0h14M12 10h9M-24 30h48M-24 40h32" stroke="#8a93a6" stroke-width="3"/></g>`;
+  b += ln("M826 540C790 520 700 500 640 470M902 546C860 540 720 520 650 490", "#2f6fb8", 5);
+  b += `<g transform="translate(612 470) rotate(-60)"><rect x="-36" y="-50" width="72" height="100" rx="8" fill="#f4f7fb" stroke="#2a3048" stroke-width="3"/><rect x="-36" y="-50" width="72" height="22" rx="8" fill="#2f6fb8"/><rect x="-24" y="-16" width="28" height="34" rx="3" fill="#c9d0dc"/><path d="M12 -10h14M12 0h14M12 10h9M-24 30h48M-24 40h32" stroke="#8a93a6" stroke-width="3"/></g>`;
   // reaching left arm (hoodie sleeve) up-left to the open palm
-  b += `<g transform="translate(-60 -30) rotate(-6 800 540)">`;
+  b += `<g transform="translate(-96 -16)">`;
   b += cel("M790 560C760 520 720 470 690 400C670 350 650 300 628 250L680 226C696 276 716 326 740 370C766 420 800 470 840 510Z", `url(#${p}-hood)`, lineG, 2.6);
   b += `<path d="M628 250L680 226C696 276 716 326 740 370C766 420 800 470 840 510L820 530C776 490 740 440 710 380C690 340 668 290 640 256Z" fill="#7a7e8c" opacity=".85"/>`;
   b += ln("M650 258C660 244 672 238 684 236", "#c9ccd4", 3);
@@ -600,14 +580,33 @@ function cgFall(): string {
     shadeSide: 1, rim: "#fff1c4",
     back: SEOHA_BACK, backFill: `url(#${p}-hair)`, hairLine: "#0e0c14",
     front: SEOHA_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#e2ab9a",
-    side: lock([-52, -40], [-66, -20], [-76, -30], [-86, -60], 26, 0.8) + lock([58, -30], [74, -10], [86, -20], [100, -46], 28, 0.8),
     hi: "#6a6890", strands: "#4a4864",
   });
   b += place(HX, HY, HS, HR, false, headS);
+  // trailing right arm (sleeve) flung out to the right and down
+  b += cel("M960 580C1010 590 1060 620 1110 670C1150 710 1180 750 1200 790L1150 820C1120 780 1090 740 1050 710C1010 680 970 660 930 650Z", `url(#${p}-hood)`, lineG, 2.6);
+  b += `<path d="M930 650C970 660 1010 680 1050 710C1090 740 1120 780 1150 820L1170 810C1140 760 1100 720 1060 690C1020 664 980 650 940 636Z" fill="#6f7382"/>`;
+  b += cel("M1160 800C1170 790 1190 786 1204 792L1236 790C1246 790 1246 802 1236 804L1212 808L1240 818C1250 822 1246 834 1236 830L1206 822L1226 840C1232 848 1224 856 1216 850L1190 832C1176 834 1162 826 1160 816Z", sk.base, sk.line, 2.2);
+  // torso: scrub top, tilted, narrowing to the waist, dissolving into the light below
+  const torso = "M740 548C770 530 820 524 870 530C930 538 980 560 1000 590C1010 640 1000 700 990 760C986 800 990 850 1000 900L760 900C752 850 744 800 738 750C730 680 720 600 740 548Z";
+  b += cel(torso, `url(#${p}-scrub)`, lineN, 2.8);
+  b += `<path d="M1000 590C1010 640 1000 700 990 760C986 800 990 850 1000 900L930 900C940 820 950 740 960 660C966 620 980 596 1000 590Z" fill="#161d3c" opacity=".75"/>`;
+  b += ln("M800 620C820 680 840 760 850 880M900 600C910 660 920 760 916 880", "#4a5c98", 2, 0.6);
+  // V-neck with skin
+  b += `<path d="M806 532C830 560 850 590 868 612C884 586 902 560 920 542C890 530 840 526 806 532Z" fill="${sk.base}" stroke="${sk.line}" stroke-width="2"/>`;
+  b += `<path d="M806 532C830 560 850 590 868 612C884 586 902 560 920 542L930 552C908 578 888 606 868 634C848 606 824 574 796 544Z" fill="#2a386a" stroke="${lineN}" stroke-width="2"/>`;
+  // open hoodie panels (billowing up and outward)
+  b += cel("M744 548C716 600 704 680 706 760C708 820 716 860 724 900L800 900C790 850 780 780 782 700C784 640 790 590 806 548C786 538 760 538 744 548Z", `url(#${p}-hood)`, lineG, 2.6);
+  b += cel("M930 546C960 560 990 580 1010 600C1030 660 1036 720 1040 780C1044 830 1054 870 1066 900L1010 900C1000 850 994 800 990 740C986 680 980 620 960 580C952 566 940 556 930 546Z", `url(#${p}-hood)`, lineG, 2.6);
+  b += `<path d="M1010 600C1030 660 1036 720 1040 780C1044 830 1054 870 1066 900L1040 900C1026 840 1020 770 1014 700C1010 660 1008 630 1010 600Z" fill="#6f7382"/>`;
+  b += ln("M760 600C748 660 744 740 752 840", "#c4c7cf", 2.4, 0.8);
+  // drawstrings floating up
+  b += ln("M812 552C806 536 804 520 808 506M912 552C920 536 926 522 924 506", "#e6e8ee", 3.4);
   // floating tear droplets rising from her eyes
   b += `<g fill="#eef8ff" stroke="#a9c8e8" stroke-width="1">`;
   for (const [x, y, s] of [[770, 250, 5], [748, 214, 3.5], [796, 200, 4], [770, 170, 2.6]] as [number, number, number][])
     b += `<ellipse cx="${x}" cy="${y}" rx="${n1(s * 0.7)}" ry="${s}" ${A(p, "tw", x * 0.01, 3)}/>`;
+  b += `</g>`;
   b += `</g>`;
   // she dissolves into the other world's light at the bottom
   b += `<rect y="640" width="1600" height="260" fill="url(#${p}-bot)"/>`;
@@ -626,8 +625,278 @@ function cgFall(): string {
   return svg(p, defs, b);
 }
 
+// ── hands: capsule fingers (outline stroke + skin stroke) and a palm ──
+function hand(x: number, y: number, sc: number, rot: number, flip: boolean, palm: string, fingers: [Pt, Pt, Pt][], sk: Skin, w = 13, extra = ""): string {
+  let f1 = "", f2 = "";
+  for (const [a, c, e] of fingers) f1 += `M${a[0]} ${a[1]}Q${c[0]} ${c[1]} ${e[0]} ${e[1]}`;
+  f2 = f1;
+  let o = ln(f1, sk.line, w + 4.4) + ln(f2, sk.base, w);
+  o += cel(palm, sk.base, sk.line, 2.2) + extra;
+  return place(x, y, sc, rot, flip, o);
+}
+/** open palm facing the viewer, fingers up (local, wrist at 0,0) */
+const PALM_OPEN = "M-24 0C-30 -14 -30 -34 -24 -48C-10 -54 12 -54 26 -46C30 -32 28 -12 20 0C8 8 -12 8 -24 0Z";
+const FING_OPEN: [Pt, Pt, Pt][] = [[[-18, -46], [-26, -66], [-30, -86]], [[-6, -50], [-8, -76], [-8, -100]], [[8, -50], [12, -76], [14, -98]], [[20, -44], [28, -64], [32, -82]], [[-24, -16], [-40, -28], [-50, -44]]];
+/** palm up, fingers relaxed and curling (reaching / offering) */
+const PALM_UP = "M-30 0C-34 -16 -30 -34 -18 -42C0 -48 22 -44 32 -32C38 -18 34 -2 24 6C6 14 -18 12 -30 0Z";
+const FING_UP: [Pt, Pt, Pt][] = [[[-20, -40], [-30, -60], [-22, -72]], [[-6, -44], [-10, -68], [0, -80]], [[10, -44], [12, -66], [22, -76]], [[24, -36], [32, -54], [38, -62]], [[-28, -10], [-48, -16], [-54, -32]]];
+/** back of hand, fingers curled over an edge (gripping) */
+const PALM_GRIP = "M-26 0C-32 -18 -28 -40 -14 -50C4 -56 24 -50 30 -36C34 -18 30 -2 20 6C4 12 -16 10 -26 0Z";
+const FING_GRIP: [Pt, Pt, Pt][] = [[[-16, -48], [-22, -70], [-10, -76]], [[-2, -52], [-2, -76], [10, -80]], [[12, -50], [16, -72], [26, -74]], [[24, -40], [32, -58], [38, -60]], [[-26, -14], [-40, -30], [-34, -48]]];
+
+// ── clocks ──
+/** clock face group (r = 50 at origin) to be <use>d */
+function clockDef(id: string, face: string, rim: string, tick: string, rimLine: string): string {
+  let t = "";
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const r0 = i % 3 === 0 ? 34 : 38;
+    t += `M${n1(Math.cos(a) * r0)} ${n1(Math.sin(a) * r0)}L${n1(Math.cos(a) * 43)} ${n1(Math.sin(a) * 43)}`;
+  }
+  return `<g id="${id}"><circle r="50" fill="${rim}" stroke="${rimLine}" stroke-width="3"/><circle r="44" fill="${face}"/><path d="${t}" stroke="${tick}" stroke-width="3"/><circle r="3.5" fill="${tick}"/></g>`;
+}
+/** hands of a clock (path fragment) */
+function clockHands(x: number, y: number, s: number, h: number, m: number): string {
+  const ah = (h / 12) * Math.PI * 2 - Math.PI / 2;
+  const am = (m / 60) * Math.PI * 2 - Math.PI / 2;
+  return `M${n1(x)} ${n1(y)}l${n1(Math.cos(ah) * 24 * s)} ${n1(Math.sin(ah) * 24 * s)}M${n1(x)} ${n1(y)}l${n1(Math.cos(am) * 36 * s)} ${n1(Math.sin(am) * 36 * s)}`;
+}
+function useAt(id: string, x: number, y: number, s: number, rot = 0, sy = 1, extra = ""): string {
+  return `<use href="#${id}" transform="translate(${n1(x)} ${n1(y)}) rotate(${n1(rot)}) scale(${n1(s)} ${n1(s * sy)})"${extra}/>`;
+}
+/** cracked porcelain mask of the Ash King (local head coords, front-ish) */
+function ashMask(glowId: string, glowOp: number): string {
+  const m = "M-56 -66C-60 -20 -60 20 -52 44C-42 70 -22 94 2 97C28 94 50 70 60 44C68 14 68 -28 64 -66C44 -98 -34 -100 -56 -66Z";
+  let o = cel(m, "#f1eeea", "#6e6870", 2.6);
+  o += `<path d="M64 -66C68 -28 68 14 60 44C50 70 28 94 2 97C24 80 40 50 44 10C46 -20 44 -50 38 -86C50 -82 58 -76 64 -66Z" fill="#c9c3c4"/>`;
+  // eye holes
+  const eh = "M4 4C10 -10 30 -14 42 -4C36 8 18 12 4 4ZM-14 4C-18 -8 -34 -12 -46 -4C-40 8 -26 10 -14 4Z";
+  o += `<path d="${eh}" fill="#18161c" stroke="#5a5460" stroke-width="1.6"/>`;
+  o += `<ellipse cx="23" cy="-2" rx="9" ry="5" fill="url(#${glowId})" opacity="${glowOp}"/><ellipse cx="-30" cy="-1" rx="7" ry="4" fill="url(#${glowId})" opacity="${glowOp}"/>`;
+  // faint painted tear line + cracks
+  o += ln("M22 10C22 30 20 48 22 64", "#a8a0a6", 1.6, 0.6);
+  o += ln("M40 -90L30 -60L38 -40L26 -18M30 -60L50 -54M-20 -96L-12 -70L-24 -52M-12 -70L4 -64M-48 30L-34 44L-38 62M58 30L44 40", "#5e5660", 1.8);
+  o += `<path d="M44 -88L56 -76L50 -70L40 -80Z" fill="#2a2630"/>`;
+  return o;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_ashking — the Room Between: the masked king leans toward her
+// ────────────────────────────────────────────────────────────────────────────
+function cgAshking(): string {
+  const p = "cg-ashking";
+  const r = rng(999);
+  const defs =
+    lg(`${p}-bg`, 0, 0, 0, 1, [[0, "#15141b"], [0.6, "#2d2a35"], [1, "#121118"]]) +
+    lg(`${p}-win`, 0, 0, 0, 1, [[0, "#5d5a62"], [0.55, "#9a948f"], [0.8, "#c9c4bc"], [1, "#a39c95"]]) +
+    glow(`${p}-sun`, "#e9e4dc", 0.9, 0.35) +
+    glow(`${p}-gold`, "#ffd27a", 0.9, 0.3) +
+    glow(`${p}-eye`, "#dcd8d0", 1, 0.5) +
+    lg(`${p}-cloak`, 0, 0, 0, 1, [[0, "#4a4650"], [0.5, "#2c2932"], [1, "#16141a"]]) +
+    lg(`${p}-hair`, 0, 0, 0, 1, [[0, "#f4f2f0"], [0.45, "#cfcad2"], [1, "#7e7688"]]) +
+    lg(`${p}-vig`, 0, 0, 0, 1, [[0, "#0c0b10", 0], [1, "#0c0b10", 0.85]]) +
+    clockDef(`${p}-ck`, "#cfc8bc", "#7a6a50", "#3a342c", "#2a2420") +
+    blur(`${p}-b`, 8);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  // huge arched window onto the endless grey dawn
+  const win = "M420 900V330C420 150 600 40 800 40C1000 40 1180 150 1180 330V900Z";
+  b += `<path d="${win}" fill="url(#${p}-win)"/>`;
+  b += `<circle cx="800" cy="330" r="360" fill="url(#${p}-sun)" opacity=".6"/>`;
+  b += `<circle cx="800" cy="330" r="76" fill="#dedad4" opacity=".9"/>`;
+  // grey ash-dunes / dead city beyond
+  b += `<path d="M420 600Q520 560 620 590T820 580T1020 590T1180 570V900H420Z" fill="#7a746f" opacity=".7"/>`;
+  b += `<path d="M420 660Q560 630 700 650T980 640T1180 650V900H420Z" fill="#5d5854"/>`;
+  // mullions
+  b += ln("M800 40V900M420 360H1180M610 80V900M990 80V900", "#1c1b22", 10, 0.85);
+  b += `<path d="${win}M380 900V330C380 120 580 0 800 0C1020 0 1220 120 1220 330V900Z" fill="#1b1a22" fill-rule="evenodd"/>`;
+  b += ln("M420 900V330C420 150 600 40 800 40C1000 40 1180 150 1180 330V900", "#4a4652", 4);
+  // falling ash (static flecks)
+  const ash: Pt[] = [];
+  for (let i = 0; i < 90; i++) ash.push([420 + r() * 760, 40 + r() * 620]);
+  b += dots(ash, 2.4, "#e8e2da", 0.45);
+
+  // throne of ash + broken clocks behind him
+  b += `<path d="M470 900C460 700 480 520 520 400C540 330 560 280 600 250C640 300 660 250 700 200C740 250 760 210 800 170C840 210 860 250 900 200C940 250 960 300 1000 250C1040 280 1060 330 1080 400C1120 520 1140 700 1130 900Z" fill="#2a2830" stroke="#4e4a56" stroke-width="3"/>`;
+  b += `<path d="M520 400C540 330 560 280 600 250C640 300 660 250 700 200C740 250 760 210 800 170C840 210 860 250 900 200C940 250 960 300 1000 250C1040 280 1060 330 1080 400C1000 360 900 340 800 340C700 340 600 360 520 400Z" fill="#46424e"/>`;
+  let ck = "", hands = "";
+  const cks: [number, number, number, number][] = [[560, 330, 0.9, -20], [1040, 330, 0.9, 25], [640, 230, 0.55, 10], [960, 230, 0.55, -8], [800, 200, 0.7, 0], [520, 500, 0.8, -40], [1080, 500, 0.8, 30], [700, 280, 0.45, 60], [900, 280, 0.45, -50]];
+  for (const [x, y, s, rot] of cks) {
+    ck += useAt(`${p}-ck`, x, y, s, rot, 0.92, ` opacity=".85"`);
+    hands += clockHands(x, y, s, r() * 12, r() * 60);
+  }
+  b += ck + ln(hands, "#2a2420", 4);
+  b += ln("M540 300L580 350L570 380M1020 300L1060 360M790 170L810 230L796 250", "#1a1820", 2.4);
+  // floating stopped gears
+  const gear = (x: number, y: number, R: number, n: number): string => {
+    let d = "";
+    for (let i = 0; i < n * 2; i++) {
+      const a = (i / (n * 2)) * Math.PI * 2;
+      const rr = i % 2 ? R : R * 0.82;
+      d += `${i ? "L" : "M"}${n1(x + Math.cos(a) * rr)} ${n1(y + Math.sin(a) * rr)}`;
+    }
+    return d + `ZM${n1(x + R * 0.35)} ${y}a${n1(R * 0.35)} ${n1(R * 0.35)} 0 1 0 ${n1(-R * 0.7)} 0a${n1(R * 0.35)} ${n1(R * 0.35)} 0 1 0 ${n1(R * 0.7)} 0Z`;
+  };
+  b += `<path d="${gear(300, 250, 60, 12)}${gear(1310, 200, 46, 10)}${gear(220, 560, 34, 8)}${gear(1390, 520, 70, 14)}" fill="#8a6a45" stroke="#3a2e2a" stroke-width="3" fill-rule="evenodd" opacity=".8"/>`;
+
+  // ── the Ash King: leaning forward, forearms on knees, one hand reaching ──
+  const line = "#18161c";
+  // cloak mass (shoulders wide, hunched forward)
+  b += cel("M480 900C470 760 500 620 560 540C600 490 660 460 720 452L880 452C940 460 1000 490 1040 540C1100 620 1130 760 1120 900Z", `url(#${p}-cloak)`, line, 3);
+  // ragged, ash-dissolving hem at shoulders
+  let rag = "";
+  for (let i = 0; i < 14; i++) {
+    const x = 500 + i * 44 + r() * 20;
+    const y = 520 + Math.abs(i - 6.5) * -6 + r() * 30;
+    rag += `M${n1(x)} ${n1(y)}l${n1(12 + r() * 10)} ${n1(40 + r() * 50)}l${n1(10 + r() * 8)} ${n1(-30 - r() * 30)}`;
+  }
+  b += ln(rag, "#5a5662", 2.4, 0.8);
+  b += `<path d="M560 540C600 490 660 460 720 452L700 520C650 540 600 580 560 640Z" fill="#5a5662" opacity=".7"/>`;
+  // long white hair falling forward over the shoulders
+  b += cel(lock([700, 330], [640, 420], [640, 520], [600, 640], 70, 0.85) + lock([900, 330], [960, 420], [970, 520], [1010, 650], 74, 0.85), `url(#${p}-hair)`, "#625a6c", 2.4);
+  // left forearm resting across the knee (right side of image)
+  b += cel("M900 600C960 610 1020 640 1060 690C1070 720 1040 740 1010 730C960 700 910 680 860 670Z", "#34313a", line, 2.6);
+  b += cel("M860 660C840 650 820 660 816 676C812 692 830 704 850 700C870 698 880 680 872 666Z", "#d6d0cc", "#5e4e54", 2.2);
+  // reaching hand toward the viewer (palm up, offered), fingertips crumbling to ash
+  b += cel("M760 560C720 600 690 640 670 690L730 720C750 680 780 640 820 610Z", "#34313a", line, 2.6);
+  b += ln("M672 690L730 720", "#5a5662", 5);
+  b += hand(690, 740, 1.5, 200, false, PALM_UP, FING_UP, { base: "#dcd6d2", shade: "#aca2a4", line: "#5e4e54", blush: "" }, 13);
+  // ash flaking from the fingertips
+  let fl = "";
+  for (let i = 0; i < 16; i++) {
+    const x = 620 + r() * 140, y = 800 + r() * 90;
+    const s2 = 3 + r() * 6;
+    fl += `M${n1(x)} ${n1(y)}l${n1(s2)} ${n1(-s2 * 0.4)}l${n1(-s2 * 0.2)} ${n1(s2)}Z`;
+  }
+  b += `<path d="${fl}" fill="#b8b0ac" opacity=".85"/>`;
+
+  // head: tilted, leaning toward the viewer, masked
+  const HX = 800, HY = 320, HS = 1.55, HR = 6;
+  const headK = head({
+    p, id: "k", skin: SK_OLD, lash: "#222", near: IR_ASH, far: IR_ASH, noFeatures: true, noNeck: true, shadeSide: 1,
+    back: OLD_BACK, backFill: `url(#${p}-hair)`, hairLine: "#625a6c",
+    front: OLD_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#a8a0a4",
+    side: OLD_SIDE, hi: "#ffffff",
+    extraBack: `<g transform="translate(-34 -92) rotate(-16)">${horn("#1f1d24", "#0c0b10", "#6a6674", 1.3, true)}</g><g transform="translate(46 -88) rotate(22)">${horn("#1f1d24", "#0c0b10", "#6a6674", 1.4, true)}</g>`,
+    extraUnder: ashMask(`${p}-eye`, 0.9),
+  });
+  b += place(HX, HY, HS, HR, false, headK);
+  // eye-hole glow, pulsing faintly
+  b += `<g ${A(p, "pu", 0, 4.5)}><circle cx="836" cy="320" r="26" fill="url(#${p}-eye)" opacity=".55"/><circle cx="752" cy="316" r="20" fill="url(#${p}-eye)" opacity=".45"/></g>`;
+
+  // gold sand falling UPWARD: bright streams + motes
+  let rib = "";
+  const st: [number, number, number][] = [[300, 380, 50], [1300, 1240, 60], [560, 620, 30], [1040, 980, 30]];
+  let sd: Pt[] = [];
+  st.forEach(([xa, xb, sw], i) => {
+    let d = "";
+    for (let k = 0; k <= 14; k++) {
+      const t = k / 14;
+      d += `${k ? "L" : "M"}${n1(xa + (xb - xa) * t + Math.sin(t * 5 + i) * sw)} ${n1(900 - 920 * t)}`;
+    }
+    rib += d;
+    sd = sd.concat(sandStream(r, 110, xa, xb, 900, -20, sw, i));
+  });
+  b += ln(rib, "#ffd27a", 30, 0.2, ` filter="url(#${p}-b)"`);
+  b += dots(sd, 2.4, "#ffd27a", 0.8);
+  // fallen broken clock faces on the floor
+  let fc = "";
+  for (const [x, y, s, rot] of [[380, 850, 1.2, 20], [1220, 840, 1.1, -30], [600, 880, 0.8, 60], [1040, 885, 0.9, -10]] as [number, number, number, number][])
+    fc += useAt(`${p}-ck`, x, y, s, rot, 0.35);
+  b += fc;
+  b += `<rect y="600" width="1600" height="300" fill="url(#${p}-vig)"/>`;
+  for (let i = 0; i < 26; i++) {
+    const x = 200 + r() * 1200, y = 380 + r() * 500;
+    b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.8 + r() * 2.2)}" fill="#ffe7a8" ${A(p, "up", r() * 6, 5 + r() * 4)}/>`;
+  }
+  let spk = "";
+  for (let i = 0; i < 8; i++) spk += sparkle(300 + r() * 1000, 100 + r() * 700, 4 + r() * 7);
+  b += `<path d="${spk}" fill="#fff4d0" opacity=".85"/>`;
+  return svg(p, defs, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_unmask — e07: beneath the cracked mask, an aged Elios
+// ────────────────────────────────────────────────────────────────────────────
+function cgUnmask(): string {
+  const p = "cg-unmask";
+  const r = rng(1000);
+  const defs =
+    lg(`${p}-bg`, 0, 0, 0, 1, [[0, "#3a383f"], [0.5, "#77716f"], [1, "#2a2830"]]) +
+    glow(`${p}-sun`, "#f2ede4", 0.95, 0.35) +
+    glow(`${p}-gold`, "#ffd27a", 0.9, 0.3) +
+    glow(`${p}-eye`, "#dcd8d0", 1, 0.5) +
+    lg(`${p}-hair`, 0, 0, 0, 1, [[0, "#f8f6f4"], [0.45, "#d2ccd4"], [1, "#857d8e"]]) +
+    lg(`${p}-cloak`, 0, 0, 0, 1, [[0, "#4a4650"], [1, "#1a181e"]]) +
+    lg(`${p}-green`, 0, 0, 1, 1, [[0, "#3f6a4c"], [1, "#1e3a2a"]]) +
+    lg(`${p}-vig`, 0, 0, 0, 1, [[0, "#141218", 0], [1, "#141218", 0.8]]) +
+    blur(`${p}-b`, 8);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  b += `<circle cx="820" cy="300" r="620" fill="url(#${p}-sun)" opacity=".55"/>`;
+  // arched window ribs soft behind
+  b += ln("M380 900V360C380 140 580 20 800 20C1020 20 1220 140 1220 360V900", "#2a2830", 26, 0.5, ` filter="url(#${p}-b)"`);
+  const ash: Pt[] = [];
+  for (let i = 0; i < 80; i++) ash.push([r() * 1600, r() * 900]);
+  b += dots(ash, 2.6, "#efe9e0", 0.4);
+
+  // shoulders/cloak
+  b += cel("M470 900C480 780 540 700 640 660L960 660C1060 700 1120 780 1130 900Z", `url(#${p}-cloak)`, "#16141a", 3);
+  b += `<path d="M640 660L960 660C900 700 860 720 800 720C740 720 700 700 640 660Z" fill="#5a5662"/>`;
+  // neck ash cracks glow
+  const HX = 800, HY = 380, HS = 2.3, HR = -3;
+  const crack = ln("M34 30L44 44L38 58L48 72M44 44L56 48M38 58L28 66M-40 40L-46 54L-40 64M10 110L18 126L12 140M18 126L30 130", "#4a3a3e", 1.8) +
+    ln("M34 30L44 44L38 58L48 72M10 110L18 126L12 140", "#ffd9a0", 0.8, 0.8);
+  const headU = head({
+    p, id: "u", skin: SK_OLD, lash: "#2a2226", near: IR_ASHRED, far: IR_ASH,
+    open: 0.58, look: [0, 0.3], brow: 1, browColor: "#cfc9cb", mouth: "soft", blush: 0.2, tears: 2, gaunt: true,
+    shadeSide: 1, rim: "#fff6e0",
+    back: OLD_BACK, backFill: `url(#${p}-hair)`, hairLine: "#625a6c",
+    front: OLD_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#a49a9e",
+    side: OLD_SIDE, hi: "#ffffff",
+    extraBack: `<g transform="translate(-34 -92) rotate(-16)">${horn("#1f1d24", "#0c0b10", "#6a6674", 1.2, true)}</g><g transform="translate(46 -88) rotate(22)">${horn("#1f1d24", "#0c0b10", "#6a6674", 1.3, true)}</g>`,
+    extraUnder: crack + ln("M4 36C14 42 30 42 42 34M-20 36C-28 40 -38 40 -46 34", "#8a7c80", 1.6, 0.7),
+  });
+  b += place(HX, HY, HS, HR, false, headU);
+
+  // the mask, lifted away up-left, held by Seoha's hands (green cloak sleeves from the left)
+  b += cel("M0 760C120 700 250 600 350 470L420 520C330 650 200 780 60 900H0Z", `url(#${p}-green)`, "#10241a", 3);
+  b += cel("M0 520C110 470 220 390 300 300L360 350C290 450 170 560 30 630H0Z", `url(#${p}-green)`, "#10241a", 3);
+  b += ln("M340 480L410 530M290 310L352 356", "#f4ecd8", 6);
+  b += `<g transform="translate(520 300) rotate(-24) scale(2.1)">${ashMask(`${p}-eye`, 0.25)}</g>`;
+  // hands gripping the mask edges
+  b += hand(340, 334, 1.55, 58, false, PALM_GRIP, FING_GRIP, SK_SEOHA, 12);
+  b += hand(396, 508, 1.55, 64, false, PALM_GRIP, FING_GRIP, SK_SEOHA, 12);
+  // his collar covers the neck
+  b += cel("M600 900C610 800 640 720 700 690C740 720 860 720 900 690C960 720 990 800 1000 900Z", "#2c2932", "#16141a", 3);
+  b += ln("M700 690C740 740 860 740 900 690", "#6a6674", 3);
+  // ash dust shed from the mask
+  let fl = "";
+  for (let i = 0; i < 18; i++) {
+    const x = 420 + r() * 260, y = 180 + r() * 300;
+    const s2 = 3 + r() * 6;
+    fl += `M${n1(x)} ${n1(y)}l${n1(s2)} ${n1(-s2 * 0.4)}l${n1(-s2 * 0.2)} ${n1(s2)}Z`;
+  }
+  b += `<path d="${fl}" fill="#d8d0cc" opacity=".8"/>`;
+  // rising gold sand + light
+  let sd: Pt[] = [];
+  sd = sd.concat(sandStream(r, 120, 1100, 1260, 900, 0, 40, 1), sandStream(r, 90, 380, 300, 900, 0, 40, 2));
+  b += dots(sd, 2.4, "#ffd27a", 0.75);
+  b += `<rect y="620" width="1600" height="280" fill="url(#${p}-vig)"/>`;
+  for (let i = 0; i < 22; i++) {
+    const x = 200 + r() * 1200, y = 300 + r() * 560;
+    b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.6 + r() * 2)}" fill="#ffe7a8" ${A(p, "up", r() * 6, 5 + r() * 4)}/>`;
+  }
+  // falling ash flakes (animated)
+  for (let i = 0; i < 10; i++) {
+    const x = 500 + r() * 600, y = 100 + r() * 400;
+    b += `<rect x="${n1(x)}" y="${n1(y)}" width="5" height="3" fill="#ece6de" ${A(p, "dn", r() * 7, 6 + r() * 3)}/>`;
+  }
+  return svg(p, defs, b);
+}
+
 export const CGS_A: Record<string, string> = {
   cg_fall: cgFall(),
+  cg_ashking: cgAshking(),
+  cg_unmask: cgUnmask(),
 };
 
 export function __faceTest(): string {

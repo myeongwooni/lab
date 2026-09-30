@@ -211,6 +211,22 @@ export default function Game() {
     [apply, notify],
   );
 
+  // 개발 서버 전용: 브라우저 콘솔에서 임시 원고를 읽어 볼 수 있습니다.
+  //   window.__sandglassTest(`* t\n@bg plaza\n...`, { loop: 3 })
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const w = window as unknown as { __sandglassTest?: (src: string, vars?: Record<string, number | boolean>) => void };
+    w.__sandglassTest = (src, vars) => {
+      const parsed = parseScript(src);
+      STORY.chapters.__test = parsed;
+      for (const [name, i] of Object.entries(parsed.labels)) STORY.labels[name] = { ch: "__test", i };
+      startAt(newGame("__test", { ...DEFAULT_VARS, ...vars }));
+    };
+    return () => {
+      delete w.__sandglassTest;
+    };
+  }, [startAt]);
+
   const newRun = () => startAt(newGame("prologue"));
   const loadData = (d: SaveData) => startAt(d.state, d.log);
   const continueLatest = () => {

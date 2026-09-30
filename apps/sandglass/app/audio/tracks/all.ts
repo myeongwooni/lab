@@ -1,21 +1,24 @@
 import type { Track } from "../track";
-import { climax, ending, lullaby, title } from "./theme";
-import { archive, festival, north, sea, tower } from "./places";
-import { lucien, sorrow, tension, villain, warm } from "./moods";
+import { between, climax, ending, title } from "./theme";
+import { court, festival, seoul, solein, tavern, villa } from "./places";
+import { elios, razel, sian } from "./people";
+import { death, sorrow, tension } from "./moods";
 
 export const BUILDERS: Record<string, () => Track> = {
   title,
-  lullaby,
-  archive,
-  tower,
-  warm,
-  lucien,
-  festival,
+  seoul,
+  solein,
+  tavern,
+  villa,
+  elios,
+  razel,
+  sian,
+  court,
   tension,
+  death,
+  between,
+  festival,
   sorrow,
-  villain,
-  north,
-  sea,
   climax,
   ending,
 };
