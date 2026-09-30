@@ -1135,7 +1135,7 @@ function room(): string {
   const wx = 800, wy = 300, wr = 104;
   const wc = A.clip("win", `M${wx - wr} ${wy}a${wr} ${wr} 0 1 0 ${wr * 2} 0a${wr} ${wr} 0 1 0 ${-wr * 2} 0`);
   let sky = A.rect(wx - wr, wy - wr, wr * 2, wr * 2, A.lin("sky", 0, 0, 0, 1, [[0, "#0a1236"], [0.6, "#1d2a6a"], [1, "#3a3f80"]]));
-  sky += ring(A, { cx: 1300, cy: 900, R: 800, a0: arcA(1300, 800, 600), a1: arcA(1300, 800, 1100), w: 70, n: 90, twinkle: 3, seed: 13, dense: 0.6, box: [wx - wr, wy - wr, wx + wr, wy + wr] }, blur);
+  sky += ring(A, { cx: 1300, cy: 900, R: 800, a0: arcA(1300, 800, 600), a1: arcA(1300, 800, 1100), w: 90, n: 200, twinkle: 3, seed: 13, dense: 1, box: [wx - wr, wy - wr, wx + wr, wy + wr] }, blur);
   sky += starField(r, 40, wx - wr, wy - wr, wx + wr, wy + wr, "#dfe6ff", 0.9);
   sky += `<path d="M${wx - wr} ${wy + 70}q40-30 70-10t60-20 70 16 50-10V${wy + wr}H${wx - wr}z" fill="#141a3c"/>`;
   A.add(A.ell(wx, wy, 230, 230, A.glowG("wglow", "#9fb4ff"), 0.35));
@@ -1295,24 +1295,26 @@ function register(): string {
   const blur = A.blur("soft", 18);
   A.add(A.rect(0, 0, 1600, 900, A.lin("bg", 0, 0, 0, 1, [[0, "#05081c"], [0.5, "#0e1638"], [1, "#070a1c"]])));
   // 돔: 오쿨루스를 향해 모이는 늑골
-  const OX = 800, OY = 70, orx = 150, ory = 46;
+  const OX = 800, OY = 78, orx = 190, ory = 58;
   let ribs = "";
   for (let i = 0; i < 16; i++) {
-    const a = (i / 16) * Math.PI * 2;
+    const a = (i / 16) * Math.PI * 2 + 0.2;
+    if (Math.sin(a) > 0.5) continue;
     const sx = OX + Math.cos(a) * orx, sy = OY + Math.sin(a) * ory;
-    const ex = OX + Math.cos(a) * 1300, ey = OY + Math.sin(a) * 300 + 420;
-    ribs += `M${i0(sx)} ${i0(sy)}Q${i0((sx + ex) / 2)} ${i0(Math.min(sy, ey) - 20)} ${i0(ex)} ${i0(ey)}`;
+    const ex = OX + Math.cos(a) * 1250, ey = 470 + Math.sin(a) * 60;
+    ribs += `M${i0(sx)} ${i0(sy)}Q${i0(OX + Math.cos(a) * 820)} ${i0(OY + Math.sin(a) * ory * 2)} ${i0(ex)} ${i0(ey)}`;
   }
   A.add(A.ell(OX, OY + 120, 900, 420, A.lin("dome", 0, 0, 0, 1, [[0, "#1e2a60"], [1, "#0b1030"]])));
+  A.add(`<g fill="none" stroke="#2c3a7a" stroke-width="6" opacity=".6"><ellipse cx="${OX}" cy="${OY + 14}" rx="360" ry="100"/><ellipse cx="${OX}" cy="${OY + 40}" rx="620" ry="190"/></g>`);
   A.add(`<path d="${ribs}" stroke="#2c3a7a" stroke-width="10" fill="none" opacity=".7"/><path d="${ribs}" stroke="#8fb8ff" stroke-width="1.5" fill="none" opacity=".25"/>`);
   // 오쿨루스와 천환
   const oc = A.clip("oc", `M${OX - orx} ${OY}a${orx} ${ory} 0 1 0 ${orx * 2} 0a${orx} ${ory} 0 1 0 ${-orx * 2} 0`);
   let sky = A.rect(OX - orx, OY - ory, orx * 2, ory * 2, "#0a1236");
-  sky += ring(A, { cx: 800, cy: 900, R: 900, a0: arcA(800, 900, 600), a1: arcA(800, 900, 1000), w: 70, n: 80, twinkle: 2, seed: 41, dense: 0.5, box: [OX - orx, OY - ory, OX + orx, OY + ory] }, blur);
+  sky += ring(A, { cx: 1100, cy: 600, R: 600, a0: arcA(1100, 600, 580), a1: arcA(1100, 600, 1020), w: 60, n: 160, twinkle: 2, seed: 41, dense: 1, box: [OX - orx, OY - ory, OX + orx, OY + ory] }, blur);
   A.add(`<g clip-path="${oc}">${sky}</g>`, `<ellipse cx="${OX}" cy="${OY}" rx="${orx}" ry="${ory}" fill="none" stroke="#b9c6f2" stroke-width="4" opacity=".6"/>`);
   // 별빛 기둥 (오쿨루스 → 책)
   const bg = A.lin("shaft", 0, 0, 0, 1, [[0, "#dfe8ff", 0.55], [0.6, "#8fb8ff", 0.25], [1, "#8fb8ff", 0.05]]);
-  A.add(`<path d="M${OX - orx + 20} ${OY}H${OX + orx - 20}L${OX + 230} 560H${OX - 230}Z" fill="${bg}" filter="${blur}"/>`);
+  A.add(`<path d="M${OX - orx + 30} ${OY + 40}H${OX + orx - 30}L${OX + 250} 560H${OX - 250}Z" fill="${bg}" filter="${blur}"/>`);
   // 원형 열주: 뒤쪽 (작게, 흐리게)
   const ring3 = (back: boolean) => {
     let s = "";

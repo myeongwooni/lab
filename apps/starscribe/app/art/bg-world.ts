@@ -983,7 +983,7 @@ function sTitle(): string {
   P.add(ell(200, 10, 420, 320, P.glow("#8a9ce0"), 0.35));
   // ring glow wash
   P.add(ell(1250, 260, 700, 460, P.glow("#3c4fb0"), 0.55));
-  P.add(starField(P, r, { n: 240, box: [0, 0, 1600, 580], keep: (x, y) => (1 - y / 720) * (x < 820 && y < 380 ? 0.35 : 1) }));
+  P.add(starField(P, r, { n: 215, box: [0, 0, 1600, 580], keep: (x, y) => (1 - y / 720) * (x < 820 && y < 380 ? 0.35 : 1) }));
   P.add(ring(P, r, { a: [1760, 700], c: [1230, 30], b: [520, -150], w: 100, n: 1050, glow: 1.35, fs, bright: 8 }));
   // city glow on the horizon
   P.add(ell(950, 640, 900, 200, P.glow("#7b8ee0"), 0.5));

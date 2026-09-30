@@ -2117,7 +2117,8 @@ function cgLGood(): string {
       [1, "#e8e0f0"],
     ]) +
     lg(`${p}-ray`, 0, 1, 0, 0, [
-      [0, "#fff8e8", 0.6],
+      [0, "#fff8e8", 0.32],
+      [0.6, "#fff8e8", 0.08],
       [1, "#fff8e8", 0],
     ]) +
     lg(`${p}-his`, 1, 0, 0, 1, [
@@ -2331,9 +2332,10 @@ function cgSisters(): string {
   b += cup(470, 560) + cup(560, 556);
   b += `<path d="M470 530c4 -10 -4 -16 0 -26M560 526c4 -10 -4 -16 0 -26" fill="none" stroke="#f4f1ea" stroke-width="1.6" opacity=".35" ${A(p, "up", 0, 5)}/>`;
   // ── embrace: Isolde (right, facing left, taller) holds Estelle (left, facing right) ──
-  const ix = 846, iy = 270, is = 0.66, irot = -22;
-  const ex = 770, ey = 320, es = 0.58, erot = -4;
+  const ix = 846, iy = 326, is = 0.66, irot = -22;
+  const ex = 770, ey = 376, es = 0.58, erot = -4;
   const rimR = "#e08a9a", rimE = "#f6d8b8";
+  b += `<ellipse cx="800" cy="668" rx="230" ry="20" fill="#0a0406" opacity=".6"/>`;
   let fg = `<g filter="url(#${p}-b)" opacity=".45">` + place(ix, iy, is, 0, true, `<path d="${F_BODY}" fill="none" stroke="#ffc0c8" stroke-width="12"/>`) + place(ex, ey, es, 0, false, `<path d="${F_BODY}" fill="none" stroke="#ffe8d0" stroke-width="12"/>`) + `</g>`;
   // Isolde gown (wider skirt) + high lace collar
   fg += place(ix, iy, is, 0, true, rim("M-16 68C-34 78 -46 96 -48 122C-50 162 -46 200 -48 240C-70 320 -110 400 -140 480H150C120 400 80 320 50 250C44 210 46 180 42 160C38 130 32 110 24 96C18 86 14 78 12 68Z", `url(#${p}-gown)`, rimR, -2.4, 1));
@@ -2346,16 +2348,16 @@ function cgSisters(): string {
   const tp = wpt(26, 16, ix, iy, is, irot, true);
   fg += `<path d="M${n1(tp[0])} ${n1(tp[1])}q3 6 0 9q-3 -3 0 -9z" fill="#fff" ${A(p, "tw", 0, 3)}/>`;
   // Isolde's arms around Estelle's back
-  fg += rim("M860 360C820 368 770 380 730 398C714 406 708 420 718 428C756 414 806 404 852 400Z", `url(#${p}-gown)`, rimR, 1, -1.6);
-  fg += rim("M864 430C820 440 772 452 736 466C722 472 720 486 732 490C772 480 820 470 862 466Z", `url(#${p}-gown)`, rimR, 1, -1.6);
-  fg += `<path d="M718 428c-8 -2 -12 -10 -6 -16c6 -2 12 2 12 8z" fill="#c8a0a8"/>`;
-  b += `<g mask="url(#${p}-m)">${fg}</g>`;
+  fg += rim("M858 414C830 408 800 410 780 424C762 436 748 454 738 476C734 486 744 492 750 484C762 466 776 450 792 442C812 434 834 434 856 440Z", `url(#${p}-gown)`, rimR, 1.4, -1.4);
+  fg += rim("M866 500C840 492 810 494 786 506C768 516 752 530 740 544C734 552 742 560 750 554C764 542 780 530 798 524C820 518 842 518 864 522Z", `url(#${p}-gown)`, rimR, 1.4, -1.4);
+  fg += `<path d="M738 476c-8 4 -14 14 -8 20c8 2 14 -4 16 -12z" fill="#c8a0a8"/><path d="M740 544c-8 4 -12 14 -6 18c8 2 12 -4 14 -10z" fill="#c8a0a8"/>`;
+  b += `<g mask="url(#${p}-m)"><g transform="translate(800 664) scale(1.38) translate(-800 -664)">${fg}</g></g>`;
   // the fallen teacup and the spill on the floor (right-front)
   b += `<ellipse cx="1010" cy="648" rx="110" ry="16" fill="#8a4a2a" opacity=".7"/><ellipse cx="1000" cy="646" rx="70" ry="9" fill="#b8742e" opacity=".4"/>`;
   b += `<g transform="rotate(-100 980 636)"><path d="M964 616H996L992 634Q980 640 968 634Z" fill="#f4f1ea"/><path d="M995 620q10 2 6 10q-4 4 -8 2" fill="none" stroke="#f4f1ea" stroke-width="2.4"/></g>`;
   b += `<ellipse cx="1060" cy="650" rx="26" ry="6" fill="#dcd6cb" transform="rotate(12 1060 650)"/><path d="M1040 630l6 -4M1078 628l-4 -6" stroke="#f4f1ea" stroke-width="2"/>`;
   const defs2 = defs + lg(`${p}-mg`, 0, 0, 0, 1, [[0, "#fff"], [0.8, "#fff"], [1, "#fff", 0]]) +
-    `<mask id="${p}-m" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900"><rect x="0" y="0" width="1600" height="680" fill="url(#${p}-mg)"/></mask>`;
+    `<mask id="${p}-m" maskUnits="userSpaceOnUse" x="0" y="0" width="1600" height="900"><rect x="0" y="0" width="1600" height="720" fill="url(#${p}-mg)"/></mask>`;
   return svg(p, defs2 + rg(`${p}-vg`, [[0, "#000", 0], [1, "#000", 0.7]], 0.5, 0.45, 0.75), b + `<rect width="1600" height="900" fill="url(#${p}-vg)"/>`);
 }
 
