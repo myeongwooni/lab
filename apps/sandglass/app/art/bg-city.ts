@@ -428,6 +428,151 @@ function facade(A: Art, x0: number, x1: number, top: number, seed: number, side:
   return s;
 }
 
+
+// ───────────────────────── 원근 도구 ─────────────────────────
+
+type P3 = [number, number, number];
+/** 한 점 원근: 월드 (x, y, z) → 화면 */
+function persp(VX: number, VY: number, F: number) {
+  return (x: number, y: number, z: number): P2 => [VX + (x * F) / z, VY + (y * F) / z];
+}
+type Proj = (x: number, y: number, z: number) => P2;
+const quad = (P: Proj, q: P3[]) => pr(q.map(([x, y, z]) => P(x, y, z)));
+/** 벽면(x 고정) 위의 사각형 */
+const wallX = (P: Proj, x: number, y0: number, y1: number, z0: number, z1: number) => quad(P, [[x, y0, z0], [x, y0, z1], [x, y1, z1], [x, y1, z0]]);
+/** 바닥/천장(y 고정) 위의 사각형 */
+const flatY = (P: Proj, y: number, x0: number, x1: number, z0: number, z1: number) => quad(P, [[x0, y, z0], [x1, y, z0], [x1, y, z1], [x0, y, z1]]);
+/** 정면(z 고정) 사각형 */
+const frontZ = (P: Proj, z: number, x0: number, x1: number, y0: number, y1: number) => quad(P, [[x0, y0, z], [x1, y0, z], [x1, y1, z], [x0, y1, z]]);
+
+/** 한글 비슷한 추상 글자 블록 (읽히지 않는 획 모양). 가로 n칸 */
+function glyphs(r: Rnd, x: number, y: number, w: number, h: number, n: number): string {
+  let d = "";
+  const cw = w / n;
+  for (let i = 0; i < n; i++) {
+    const gx = x + i * cw + cw * 0.14, gw = cw * 0.72, gy = y + h * 0.12, gh = h * 0.76;
+    const k = r();
+    const L = (a: number, b: number, c: number, e: number) => `M${f(gx + gw * a)} ${f(gy + gh * b)}L${f(gx + gw * c)} ${f(gy + gh * e)}`;
+    if (k < 0.3) d += L(0, 0.1, 0.5, 0.1) + L(0.5, 0.1, 0.5, 0.5) + L(0.8, 0, 0.8, 1) + L(0.8, 0.45, 1, 0.45) + L(0.1, 0.7, 0.6, 0.7);
+    else if (k < 0.55) d += L(0.1, 0.05, 0.9, 0.05) + L(0.5, 0.05, 0.5, 0.4) + L(0, 0.45, 1, 0.45) + `M${f(gx + gw * 0.3)} ${f(gy + gh * 0.75)}a${f(gw * 0.2)} ${f(gh * 0.2)} 0 1 0 ${f(gw * 0.4)} 0a${f(gw * 0.2)} ${f(gh * 0.2)} 0 1 0 ${f(-gw * 0.4)} 0`;
+    else if (k < 0.8) d += L(0.1, 0.1, 0.1, 0.6) + L(0.1, 0.6, 0.6, 0.6) + L(0.75, 0, 0.75, 0.9) + L(0.2, 0.9, 0.9, 0.9);
+    else d += L(0, 0.2, 0.55, 0.2) + L(0.28, 0.2, 0, 0.8) + L(0.28, 0.2, 0.55, 0.8) + L(0.85, 0, 0.85, 1);
+  }
+  return rel(d);
+}
+
+/** 도시 스카이라인 실루엣: 사각 빌딩 + 안테나 + 창 불빛 점 */
+function skyline(A: Art, r: Rnd, x0: number, x1: number, base: number, hMin: number, hMax: number, wMin: number, wMax: number, color: string, winC = "", winP = 0, ws = 2): string {
+  let d = "";
+  const win: P2[] = [];
+  for (let x = x0; x < x1; ) {
+    const w = wMin + r() * (wMax - wMin);
+    const h = hMin + Math.pow(r(), 1.6) * (hMax - hMin);
+    d += rp(x, base - h, w, h + 2);
+    if (r() < 0.15) d += rp(x + w * 0.45, base - h - h * 0.25, 2, h * 0.25);
+    if (r() < 0.25) d += rp(x + w * 0.15, base - h - 6, w * 0.7, 8);
+    if (winC)
+      for (let yy = base - h + 6; yy < base - 4; yy += ws * 3.2)
+        for (let xx = x + 3; xx < x + w - 2; xx += ws * 3) if (r() < winP) win.push([xx, yy]);
+    x += w * (0.7 + r() * 0.5);
+  }
+  return A.path(d, color) + (win.length ? dots(win, winC, ws, 0.9) : "");
+}
+
+// ───────────────────────── 서울: 병원 옥상의 새벽 ─────────────────────────
+
+function rooftop(): string {
+  const A = new Art("rooftop");
+  const r = mulberry32(2202);
+  const blur = A.blur("soft", 8);
+  const HOR = 586;
+  A.add(A.rect(0, 0, 1600, 900, A.v("sky", 0, HOR, [[0, "#15234a"], [0.26, "#2a4274"], [0.5, "#5871a8"], [0.7, "#a791b6"], [0.86, "#eeb49e"], [1, "#ffdcaa"]])));
+  A.add(starField(r, 70, 0, 0, 1600, 230, "#e8eeff", 0.8));
+  // 그믐달
+  A.add(A.ell(360, 140, 60, 60, A.glowG("moon", "#dfe6ff"), 0.4) + A.path("M372 112a30 30 0 1 0 14 52a24 24 0 1 1-14-52z", "#f6f3ff"));
+  // 새벽빛 번짐
+  A.add(A.ell(1000, HOR, 900, 330, A.glowG("dawn", "#ffc294", "#fff3da"), 0.95));
+  A.add(streaks(r, 10, 0, 1600, 300, 470, "#ffc2ae", 0.6, 9));
+  A.add(streaks(r, 8, 100, 1500, 170, 300, "#8f8fc4", 0.55, 6));
+  A.add(cloud(r, 1320, 250, 420, 60, { lit: "#ffd0b8", mid: "#b99bbd", shade: "#7b76a8" }, -1, 0.85));
+  A.add(cloud(r, 250, 330, 360, 50, { lit: "#f7b8a8", mid: "#a58db8", shade: "#6f6d9e" }, 1, 0.75));
+  // 먼 산
+  A.add(A.path(ridge(r, -20, 1620, 30, (x) => HOR - 50 - 60 * bell(x, 250, 220) - 40 * bell(x, 1420, 260) - 12 * Math.sin(x / 70), 3), "#9c8cb2", 'opacity=".7"'));
+  // 남산과 탑
+  A.add(A.path(ridge(r, 480, 900, 20, (x) => HOR - 70 * bell(x, 690, 150) - 8, 1), "#6f6a98"));
+  A.add(A.path("M687 516h6v-150h-6zM682 370h16l-2-14h-12zM684 356h12v-10h-12z", "#5d5a88") + A.path(ep(690, 382, 18, 8), "#6b6896") + A.line("M690 346v-40", "#5d5a88", 2));
+  A.add(`<circle cx="690" cy="305" r="3" fill="#ff6a6a" ${A.a("tw", 0, 2.4)}/>`);
+  // 스카이라인 (먼 → 가까운)
+  A.add(skyline(A, r, -10, 1610, HOR, 20, 70, 18, 46, "#8a7fa8", "#ffe6b8", 0.05));
+  A.add(skyline(A, r, -10, 1610, HOR + 6, 30, 120, 26, 70, "#5e5a86", "#ffd98a", 0.08, 2.2));
+  // 강
+  A.add(A.rect(0, HOR + 6, 1600, 70, A.v("river", HOR + 6, HOR + 76, [[0, "#f2c2a2"], [0.5, "#b99ab4"], [1, "#6a6892"]])));
+  for (let i = 0; i < 12; i++) A.add(A.rect(700 + gauss(r) * 260, HOR + 12 + r() * 50, 30 + r() * 60, 2, "#fff0d6", A.a("sh", r() * 7, 5 + r() * 3)));
+  // 다리
+  A.add(A.path(`M-10 ${HOR + 20}Q800 ${HOR + 8} 1610 ${HOR + 22}v7Q800 ${HOR + 15} -10 ${HOR + 27}z`, "#48456e"));
+  let piers = "";
+  for (let x = 40; x < 1600; x += 120) piers += rp(x, HOR + 24, 8, 26);
+  A.add(A.path(piers, "#48456e", 'opacity=".85"'));
+  const lamps: P2[] = [];
+  for (let x = 10; x < 1600; x += 40) lamps.push([x, HOR + 15 + 0.000008 * (x - 800) ** 2]);
+  A.add(dots(lamps, "#ffe2a6", 3.2));
+  // 가까운 강변 건물
+  A.add(skyline(A, r, -10, 1610, 690, 40, 100, 50, 110, "#3a3860", "#ffd98a", 0.06, 3));
+  // 옥상: 난간 벽
+  A.add(A.rect(0, 640, 1600, 70, A.v("para", 640, 710, [[0, "#9d93a8"], [0.2, "#77708c"], [1, "#4d4866"]])));
+  A.add(A.rect(0, 636, 1600, 6, "#ffd4b0"));
+  // 철망 난간
+  let bars = "";
+  for (let x = 6; x < 1600; x += 16) bars += `M${x} 530v106`;
+  A.add(A.line(bars, "#2f2d4c", 2.2, 'opacity=".75"'));
+  A.add(A.line("M0 530H1600M0 584H1600", "#2f2d4c", 4) + A.line("M0 528H1600", "#ffcaa8", 1.4, 'opacity=".7"'));
+  // 바닥
+  A.add(A.rect(0, 710, 1600, 190, A.v("floor", 710, 900, [[0, "#6f6882"], [1, "#3a3650"]])));
+  A.add(A.line("M0 760H1600M0 830H1600M300 710L120 900M800 710V900M1300 710L1480 900", "#8a8098", 1.5, 'opacity=".4"'));
+  A.add(A.ell(1000, 780, 360, 30, "#ffcfa8", 0.22, `filter="${blur}"`));
+  // 계단실 (왼쪽)
+  A.add(A.rect(40, 330, 380, 390, A.lin("stw", 0, 0, 1, 0, [[0, "#57527a"], [1, "#8a82a6"]])));
+  A.add(A.rect(30, 318, 400, 16, "#a59cbc") + A.rect(30, 330, 400, 5, "#3e3a5e"));
+  A.add(A.rect(250, 470, 110, 250, "#5f7a86") + A.rect(256, 476, 98, 244, "#6e8a94") + A.rect(338, 590, 8, 22, "#c9c1a8"));
+  A.add(A.rect(270, 440, 70, 22, "#2fa86a") + A.path("M296 444l6 0 0 5-3 3 4 7-3 0-3-5-3 4-3 0 5-8z", "#e8fff0"));
+  A.add(A.ell(305, 451, 60, 40, A.glowG("exit", "#6affb0"), 0.35, A.a("br", 0, 5)));
+  A.add(A.rect(90, 400, 90, 60, "#2f2d4c") + A.rect(96, 406, 78, 48, A.v("win", 406, 454, [[0, "#ffe4b8"], [1, "#f3b478"]])));
+  A.add(A.ell(215, 410, 14, 14, "#fff4d6") + A.ell(215, 410, 90, 90, A.glowG("bulb", "#ffd9a0"), 0.55, A.a("fl", 1, 3)));
+  // 자판기 (주인공)
+  const vx = 570, vy = 400, vw = 150, vh = 320;
+  A.add(A.ell(vx + vw / 2, 720, 260, 40, A.glowG("vspill", "#dff2ff"), 0.6));
+  A.add(A.ell(vx + vw / 2, 540, 250, 250, A.glowG("vglow", "#cfe8ff"), 0.45, A.a("br", 2, 6)));
+  A.add(A.rect(vx + vw, vy + 6, 26, vh - 6, "#7a2632") + A.rect(vx, vy, vw, vh, A.lin("vb", 0, 0, 1, 0, [[0, "#b73644"], [0.7, "#d44a52"], [1, "#a82e3c"]])));
+  A.add(A.rect(vx + 10, vy + 12, vw - 20, 34, "#f6f0ea") + A.path(glyphs(r, vx + 22, vy + 18, 90, 22, 4), "none", 'stroke="#c23a3a" stroke-width="3" stroke-linecap="round"'));
+  A.add(A.rect(vx + 12, vy + 56, vw - 44, 150, A.v("vwin", vy + 56, vy + 206, [[0, "#ffffff"], [1, "#dcecff"]])));
+  const canC = ["#3a6fd0", "#e8b030", "#3aa060", "#d04a4a", "#8a5ad0", "#f07a30"];
+  let cans = "";
+  for (let row = 0; row < 3; row++) {
+    for (let k = 0; k < 5; k++) {
+      const cx = vx + 20 + k * 19, cy = vy + 66 + row * 48;
+      cans += A.rect(cx, cy, 13, 26, canC[(row * 5 + k * 2) % 6], 'rx="3"') + A.rect(cx + 2, cy + 3, 3, 18, "#ffffff", 'opacity=".5"');
+    }
+  }
+  A.add(cans);
+  A.add(A.line(`M${vx + 16} ${vy + 96}h${vw - 52}M${vx + 16} ${vy + 144}h${vw - 52}M${vx + 16} ${vy + 192}h${vw - 52}`, "#9aa6c0", 2));
+  let btn: P2[] = [];
+  for (let row = 0; row < 3; row++) for (let k = 0; k < 5; k++) btn.push([vx + 26 + k * 19, vy + 99 + row * 48]);
+  A.add(dots(btn, "#ff5a5a", 4));
+  A.add(A.rect(vx + vw - 28, vy + 70, 16, 60, "#3a1a22", 'rx="3"') + A.rect(vx + vw - 25, vy + 78, 10, 6, "#8affc0"));
+  A.add(A.rect(vx + 24, vy + 250, vw - 48, 36, "#2a1418", 'rx="4"') + A.rect(vx, vy, 4, vh, "#ff9aa0", 'opacity=".6"'));
+  // 캔커피 하나 (난간 위)
+  A.add(A.rect(868, 616, 12, 22, "#c9a470", 'rx="2"') + A.rect(868, 622, 12, 7, "#6a3a24"));
+  // 물탱크 + 실외기 (오른쪽)
+  A.add(A.rect(1200, 430, 300, 210, A.lin("tank", 0, 0, 1, 0, [[0, "#8f88b0"], [0.35, "#d8cde0"], [1, "#6c6690"]])));
+  A.add(A.ell(1350, 430, 150, 22, "#bfb4d0") + A.line("M1200 480H1500M1200 540H1500M1200 600H1500", "#6c6690", 3, 'opacity=".6"'));
+  A.add(A.line("M1220 640v70M1480 640v70M1300 640v70M1400 640v70", "#3a3656", 8));
+  A.add(A.rect(1040, 620, 120, 90, "#9e98b2") + A.rect(1050, 630, 70, 70, "#6c6690") + `<circle cx="1085" cy="665" r="28" fill="#4d4866"/><path d="M1085 641v48M1061 665h48" stroke="#8a84a4" stroke-width="3"/>`);
+  // 역광 테두리 빛 (새벽 쪽)
+  A.add(A.line("M1500 432V640M1160 620V710M420 330V720", "#ffc9a4", 2.5, 'opacity=".8"'));
+  finish(A, "#1a1838", 0.45, 0.35);
+  return A.svg();
+}
+
 // ───────────────────────── 태양의 분수 광장 ─────────────────────────
 
 function plaza(): string {
@@ -512,4 +657,5 @@ function plaza(): string {
 
 export const CITY_BACKGROUNDS: Record<string, string> = {
   plaza: plaza(),
+  rooftop: rooftop(),
 };

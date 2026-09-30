@@ -142,6 +142,9 @@ interface HeadOpt {
   hairShade?: string; // colour of shadow cast on face by bangs
   extraUnder?: string; // drawn after face, before bangs (ears, horns behind etc)
   extraOver?: string; // drawn after bangs
+  side?: string; // side locks in front of the face
+  hi?: string; // angel-ring highlight colour
+  strands?: string; // strand line colour
   extraBack?: string; // drawn before back hair
 }
 
@@ -227,8 +230,8 @@ function head(o: HeadOpt): string {
     s += `<g opacity="${bl}"><ellipse cx="28" cy="44" rx="16" ry="7" fill="${sk.blush}" opacity=".55"/><ellipse cx="-36" cy="44" rx="9" ry="6" fill="${sk.blush}" opacity=".5"/>` +
       ln("M20 42l-4 6M28 42l-4 6M36 42l-4 6", sk.blush, 1.4, 0.9) + `</g>`;
   // eyes
-  s += eye(o, 22, 8, 40, 44, 1, iN, o.near);
-  s += eye(o, -31, 8, 26, 42, -1, iF, o.far);
+  s += eye(o, 22, 8, 44, 50, 1, iN, o.near);
+  s += eye(o, -32, 8, 29, 48, -1, iF, o.far);
   // brows
   const b = o.brow ?? 0;
   const bc = o.browColor ?? o.lash;
@@ -255,6 +258,9 @@ function head(o: HeadOpt): string {
     s += `<path d="M34 34C36 50 30 64 32 80C34 90 40 92 42 84C44 70 38 52 34 34Z" fill="#dff2ff" opacity=".75" stroke="#9cc4e6" stroke-width="1"/><circle cx="37" cy="94" r="3.4" fill="#e6f4ff" opacity=".85"/>`;
   s += o.extraUnder ?? "";
   if (o.front) s += cel(o.front, o.frontFill ?? "#222", o.hairLine ?? "#000", 2.4);
+  if (o.hi) s += `<path d="${hiBand(-50, 64, -74, 12, 8, 11)}" fill="${o.hi}" opacity=".85"/>`;
+  if (o.strands) s += ln("M-40 -70C-44 -50 -44 -30 -40 -10M-14 -84C-16 -60 -14 -40 -10 -20M14 -86C16 -60 22 -40 24 -20M44 -76C48 -56 54 -40 60 -24", o.strands, 1.6, 0.7);
+  if (o.side) s += cel(o.side, o.frontFill ?? "#222", o.hairLine ?? "#000", 2.2);
   s += o.extraOver ?? "";
   return s;
 }
@@ -619,11 +625,11 @@ export function __faceTest(): string {
   const p = "ft";
   const heads: string[] = [];
   const cfg: [Partial<HeadOpt>, Skin, Iris, Iris, string, string, string][] = [
-    [{ mouth: "soft" }, SK_SEOHA, IR_BROWN, IR_BROWN, SEOHA_BACK, SEOHA_FRONT, "#252330"],
-    [{ mouth: "n", open: 0.8 }, SK_ELIOS, IR_RED, IR_GOLD, ELIOS_BACK, ELIOS_FRONT, "#1d1c28"],
-    [{ mouth: "part", brow: 1 }, SK_RAZEL, IR_AMBER, IR_AMBER, RAZEL_BACK, RAZEL_FRONT, "#a88158"],
-    [{ mouth: "smile" }, SK_CECI, IR_SKY, IR_SKY, OLD_BACK, CECI_FRONT, "#f0c860"],
-    [{ mouth: "sad", open: 0.6, gaunt: true, brow: 0.8 }, SK_OLD, IR_ASHRED, IR_ASH, OLD_BACK, OLD_FRONT, "#e8e4e0"],
+    [{ mouth: "soft", side: SEOHA_SIDE, hi: "#5a5874", strands: "#46445c" }, SK_SEOHA, IR_BROWN, IR_BROWN, SEOHA_BACK, SEOHA_FRONT, "#252330"],
+    [{ mouth: "n", open: 0.8, side: ELIOS_SIDE, hi: "#4a4c6e", extraOver: ln(ELIOS_WHITE, "#f4f2f6", 3) }, SK_ELIOS, IR_RED, IR_GOLD, ELIOS_BACK, ELIOS_FRONT, "#1d1c28"],
+    [{ mouth: "part", brow: 1, side: RAZEL_STRANDS, hi: "#d8b88a" }, SK_RAZEL, IR_AMBER, IR_AMBER, RAZEL_BACK, RAZEL_FRONT, "#a88158"],
+    [{ mouth: "smile", side: CECI_SIDE, hi: "#fff2b8" }, SK_CECI, IR_SKY, IR_SKY, CECI_BACK, CECI_FRONT, "#f0c860"],
+    [{ mouth: "sad", open: 0.6, gaunt: true, brow: 0.8, side: OLD_SIDE, hi: "#ffffff" }, SK_OLD, IR_ASHRED, IR_ASH, OLD_BACK, OLD_FRONT, "#e8e4e0"],
   ];
   cfg.forEach(([o, sk, a, b2, bk, fr, hc], i) => {
     heads.push(place(170 + i * 315, 330, 1.45, 0, false, head({ p, id: "t" + i, skin: sk, lash: "#1a1216", near: a, far: b2, back: bk, backFill: hc, front: fr, frontFill: hc, hairLine: "#3a2a2a", ...o } as HeadOpt)));

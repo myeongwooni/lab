@@ -789,7 +789,7 @@ function TitleHourglass({ className }: { className?: string }) {
       <g clipPath="url(#hg-bot)">
         <rect className="hg-fill-bot" x="30" y="162" width="140" height="130" fill="url(#hg-sand)" />
       </g>
-      <line className="hg-stream" x1="100" y1="236" x2="100" y2="40" />
+      <line className="hg-stream" x1="100" y1="200" x2="100" y2="40" />
       <rect x="22" y="14" width="156" height="14" rx="4" fill="url(#hg-frame)" />
       <rect x="22" y="292" width="156" height="14" rx="4" fill="url(#hg-frame)" />
       <path d="M30 28 V292 M170 28 V292" stroke="url(#hg-frame)" strokeWidth="4" />
