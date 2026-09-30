@@ -101,7 +101,7 @@ function A(p: string, kind: string, delay = 0, dur?: number): string {
 }
 
 function svg(c: Ctx, body: string, extraCss = ""): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><defs>${c.defs}</defs>${css(c.p, extraCss)}${body}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><defs>${c.defs}</defs>${css(c.p, extraCss)}<g stroke-linejoin="round" stroke-linecap="round">${body}</g></svg>`;
 }
 
 function place(x: number, y: number, s: number, rot: number, flip: boolean, inner: string): string {
@@ -112,7 +112,7 @@ function place(x: number, y: number, s: number, rot: number, flip: boolean, inne
 function dots(pts: Pt[], w: number, color: string, op: number): string {
   const q = pts.filter(([x, y]) => x > -10 && x < 1610 && y > -10 && y < 910);
   if (!q.length) return "";
-  return `<path d="${q.map(([x, y]) => `M${Math.round(x)} ${Math.round(y)}h0`).join("")}" stroke="${color}" stroke-width="${w}" stroke-linecap="round" opacity="${op}"/>`;
+  return `<path d="${q.map(([x, y]) => `M${Math.round(x)} ${Math.round(y)}h0`).join("")}" stroke="${color}" stroke-width="${w}" opacity="${op}"/>`;
 }
 
 /** 4점 반짝임 */
@@ -123,10 +123,10 @@ function spark(x: number, y: number, s: number): string {
 
 /** 셀 도형: 채움 + 색 외곽선 */
 function cel(d: string, fill: string, line: string, w = 2.6, extra = ""): string {
-  return `<path d="${d}" fill="${fill}" stroke="${line}" stroke-width="${w}" stroke-linejoin="round"${extra}/>`;
+  return `<path d="${d}" fill="${fill}" stroke="${line}" stroke-width="${w}"${extra}/>`;
 }
 function ln(d: string, color: string, w = 2, op = 1): string {
-  return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"${op < 1 ? ` opacity="${op}"` : ""}/>`;
+  return `<path d="${d}" fill="none" stroke="${color}" stroke-width="${w}"${op < 1 ? ` opacity="${op}"` : ""}/>`;
 }
 function fl(d: string, fill: string, op = 1): string {
   return `<path d="${d}" fill="${fill}"${op < 1 ? ` opacity="${op}"` : ""}/>`;
@@ -283,7 +283,7 @@ function face(c: Ctx, o: FaceO): string {
   if (o.thin) inner += fl("M30 40C26 58 18 72 8 82C18 66 24 52 26 36Z", sk.s) + fl("M-44 40C-40 56 -34 66 -28 74C-38 68 -46 56 -48 44Z", sk.s);
   if (o.rim && sk.rim) inner += `<path d="${d}" fill="none" stroke="${sk.rim}" stroke-width="7" transform="translate(${o.rim[0]} ${o.rim[1]})" opacity=".95"/>`;
   s += `<g clip-path="${cp}">${inner}</g>`;
-  s += `<path d="${d}" fill="none" stroke="${sk.l}" stroke-width="2.6" stroke-linejoin="round"/>`;
+  s += `<path d="${d}" fill="none" stroke="${sk.l}" stroke-width="2.6"/>`;
   // 볼 홍조
   const bl = o.blush ?? 0.45;
   if (bl > 0) {
@@ -352,7 +352,7 @@ function locks(ls: Lock[], rootY: number, h: Hair, w = 2.2, shadeSide = 1): stri
     const my = (rootY + ty) / 2;
     const q = ty - rootY;
     const d = `M${n1(rx - wd)} ${rootY}C${n1(rx - wd + bend)} ${n1(my)} ${n1(tx + bend * 0.4 - wd * 0.2)} ${n1(ty - q * 0.25)} ${n1(tx)} ${n1(ty)}C${n1(tx + wd * 0.5 + bend * 0.4)} ${n1(ty - q * 0.3)} ${n1(rx + wd + bend)} ${n1(my)} ${n1(rx + wd)} ${rootY}`;
-    s += `<path d="${d}" fill="${h.b}" stroke="${h.l}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    s += `<path d="${d}" fill="${h.b}" stroke="${h.l}" stroke-width="${w}"/>`;
     const k = shadeSide;
     sh += `M${n1(rx + k * wd * 0.1)} ${rootY}C${n1(rx + k * wd * 0.2 + bend)} ${n1(my + 6)} ${n1(tx + k * 2 + bend * 0.3)} ${n1(ty - q * 0.3)} ${n1(tx)} ${n1(ty - 3)}C${n1(tx + k * wd * 0.4 + bend * 0.4)} ${n1(ty - q * 0.35)} ${n1(rx + k * wd * 0.85 + bend)} ${n1(my + 6)} ${n1(rx + k * wd * 0.8)} ${rootY}Z`;
   }
@@ -460,7 +460,7 @@ function razelMarks(): string {
   }
   return (
     fl("M-38 70C-30 100 -10 116 10 106C30 92 44 72 50 54C40 80 20 98 2 100C-14 100 -28 90 -38 70Z", "#b88670", 0.35) +
-    `<path d="${pts.map(([x, y]) => `M${n1(x)} ${n1(y)}h0`).join("")}" stroke="#8a5a44" stroke-width="1.8" stroke-linecap="round" opacity=".45"/>` +
+    `<path d="${pts.map(([x, y]) => `M${n1(x)} ${n1(y)}h0`).join("")}" stroke="#8a5a44" stroke-width="1.8" opacity=".45"/>` +
     ln("M-40 36L28 44", "#c8806e", 4) + ln("M-40 36L28 44", "#f4c8b4", 1.6) + ln("M-22 32L-26 42M-4 36L-8 46M12 38L8 48", "#c8806e", 1.4)
   );
 }
@@ -802,8 +802,8 @@ function cgEGood(): string {
   b += dots(st, 2, "#fff6e0", 0.7);
   b += `<circle cx="${SUNX}" cy="${SUNY}" r="1000" fill="${c.glow("#fff0c0", 0.95, 0.42)}"/>`;
   b += rays(SUNX, SUNY, 20, 1700, -Math.PI * 0.95, -Math.PI * 0.02, 0.018, "#fff6d8", 0.15, r);
-  b += cloudBank(r, -40, 1640, 470, 90, "#e0909a", "#fff0c0", 0.5, 100);
-  b += cloudBank(r, -40, 1640, 560, 70, "#f2b28e", "#fff6d8", 0.6, 80);
+  b += cloudBank(r, -40, 1640, 470, 90, "#e0909a", "#fff0c0", 0.5, 150);
+  b += cloudBank(r, -40, 1640, 560, 70, "#f2b28e", "#fff6d8", 0.6, 120);
   b += `<circle cx="${SUNX}" cy="${SUNY}" r="170" fill="${c.glow("#ffffff", 1, 0.8)}"/><circle cx="${SUNX}" cy="${SUNY}" r="64" fill="#fffdf2"/>`;
   // 아래 솔레인(금빛 안개 속 지붕)
   let city = "M0 900V700";
@@ -846,7 +846,7 @@ function cgEGood(): string {
   b += place(654, 578, 1.08, 30, false, hand(GLOVE.b, GLOVE.s, GLOVE.l));
   b += ln("M1060 470C1000 520 900 560 800 580C740 590 690 586 650 574", rimC, 3.5, 0.8);
   // 그녀의 손: 그의 소매를 잡는다
-  b += place(846, 612, 1.05, -70, false, hand(skS.b, skS.s, skS.l));
+  b += place(836, 612, 1.05, 60, false, hand(skS.b, skS.s, skS.l));
   // ── 재 → 금빛 모래: 오른쪽 아래 재가 둘 사이를 지나 해 쪽으로 ──
   const band = (t: number): Pt => [1300 - t * 900 + gauss(r) * 60, 820 - t * 560 - Math.sin(t * 3.1) * 120 + gauss(r) * 50];
   const grey: Pt[] = [];

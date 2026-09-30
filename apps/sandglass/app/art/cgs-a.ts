@@ -380,7 +380,7 @@ const OLD_FRONT = bangs(
   [[-66, -26], [-62, 34], [-50, -44], [-44, 6], [-30, -60], [-24, -10], [-12, -64], [-8, -24], [4, -66], [16, -14], [24, -64], [36, 2], [44, -56], [60, 18], [66, -40], [78, 46], [80, -20]],
   CROWN,
 );
-const OLD_SIDE = lock([-54, -30], [-74, 20], [-60, 80], [-78, 150], 18) + lock([62, -24], [82, 30], [68, 100], [88, 170], 20) + lock([-8, -40], [-20, -10], [-10, 20], [-22, 44], 8);
+const OLD_SIDE = lock([-54, -30], [-92, 30], [-44, 90], [-84, 170], 18) + lock([62, -24], [96, 40], [54, 100], [92, 180], 20) + lock([-8, -40], [-20, -10], [-10, 20], [-22, 44], 8);
 
 /** horn (local coords, base at 0,0, pointing up/back) */
 function horn(fill: string, line: string, hi: string, s = 1, crumble = false): string {
@@ -673,6 +673,7 @@ function ashMask(glowId: string, glowOp: number): string {
   const eh = "M4 4C10 -10 30 -14 42 -4C36 8 18 12 4 4ZM-14 4C-18 -8 -34 -12 -46 -4C-40 8 -26 10 -14 4Z";
   o += `<path d="${eh}" fill="#18161c" stroke="#5a5460" stroke-width="1.6"/>`;
   o += `<ellipse cx="23" cy="-2" rx="9" ry="5" fill="url(#${glowId})" opacity="${glowOp}"/><ellipse cx="-30" cy="-1" rx="7" ry="4" fill="url(#${glowId})" opacity="${glowOp}"/>`;
+  if (glowOp > 0.5) o += `<circle cx="22" cy="-1" r="2.2" fill="#ece8e0"/><circle cx="-30" cy="0" r="1.8" fill="#ece8e0"/>`;
   // faint painted tear line + cracks
   o += ln("M22 10C22 30 20 48 22 64", "#a8a0a6", 1.6, 0.6);
   o += ln("M40 -90L30 -60L38 -40L26 -18M30 -60L50 -54M-20 -96L-12 -70L-24 -52M-12 -70L4 -64M-48 30L-34 44L-38 62M58 30L44 40", "#5e5660", 1.8);
