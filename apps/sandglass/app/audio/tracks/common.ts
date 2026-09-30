@@ -35,11 +35,13 @@ export const MINOR_HARM =
   "Bbmaj7:4 Gm7:4 Em7b5:4 A7sus4:2 A7:2 | Bb:4 Gm:4 Dm/A:2 A7:2 Dm:4";
 
 /** 3/4 form of the tune (each 4/4 bar becomes two waltz bars), pickup at -1 */
-export const MAIN3 =
+export const MAIN3_A =
   "F#5:2 E5:1 | D5:2 A4:1 | B4:2 C#5:1 | D5:2 G5:1 | F#5:2 E5:1 | E5:2 D5:.5 E5:.5 | E5:5 A4:.5 D5:.5 | " +
-  "F#5:2 E5:1 | D5:2 A4:1 | D5:2 C#5:1 | B4:2 F#5:1 | B5:2 A5:1 | G5:2 E5:1 | G5:1 F#5:1 E5:1 | D5:3 | " +
+  "F#5:2 E5:1 | D5:2 A4:1 | D5:2 C#5:1 | B4:2 F#5:1 | B5:2 A5:1 | G5:2 E5:1 | G5:1 F#5:1 E5:1 | D5:3";
+export const MAIN3_B =
   "F#5:1 B5:2 | B5:2 A5:1 | A5:2 G5:1 | F#5:2 D5:1 | G5:1 B5:1 E6:1 | _:2 D6:1 | D6:3 | C#6:2 A5:1 | " +
   "D6:2 C#6:1 | B5:2 F#5:1 | B5:2 A5:1 | G5:2 Bb5:1 | A5:3 | F#5:2 E5:1 | D5:6";
+export const MAIN3 = MAIN3_A + " | " + MAIN3_B;
 export const MAIN3_LEN = 96;
 
 /** the head motif alone (bars 1-2 of the 4/4 tune) — the "dawn" figure */

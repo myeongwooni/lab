@@ -583,7 +583,7 @@ function cgFall(): string {
     open: 0.92, look: [-0.8, -0.8], brow: 0.7, browColor: "#231c24", mouth: "part", blush: 0.7, tears: 1,
     shadeSide: 1, rim: "#fff1c4", noNeck: false,
     back: hairFall, backFill: `url(#${p}-hair)`, hairLine: "#0e0c14",
-    front: bangs([-62, -20], [[-66, -64], [-44, -34], [-40, -86], [-22, -44], [-12, -96], [0, -44], [14, -100], [18, -46], [40, -96], [38, -40], [64, -80], [58, -30], [80, -40]], "C84 0 84 -60 58 -92C30 -122 -34 -124 -58 -90C-72 -70 -70 -40 -62 -20"),
+    front: SEOHA_FRONT,
     frontFill: `url(#${p}-hair)`, hairShade: "#e3ad9c",
     extraOver:
       `<path d="${hiBand(-50, 60, -80, 16, 8, 9)}" fill="#6c6a8e" opacity=".85"/>` +

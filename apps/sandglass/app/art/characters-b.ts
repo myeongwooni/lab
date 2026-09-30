@@ -113,7 +113,10 @@ class B {
   defs: string[] = [];
   out: string[] = [];
   n = 0;
-  constructor(public p: string) {}
+  p: string;
+  constructor(p: string) {
+    this.p = p;
+  }
   id(s: string): string {
     return `${this.p}-${s}`;
   }
@@ -420,9 +423,13 @@ const MAN: Geo = {
 
 const EAR: Pt[] = [[60, -14], [72, -24], [83, -12], [82, 12], [74, 30], [60, 30]];
 
+function neck(b: B, tf: string, g: Geo, S: Pal): void {
+  b.pc(sp(g.neck), S, sp(g.neckSh), tf);
+}
+
 /** 목 + 얼굴 피부 + 코 + 셀 음영. 얼굴 id를 돌려준다. */
 function headBase(b: B, tf: string, g: Geo, S: Pal, o: { bang?: Pt[]; ear?: boolean; noNeck?: boolean; nose?: string } = {}): string {
-  if (!o.noNeck) b.pc(sp(g.neck), S, sp(g.neckSh), tf);
+  if (!o.noNeck) neck(b, tf, g, S);
   if (o.ear) {
     b.pc(sp(EAR), S, "", tf, 2.2);
     b.g(tf, ln("M67 -8Q76 -12 76 2Q74 14 68 20", S.l, 1.4, op(0.8)));
@@ -479,9 +486,7 @@ const lili: Char = {
     // 뒷머리
     b.pc(sp([[-78, -70], [-62, -122], [-8, -142], [52, -136], [92, -104], [108, -50], [110, 10], [104, 60], [94, 98, 1], [78, 82], [62, 100, 1], [48, 72], [-50, 60], [-66, 94, 1], [-76, 72], [-88, 92, 1], [-92, 40], [-88, -20]]), { ...LH, b: LH.s }, "", HT);
     // 목, 몸
-    headBase(b, HT, GIRL, SKIN, { noNeck: false, bang: [], nose: undefined });
-    b.out.pop(); b.out.pop(); b.out.pop(); b.out.pop();
-    // (위 네 줄은 목만 남기기 위해 얼굴을 뒤로 미룬다 — 아래에서 다시 그림)
+    neck(b, HT, GIRL, SKIN);
     const skirtSh = sp([[330, 590], [384, 590], [420, 760], [440, 1000], [360, 1000], [352, 760]]);
     b.pc(sp([[232, 580], [372, 580], [398, 660], [426, 780], [444, 1000, 1], [172, 1000, 1], [186, 780], [206, 660]]), BLACK, skirtSh);
     b.pc(sp([[286, 426], [250, 438], [222, 456], [208, 490], [214, 540], [230, 592], [372, 592], [388, 540], [398, 490], [392, 458], [368, 440], [336, 428]]), BLACK, sp([[340, 430], [400, 450], [410, 600], [350, 600], [358, 520]]));

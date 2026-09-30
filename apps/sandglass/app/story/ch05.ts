@@ -458,13 +458,13 @@ export default String.raw`
 세어야 했다. 버릇이니까. 하나.
 @se bell
 둘은 종소리가 대신 셌다. 위에서, 아주 멀리서.
+@flag know_cecilia
 @death d_bell
 
 @bg between white 2000
 @bgm between
 @fx sand
 @amb none
-@flag know_cecilia
 @show ashking normal center
 모래가 위로 떨어지고 있었다. 나는 잿더미 위에 누운 채 한참 동안 일어나지 않았다.
 옆구리를 만졌다. 구멍이 없었다. 여기서는 늘 없다.

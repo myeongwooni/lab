@@ -2,7 +2,7 @@
 
 import { Score, harm, voicing, above, Seg, pc } from "../theory";
 import type { Track } from "../track";
-import { MAIN, MAIN_HARM, clock, drums, oompah, trans, tuneHarm } from "./common";
+import { MAIN, clock, drums, trans, tuneHarm } from "./common";
 
 // ================================================================ seoul 「4시 44분」 — solo piano, A minor, 56 bpm
 // Three repeated notes (four, four, four) and a lot of silence.
@@ -11,8 +11,6 @@ export function seoul(): Track {
   const s = new Score(2101);
   const HA = "Fmaj7:4 Em7:4 Dm7:4 Esus4:2 E:2 Fmaj7:4 C/G:4 Dm7:4 Esus4:2 E7:2";
   const HB = "Am:4 Fmaj7:4 G:4 C/E:4 Fmaj7:4 Em7:4 Dm7:4 Esus4:2 E:2";
-  const HC = "Fmaj7:4 Em7:4 Dm7:4 Am/C:4 Fmaj7#11? :4";
-  void HC;
   const HA2 = "Fmaj7:4 Em7:4 Dm7:4 Am/C:4 Fmaj7:4 Em7:4 Dm7:4 Esus4:4";
   const MA = "r:1 E5:1 E5:1 E5:1 | D5:3 r:1 | r:1 F5:1 E5:1 D5:1 | C5:2 B4:2 | r:1 E5:1 E5:1 E5:1 | G5:3 E5:1 | D5:1.5 C5:.5 A4:2 | B4:4";
   const MB = "r:2 A5:1 G5:1 | E5:3 C5:1 | D5:2 G5:2 | E5:4 | A5:2 G5:1 F5:1 | G5:2 E5:2 | F5:1 E5:1 D5:1 C5:1 | B4:2 G#4:2";
@@ -524,4 +522,3 @@ export function festival(): Track {
   };
 }
 
-export { MAIN_HARM };

@@ -494,8 +494,8 @@ function rooftop(): string {
   A.add(A.ell(1000, HOR, 900, 330, A.glowG("dawn", "#ffc294", "#fff3da"), 0.95));
   A.add(streaks(r, 10, 0, 1600, 300, 470, "#ffc2ae", 0.6, 9));
   A.add(streaks(r, 8, 100, 1500, 170, 300, "#8f8fc4", 0.55, 6));
-  A.add(cloud(r, 1320, 250, 420, 60, { lit: "#ffd0b8", mid: "#b99bbd", shade: "#7b76a8" }, -1, 0.85));
-  A.add(cloud(r, 250, 330, 360, 50, { lit: "#f7b8a8", mid: "#a58db8", shade: "#6f6d9e" }, 1, 0.75));
+  A.add(streaks(r, 7, 900, 1600, 200, 290, "#7b76a8", 0.8, 16) + streaks(r, 7, 920, 1600, 206, 292, "#ffc8b0", 0.7, 7));
+  A.add(streaks(r, 6, 0, 600, 280, 360, "#6f6d9e", 0.7, 14) + streaks(r, 6, 0, 600, 286, 362, "#f7b8a8", 0.65, 6));
   // 먼 산
   A.add(A.path(ridge(r, -20, 1620, 30, (x) => HOR - 50 - 60 * bell(x, 250, 220) - 40 * bell(x, 1420, 260) - 12 * Math.sin(x / 70), 3), "#9c8cb2", 'opacity=".7"'));
   // 남산과 탑

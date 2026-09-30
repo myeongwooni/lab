@@ -373,7 +373,7 @@ const FACE_SLIM: Pt[] = [
 function faceBase(b: B, fc: Face, outline: Pt[], earPts: Pt[] | null, neck: Pt[], extraShade = ""): string {
   // 목
   b.add(P(sp(neck), fc.skin, fc.skinLine, 2));
-  b.add(P(sp([[-16, 58], [4, 56], [26, 44], [40, 30], [36, 84], [-12, 80]]), fc.skinSh));
+  b.add(P(sp([[-12, 58], [4, 56], [26, 44], [27, 34], [26, 84], [-10, 78]]), fc.skinSh));
   // 귀
   if (earPts) {
     b.add(P(sp(earPts), fc.skin, fc.skinLine, 2));
@@ -385,7 +385,7 @@ function faceBase(b: B, fc: Face, outline: Pt[], earPts: Pt[] | null, neck: Pt[]
   b.add(`<use href="#${fid}" fill="${fc.skin}" stroke="${fc.skinLine}" stroke-width="2.2"/>`);
   const fcid = b.clip("fc", `<use href="#${fid}"/>`);
   // 얼굴 가까운 쪽 셀 그림자
-  b.add(`<g clip-path="${fcid}">${P(sp([[36, -60], [42, -20], [40, 8], [30, 32], [12, 52], [60, 60], [60, -60]]), fc.skinSh)}${extraShade}</g>`);
+  b.add(`<g clip-path="${fcid}">${P(sp([[40, -60], [43.5, -12], [41, 10], [33, 28], [19, 44], [2, 56], [-8, 64, 1], [60, 70, 1], [60, -60, 1]]), fc.skinSh)}${extraShade}</g>`);
   // 코
   b.add(P(sp([[-9, 10], [-13, 20], [-16, 26.5, 1], [-10, 27], [-8, 24]]), fc.skinSh));
   b.add(S(sp([[-12, 18], [-16, 26], [-11, 27.5]], false), fc.skinLine, 1.5));
@@ -419,7 +419,7 @@ function eliosHead(b: B, ex: Ex, o: { hair: Tone; fc: Face; bare?: boolean }): v
   ], H);
   faceBase(b, fc, FACE_SLIM,
     [[47, -6], [56, -12], [70, -28, 1], [66, -8], [63, 10], [58, 26], [47, 31]],
-    [[-16, 48], [-14, 116], [32, 116], [31, 34]]);
+    [[-12, 48], [-10, 110], [25, 110], [27, 34]]);
   drawFace(b, fc, ex);
   // 윗머리 덩어리
   const cap = b.def(sp([[-60, -14], [-64, -52], [-44, -86], [-6, -99], [36, -93], [62, -70], [70, -36], [64, -4], [48, -40], [0, -56], [-44, -44]]));
@@ -441,10 +441,9 @@ function eliosHead(b: B, ex: Ex, o: { hair: Tone; fc: Face; bare?: boolean }): v
     [[[12, -90], [15, -60], [18, -32], [15, -10]], 22],
     [[[-14, -90], [-22, -58], [-26, -28], [-22, -2]], 22],
     [[[0, -92], [-4, -60], [-6, -28], [-2, 8]], 20],
-    [[[-44, -80], [-30, -76], [-12, -80]], 14],
-    [[[30, -92], [8, -86], [-8, -90]], 12],
   ], H);
-  sheen(b, "sh", [cap, ...bangs], band(-60, 64, -70, 12, 12, 10), H.h!);
+  b.add(P(sp([[-58, -44], [-50, -78], [-6, -99], [36, -93], [62, -70], [68, -44], [44, -68], [20, -76], [0, -78], [-22, -76], [-42, -64]]), H.b), S(sp([[-60, -40], [-50, -79], [-6, -100], [36, -94], [62, -71], [69, -42]], false), H.l, 2));
+  sheen(b, "sh", [cap, ...bangs], band(-58, 64, -62, 10, 14, 14), H.h!);
   // 흰 가닥(인물의 오른쪽 = 관객 왼쪽 앞머리)
   if (!o.bare) {
     const W: Tone = { b: "#eef0f8", s: "#b6bbd0", l: "#6f7590" };
@@ -514,7 +513,7 @@ function elios(b: B, ex: Ex): void {
   // 머리
   b.add(`<g transform="translate(300 168)">`);
   const fc: Face = {
-    ...SKIN_PALE, lash: "#1a1420", brow: "#221e2c", browW: 4.6,
+    ...SKIN_PALE, lash: "#1a1420", brow: "#221e2c", browW: 5.6,
     eyes: [EYE_NEAR, EYE_FAR], iris: [IRIS_RED, IRIS_GOLD], brows: BROWS,
     mouth: [-10, 44, 8, 12], lip: "#a45b5e",
   };
