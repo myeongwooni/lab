@@ -716,16 +716,28 @@ function cgAshking(): string {
   b += dots(ash, 2.4, "#e8e2da", 0.45);
 
   // throne of ash + broken clocks behind him
-  b += `<path d="M470 900C460 700 480 520 520 400C540 330 560 280 600 250C640 300 660 250 700 200C740 250 760 210 800 170C840 210 860 250 900 200C940 250 960 300 1000 250C1040 280 1060 330 1080 400C1120 520 1140 700 1130 900Z" fill="#2a2830" stroke="#4e4a56" stroke-width="3"/>`;
-  b += `<path d="M520 400C540 330 560 280 600 250C640 300 660 250 700 200C740 250 760 210 800 170C840 210 860 250 900 200C940 250 960 300 1000 250C1040 280 1060 330 1080 400C1000 360 900 340 800 340C700 340 600 360 520 400Z" fill="#46424e"/>`;
+  b += `<path d="M540 900C530 700 540 500 560 360C570 280 580 220 600 160C620 210 640 190 660 130C690 180 710 150 740 110C760 150 780 120 800 80C820 120 840 150 860 110C890 150 910 180 940 130C960 190 980 210 1000 160C1020 220 1030 280 1040 360C1060 500 1070 700 1060 900Z" fill="#232129" stroke="#6a6672" stroke-width="3"/>`;
+  // the great broken clock behind his head, a pale halo
+  b += `<circle cx="800" cy="300" r="300" fill="url(#${p}-sun)" opacity=".75"/>`;
+  b += `<circle cx="800" cy="300" r="190" fill="#d9d3c8" stroke="#8a6a45" stroke-width="10"/><circle cx="800" cy="300" r="172" fill="none" stroke="#a89880" stroke-width="3"/>`;
+  let tk = "";
+  for (let i = 0; i < 60; i++) {
+    const a2 = (i / 60) * Math.PI * 2;
+    const r0 = i % 5 === 0 ? 146 : 160;
+    tk += `M${n1(800 + Math.cos(a2) * r0)} ${n1(300 + Math.sin(a2) * r0)}L${n1(800 + Math.cos(a2) * 168)} ${n1(300 + Math.sin(a2) * 168)}`;
+  }
+  b += ln(tk, "#6a5a48", 3);
+  b += `<path d="M800 300L1000 180L990 120L920 140Z" fill="#2d2a35"/>`;
+  b += ln("M800 300L960 110M800 300L1000 190M800 300L640 420L600 400M640 420L660 470", "#4a3e36", 3);
+  b += ln("M800 300L700 150M800 300L920 400", "#3a2e2a", 7);
   let ck = "", hands = "";
-  const cks: [number, number, number, number][] = [[560, 330, 0.9, -20], [1040, 330, 0.9, 25], [640, 230, 0.55, 10], [960, 230, 0.55, -8], [800, 200, 0.7, 0], [520, 500, 0.8, -40], [1080, 500, 0.8, 30], [700, 280, 0.45, 60], [900, 280, 0.45, -50]];
+  const cks: [number, number, number, number][] = [[580, 520, 0.8, -20], [1020, 520, 0.8, 25], [600, 180, 0.4, 10], [1000, 180, 0.4, -8], [570, 380, 0.55, -40], [1030, 380, 0.55, 30]];
   for (const [x, y, s, rot] of cks) {
     ck += useAt(`${p}-ck`, x, y, s, rot, 0.92, ` opacity=".85"`);
     hands += clockHands(x, y, s, r() * 12, r() * 60);
   }
   b += ck + ln(hands, "#2a2420", 4);
-  b += ln("M540 300L580 350L570 380M1020 300L1060 360M790 170L810 230L796 250", "#1a1820", 2.4);
+  
   // floating stopped gears
   const gear = (x: number, y: number, R: number, n: number): string => {
     let d = "";
@@ -751,11 +763,11 @@ function cgAshking(): string {
   }
   b += ln(rag, "#5a5662", 2.4, 0.8);
   b += `<path d="M560 540C600 490 660 460 720 452L700 520C650 540 600 580 560 640Z" fill="#5a5662" opacity=".7"/>`;
+  b += ln("M490 800C490 700 510 610 560 540C600 490 660 460 720 452M1110 800C1110 700 1090 610 1040 540C1000 490 940 460 880 452", "#e8e2d8", 3, 0.8);
   // long white hair falling forward over the shoulders
   b += cel(lock([700, 330], [640, 420], [640, 520], [600, 640], 70, 0.85) + lock([900, 330], [960, 420], [970, 520], [1010, 650], 74, 0.85), `url(#${p}-hair)`, "#625a6c", 2.4);
   // left forearm resting across the knee (right side of image)
   b += cel("M900 600C960 610 1020 640 1060 690C1070 720 1040 740 1010 730C960 700 910 680 860 670Z", "#34313a", line, 2.6);
-  b += cel("M860 660C840 650 820 660 816 676C812 692 830 704 850 700C870 698 880 680 872 666Z", "#d6d0cc", "#5e4e54", 2.2);
   // reaching hand toward the viewer (palm up, offered), fingertips crumbling to ash
   b += cel("M760 560C720 600 690 640 670 690L730 720C750 680 780 640 820 610Z", "#34313a", line, 2.6);
   b += ln("M672 690L730 720", "#5a5662", 5);
@@ -772,7 +784,7 @@ function cgAshking(): string {
   // head: tilted, leaning toward the viewer, masked
   const HX = 800, HY = 320, HS = 1.55, HR = 6;
   const headK = head({
-    p, id: "k", skin: SK_OLD, lash: "#222", near: IR_ASH, far: IR_ASH, noFeatures: true, noNeck: true, shadeSide: 1,
+    p, id: "k", skin: SK_OLD, lash: "#222", near: IR_ASH, far: IR_ASH, noFeatures: true, shadeSide: 1, rim: "#fffaf0",
     back: OLD_BACK, backFill: `url(#${p}-hair)`, hairLine: "#625a6c",
     front: OLD_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#a8a0a4",
     side: OLD_SIDE, hi: "#ffffff",
@@ -780,6 +792,8 @@ function cgAshking(): string {
     extraUnder: ashMask(`${p}-eye`, 0.9),
   });
   b += place(HX, HY, HS, HR, false, headK);
+  b += cel("M728 480C760 520 850 522 884 486L910 560C860 580 750 580 700 560Z", "#2c2932", "#16141a", 2.6);
+  b += cel(lock([730, 480], [700, 540], [700, 600], [680, 680], 40, 0.9) + lock([872, 480], [906, 540], [910, 600], [930, 690], 42, 0.9), `url(#${p}-hair)`, "#625a6c", 2.2);
   // eye-hole glow, pulsing faintly
   b += `<g ${A(p, "pu", 0, 4.5)}><circle cx="836" cy="320" r="26" fill="url(#${p}-eye)" opacity=".55"/><circle cx="752" cy="316" r="20" fill="url(#${p}-eye)" opacity=".45"/></g>`;
 

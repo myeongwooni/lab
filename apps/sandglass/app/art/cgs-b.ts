@@ -192,6 +192,7 @@ interface FaceO {
   extra?: string; // 얼굴 위(흉터·금·수염)
   noNearEye?: boolean; // 안대 등으로 가림
   nearEyeExtra?: string; // 가까운 눈 위 장식(시계 문자판)
+  noNeck?: boolean;
 }
 
 const FACE_F =
@@ -256,6 +257,15 @@ function eyeUnit(c: Ctx, ir: Iris, lash: string, skin: Skin, mode: EyeMode, male
   return s;
 }
 
+/** 목(얼굴 로컬 좌표). 옷깃이 아랫부분을 덮는다. */
+function neck(sex: "f" | "m" | "c", sk: Skin): string {
+  const male = sex === "m";
+  return (
+    cel(male ? "M-22 80L-26 170H40L36 60Z" : "M-16 80L-18 160H30L28 64Z", sk.b, sk.l, 2.4) +
+    fl(male ? "M-24 96C0 116 20 100 36 76L38 124C14 136 -8 130 -25 122Z" : "M-17 94C0 110 16 96 28 78L29 116C10 124 -6 120 -17 112Z", sk.s)
+  );
+}
+
 /** 얼굴(피부·눈·코·입·볼). 머리카락은 따로. */
 function face(c: Ctx, o: FaceO): string {
   const male = o.sex === "m";
@@ -264,10 +274,7 @@ function face(c: Ctx, o: FaceO): string {
   const eyes = o.eyes ?? "open";
   const cp = c.clip(d);
   let s = "";
-  // 목
-  const neck = male ? "M-20 80L-24 190H38L34 60Z" : "M-16 80L-18 180H30L28 64Z";
-  s += cel(neck, sk.b, sk.l, 2.4);
-  s += fl(male ? "M-22 96C0 116 20 100 34 76L36 120C14 132 -8 126 -23 118Z" : "M-17 94C0 110 16 96 28 78L29 116C10 124 -6 120 -17 112Z", sk.s);
+  if (!o.noNeck) s += neck(o.sex, sk);
   // 얼굴 면 + 음영 + 림 라이트(얼굴 모양으로 잘라서)
   let inner = `<path d="${d}" fill="${sk.b}"/>`;
   const sh = o.shade ?? 1;
@@ -345,7 +352,7 @@ function locks(ls: Lock[], rootY: number, h: Hair, w = 2.2, shadeSide = 1): stri
     const my = (rootY + ty) / 2;
     const q = ty - rootY;
     const d = `M${n1(rx - wd)} ${rootY}C${n1(rx - wd + bend)} ${n1(my)} ${n1(tx + bend * 0.4 - wd * 0.2)} ${n1(ty - q * 0.25)} ${n1(tx)} ${n1(ty)}C${n1(tx + wd * 0.5 + bend * 0.4)} ${n1(ty - q * 0.3)} ${n1(rx + wd + bend)} ${n1(my)} ${n1(rx + wd)} ${rootY}`;
-    s += `<path d="${d}Z" fill="${h.b}"/><path d="${d}" fill="none" stroke="${h.l}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
+    s += `<path d="${d}" fill="${h.b}" stroke="${h.l}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"/>`;
     const k = shadeSide;
     sh += `M${n1(rx + k * wd * 0.1)} ${rootY}C${n1(rx + k * wd * 0.2 + bend)} ${n1(my + 6)} ${n1(tx + k * 2 + bend * 0.3)} ${n1(ty - q * 0.3)} ${n1(tx)} ${n1(ty - 3)}C${n1(tx + k * wd * 0.4 + bend * 0.4)} ${n1(ty - q * 0.35)} ${n1(rx + k * wd * 0.85 + bend)} ${n1(my + 6)} ${n1(rx + k * wd * 0.8)} ${rootY}Z`;
   }
@@ -643,6 +650,17 @@ function rays(cx: number, cy: number, n: number, len: number, a0: number, a1: nu
   return fl(d, color, op);
 }
 
+/** 반짝임 기호(defs에 한 번) → <use> */
+function sparkDef(c: Ctx): string {
+  const id = `${c.p}-sp`;
+  if (!c.defs.includes(`id="${id}"`)) c.defs += `<path id="${id}" d="${spark(0, 0, 10)}"/>`;
+  return id;
+}
+function sparkAt(c: Ctx, x: number, y: number, s: number, fill: string, anim = ""): string {
+  const id = sparkDef(c);
+  return `<g transform="translate(${Math.round(x)} ${Math.round(y)}) scale(${n1(s / 10)})"><use href="#${id}" fill="${fill}"${anim ? " " + anim : ""}/></g>`;
+}
+
 /** 금빛 모래알 흐름(정적) + 반짝임(일부 움직임) */
 function sandStream(c: Ctx, r: () => number, pts: () => Pt, n: number, anim: number, kind = "up", color = "#ffe08a"): string {
   const L: Pt[][] = [[], [], []];
@@ -650,7 +668,7 @@ function sandStream(c: Ctx, r: () => number, pts: () => Pt, n: number, anim: num
   let s = dots(L[0], 2.2, color, 0.75) + dots(L[1], 3.4, "#fff3c4", 0.9) + dots(L[2], 5, "#ffffff", 0.95);
   for (let i = 0; i < anim; i++) {
     const [x, y] = pts();
-    s += `<path d="${spark(x, y, 4 + r() * 6)}" fill="#fff6d0" ${A(c.p, i % 2 ? kind : "tw", r() * 6, 5 + r() * 4)}/>`;
+    s += sparkAt(c, x, y, 4 + r() * 6, "#fff6d0", A(c.p, i % 2 ? kind : "tw", r() * 6, 5 + r() * 4));
   }
   return s;
 }
@@ -701,51 +719,54 @@ const CLOAK_G: Cloth = { b: "#2f5a46", s: "#1c3a2c", l: "#0e2018" };
 const DRESS: Cloth = { b: "#f4ead4", s: "#d8c6a4", l: "#8a7452" };
 const GLOVE: Cloth = { b: "#24222a", s: "#141218", l: "#050408" };
 
+/** 남자 상반신 윤곽(로컬: 왼쪽을 봄). 어깨 ±150, 목 밑 y≈120. */
+function maleTorsoD(bot: number): string {
+  return `M-30 116C-64 134 -104 144 -128 170C-152 198 -162 248 -168 318L-180 ${bot}H196L186 318C182 248 176 194 156 170C126 140 84 130 44 114Z`;
+}
+/** 여자 상반신 윤곽 */
+function femTorsoD(bot: number): string {
+  return `M-22 118C-50 132 -80 140 -98 160C-114 182 -120 228 -122 298L-130 ${bot}H150L144 298C140 228 134 182 120 162C100 140 70 130 32 116Z`;
+}
+
 /** 엘리오스 코트 상반신(로컬: 왼쪽을 봄). 높은 깃, 놋쇠 단추 두 줄, 흰 셔츠 깃, 회중시계 줄. */
-function eliosTorso(rimC: string | null, len = 700): string {
+function eliosTorso(rimC: string | null, bot = 800): string {
   const C = COAT;
-  const bot = 100 + len;
-  let s = cel(`M-44 150C-96 164 -146 196 -166 262L-196 ${bot}H206L186 262C166 198 116 166 54 150Z`, C.b, C.l, 2.8);
-  // 그림자 면(가까운 쪽 옆구리)
-  s += fl(`M120 190C150 210 176 240 186 262L206 ${bot}H96C110 ${bot - 200} 118 360 120 190Z`, C.s);
-  s += fl(`M-60 176C-40 260 -30 360 -40 ${bot}H-110C-96 360 -90 260 -60 176Z`, C.s, 0.6);
-  // 앞여밈 선 + 단추
-  s += ln(`M-6 170C0 300 -4 420 -2 ${bot}`, C.l, 2.4);
+  let s = cel(maleTorsoD(bot), C.b, C.l, 2.8);
+  s += fl(`M110 150C140 164 164 180 176 210C184 250 186 290 188 330L196 ${bot}H110C120 ${bot - 200} 126 400 120 250Z`, C.s);
+  s += fl(`M-70 150C-50 240 -44 360 -50 ${bot}H-120C-104 360 -100 240 -70 150Z`, C.s, 0.55);
+  s += ln(`M-4 160C2 300 -2 420 0 ${bot}`, C.l, 2.4);
   let bt = "";
   for (let i = 0; i < 5; i++) {
-    const y = 214 + i * 70;
-    bt += `<circle cx="-40" cy="${y}" r="7" fill="#d8a848" stroke="#6a4814" stroke-width="2"/><circle cx="-42" cy="${y - 2}" r="2.4" fill="#fff0c0"/>`;
-    bt += `<circle cx="36" cy="${y + 4}" r="7" fill="#c89838" stroke="#6a4814" stroke-width="2"/>`;
+    const y = 200 + i * 66;
+    bt += `<circle cx="-36" cy="${y}" r="7" fill="#d8a848" stroke="#6a4814" stroke-width="2"/><circle cx="-38" cy="${y - 2}" r="2.4" fill="#fff0c0"/>`;
+    bt += `<circle cx="34" cy="${y + 4}" r="7" fill="#c89838" stroke="#6a4814" stroke-width="2"/>`;
   }
   s += bt;
-  // 회중시계 줄
-  s += ln("M-40 284C-20 310 10 316 36 300", "#f0c860", 3) + ln("M-40 284C-20 310 10 316 36 300", "#8a6418", 1, 0.6);
-  // 높은 깃
-  s += cel("M-34 108L-44 168C-10 182 30 180 60 164L50 98C20 112 -8 114 -34 108Z", C.b, C.l, 2.6);
-  s += fl("M24 110L50 98L60 164C46 172 34 176 22 178Z", C.s);
-  s += cel("M-30 110C-6 118 22 116 48 102L50 110C24 124 -6 126 -32 118Z", "#f6f4f0", "#8a8aa0", 1.6);
-  if (rimC) s += ln(`M-44 150C-96 164 -146 196 -166 262L-196 ${bot}`, rimC, 5, 0.9);
+  s += ln("M-36 266C-16 296 14 302 34 286", "#f0c860", 3.2) + `<circle cx="34" cy="286" r="5" fill="#f0c860" stroke="#8a6418" stroke-width="1.5"/>`;
+  // 높은 깃(턱 밑에서 목을 감싼다)
+  s += cel("M-30 110L-40 158C-6 172 34 170 62 152L54 92C24 106 -4 114 -30 110Z", C.b, C.l, 2.6);
+  s += fl("M26 104L54 92L62 152C48 162 36 166 24 168Z", C.s);
+  s += cel("M-28 110C-2 116 26 108 52 94L54 102C28 118 -2 124 -30 118Z", "#f6f4f0", "#8a8aa0", 1.6);
+  s += ln("M-60 132C-80 140 -100 150 -114 164", C.l, 1.6, 0.6);
+  if (rimC) s += ln(`M-30 116C-64 134 -104 144 -128 170C-152 198 -162 248 -168 318L-180 ${bot}`, rimC, 5, 0.9);
   return s;
 }
 
 /** 서하 상반신(로컬: 왼쪽을 봄): 생성색 원피스 + 짙은 녹색 망토(후드 뒤로). */
-function seohaTorsoFantasy(rimC: string | null, len = 600): string {
-  const bot = 100 + len;
-  let s = "";
-  // 망토(뒤 → 어깨)
-  s += cel(`M-40 130C-100 150 -140 200 -150 280L-170 ${bot}H190L160 280C150 200 110 150 50 128Z`, CLOAK_G.b, CLOAK_G.l, 2.6);
-  s += fl(`M110 170C140 200 156 240 160 280L190 ${bot}H100C110 ${bot - 200} 116 320 110 170Z`, CLOAK_G.s);
-  // 원피스 앞판
-  s += cel(`M-40 150C-54 220 -60 300 -64 ${bot}H80C74 300 66 220 56 146C30 160 -14 162 -40 150Z`, DRESS.b, DRESS.l, 2.2);
-  s += fl(`M30 156C44 230 52 320 56 ${bot}H80C74 300 66 220 56 146Z`, DRESS.s);
-  // 둥근 깃 + 끈
-  s += cel("M-40 148C-20 176 30 176 56 144C40 168 -18 170 -40 148Z", "#fffaf0", DRESS.l, 1.6);
-  s += ln("M-4 170C-6 190 -10 210 -14 228M14 170C18 190 22 206 28 222", "#8a6a3a", 2);
-  // 망토 여밈(놋쇠 걸쇠) + 후드 주름
-  s += cel("M-46 136C-66 150 -76 170 -78 196C-60 186 -48 168 -40 150Z", CLOAK_G.b, CLOAK_G.l, 2) + cel("M56 132C80 146 92 168 96 196C76 184 64 166 54 146Z", CLOAK_G.b, CLOAK_G.l, 2);
-  s += `<circle cx="-42" cy="154" r="7" fill="#d8a848" stroke="#6a4814" stroke-width="1.8"/><circle cx="56" cy="150" r="7" fill="#d8a848" stroke="#6a4814" stroke-width="1.8"/>`;
-  s += cel("M-30 110C-60 120 -80 140 -90 160C-40 150 20 150 90 156C80 132 64 116 50 106C20 120 -4 120 -30 110Z", CLOAK_G.s, CLOAK_G.l, 2.2);
-  if (rimC) s += ln(`M50 128C110 150 150 200 160 280L190 ${bot}`, rimC, 5, 0.9);
+function seohaTorsoFantasy(rimC: string | null, bot = 800): string {
+  let s = cel(femTorsoD(bot), CLOAK_G.b, CLOAK_G.l, 2.6);
+  s += fl(`M96 146C120 160 136 190 142 240L150 ${bot}H90C100 ${bot - 200} 108 360 96 146Z`, CLOAK_G.s);
+  // 원피스 앞판(망토 사이)
+  s += cel(`M-40 150C-54 220 -58 300 -60 ${bot}H70C66 300 60 220 52 146C28 158 -14 160 -40 150Z`, DRESS.b, DRESS.l, 2.2);
+  s += fl(`M26 156C40 230 46 320 50 ${bot}H70C66 300 60 220 52 146Z`, DRESS.s);
+  s += cel("M-38 146C-18 172 28 172 52 142C38 158 -16 160 -38 146Z", "#fffaf0", DRESS.l, 1.6);
+  s += ln("M-2 166C-4 186 -8 206 -12 224M14 166C18 186 22 202 28 218", "#8a6a3a", 2);
+  // 망토 깃 + 걸쇠
+  s += cel("M-44 132C-66 148 -76 170 -78 198C-60 186 -48 168 -40 150Z", CLOAK_G.b, CLOAK_G.l, 2) + cel("M54 128C78 142 90 166 94 196C74 184 62 166 52 146Z", CLOAK_G.b, CLOAK_G.l, 2);
+  s += `<circle cx="-40" cy="152" r="7" fill="#d8a848" stroke="#6a4814" stroke-width="1.8"/><circle cx="54" cy="148" r="7" fill="#d8a848" stroke="#6a4814" stroke-width="1.8"/>`;
+  // 뒤로 넘긴 후드
+  s += cel("M40 112C70 116 100 130 116 152C92 146 70 140 50 138Z", CLOAK_G.s, CLOAK_G.l, 2);
+  if (rimC) s += ln(`M-22 118C-50 132 -80 140 -98 160C-114 182 -120 228 -122 298L-130 ${bot}`, rimC, 5, 0.9);
   return s;
 }
 
@@ -758,105 +779,91 @@ function hand(fill: string, shade: string, line: string, spread = 0): string {
   );
 }
 
+
 // ────────────────────────────────────────────────────────────────────────────
-// cg_e_good — 금빛 새벽, 여명탑 꼭대기. 흰 가닥이 섞인 엘리오스가 서하를 안고,
-// 둘 사이로 재가 금빛 모래가 되어 날아간다.
+// cg_e_good — 금빛 새벽, 여명탑 꼭대기. 흰 가닥이 섞인 엘리오스가 서하를 뒤에서 안고,
+// 둘 사이로 재가 금빛 모래가 되어 해 쪽으로 날아간다.
 // ────────────────────────────────────────────────────────────────────────────
 //@id cg_e_good cgEGood
 function cgEGood(): string {
   const c = new Ctx("cg-e-good");
-  const p = c.p;
   const r = rng(1001);
-  const sky = c.lgu(0, 0, 0, 900, [
-    [0, "#2c3a78"],
-    [0.22, "#6a5a9a"],
-    [0.42, "#e08a7a"],
-    [0.56, "#f8b858"],
-    [0.66, "#ffe29a"],
+  const SUNX = 300, SUNY = 600;
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [
+    [0, "#27336e"],
+    [0.2, "#5e5696"],
+    [0.4, "#d88a86"],
+    [0.55, "#f8b45a"],
+    [0.66, "#ffe09a"],
     [0.8, "#fff4d4"],
-  ]);
-  let b = `<rect width="1600" height="900" fill="${sky}"/>`;
-  // 별 몇 개(위쪽, 사라지는 밤)
+  ])}"/>`;
   const st: Pt[] = [];
-  for (let i = 0; i < 70; i++) st.push([r() * 1600, Math.pow(r(), 1.8) * 240]);
+  for (let i = 0; i < 60; i++) st.push([600 + r() * 1000, Math.pow(r(), 1.8) * 220]);
   b += dots(st, 2, "#fff6e0", 0.7);
-  // 거대한 해의 빛번짐
-  b += `<circle cx="800" cy="600" r="900" fill="${c.glow("#fff0c0", 0.95, 0.4)}"/>`;
-  b += rays(800, 600, 22, 1400, Math.PI, Math.PI * 2, 0.02, "#fff6d8", 0.16, r);
-  // 먼 구름 띠(금빛 테두리)
-  b += cloudBank(r, -40, 1640, 470, 90, "#e89a86", "#fff0c0", 0.55, 90);
-  b += cloudBank(r, -40, 1640, 560, 70, "#f4b890", "#fff6d8", 0.6, 70);
-  // 해 원반
-  b += `<circle cx="800" cy="610" r="150" fill="${c.glow("#ffffff", 1, 0.8)}"/><circle cx="800" cy="610" r="62" fill="#fffdf2"/>`;
-  // 아래 솔레인 도시(금빛 안개)
+  b += `<circle cx="${SUNX}" cy="${SUNY}" r="1000" fill="${c.glow("#fff0c0", 0.95, 0.42)}"/>`;
+  b += rays(SUNX, SUNY, 20, 1700, -Math.PI * 0.95, -Math.PI * 0.02, 0.018, "#fff6d8", 0.15, r);
+  b += cloudBank(r, -40, 1640, 470, 90, "#e0909a", "#fff0c0", 0.5, 100);
+  b += cloudBank(r, -40, 1640, 560, 70, "#f2b28e", "#fff6d8", 0.6, 80);
+  b += `<circle cx="${SUNX}" cy="${SUNY}" r="170" fill="${c.glow("#ffffff", 1, 0.8)}"/><circle cx="${SUNX}" cy="${SUNY}" r="64" fill="#fffdf2"/>`;
+  // 아래 솔레인(금빛 안개 속 지붕)
   let city = "M0 900V700";
   for (let x = 0; x <= 1600; x += 24 + Math.floor(r() * 30)) {
-    const h = 30 + r() * 60 * (0.4 + Math.abs(x - 800) / 900);
-    city += `L${x} ${n1(700 - h)}L${x + 12} ${n1(690 - h - r() * 16)}`;
+    const h = 30 + r() * 50 * (0.5 + Math.abs(x - 300) / 1200);
+    city += `L${x} ${Math.round(700 - h)}L${x + 12} ${Math.round(690 - h - r() * 16)}`;
   }
-  b += fl(city + "L1600 700V900Z", "#e8a070", 0.55);
-  b += fl("M0 740Q800 700 1600 740V900H0Z", "#f6c898", 0.6);
-  // 왼쪽: 여명탑의 금빛 문자판(해와 달 기호) 일부
-  let dial = `<circle cx="140" cy="360" r="330" fill="none" stroke="#f5c060" stroke-width="18"/><circle cx="140" cy="360" r="300" fill="#fbe8b8" opacity=".25"/><circle cx="140" cy="360" r="300" fill="none" stroke="#fff0c0" stroke-width="4"/>`;
+  b += fl(city + "L1600 700V900Z", "#e49a70", 0.5) + fl("M0 740Q800 700 1600 740V900H0Z", "#f6c898", 0.6);
+  // 오른쪽: 여명탑의 금빛 문자판(해·달 기호)
+  let dial = `<circle cx="1480" cy="330" r="330" fill="#fbe8b8" opacity=".22"/><circle cx="1480" cy="330" r="330" fill="none" stroke="#f5c060" stroke-width="18"/><circle cx="1480" cy="330" r="298" fill="none" stroke="#fff0c0" stroke-width="4"/>`;
   for (let i = 0; i < 12; i++) {
     const a = (i / 12) * Math.PI * 2;
-    const x = 140 + Math.cos(a) * 262;
-    const y = 360 + Math.sin(a) * 262;
-    dial += i % 2 ? `<circle cx="${n1(x)}" cy="${n1(y)}" r="12" fill="#f5c060"/>` : `<path d="M${n1(x - 14)} ${n1(y)}a14 14 0 1 0 22 -11a11 11 0 1 1 -22 11z" fill="#f5c060"/>`;
+    const x = 1480 + Math.cos(a) * 262;
+    const y = 330 + Math.sin(a) * 262;
+    dial += i % 2 ? `<circle cx="${Math.round(x)}" cy="${Math.round(y)}" r="12" fill="#f5c060"/>` : `<path d="M${Math.round(x - 14)} ${Math.round(y)}a14 14 0 1 0 22 -11a11 11 0 1 1 -22 11z" fill="#f5c060"/>`;
   }
-  dial += ln("M140 360L300 240M140 360L150 150", "#c08a30", 10) + `<circle cx="140" cy="360" r="20" fill="#f5c060"/>`;
-  b += `<g opacity=".75">${dial}</g>`;
-  // 오른쪽 탑 기둥(프레임)
-  b += cel("M1460 0H1600V900H1430L1440 300Z", "#e8d8bc", "#a88a64", 3) + fl("M1470 0H1500L1480 900H1440Z", "#fff4dc", 0.6);
+  dial += ln("M1480 330L1300 250M1480 330L1470 110", "#c08a30", 10);
+  b += `<g opacity=".8">${dial}</g>`;
 
-  // ── 인물 ──
-  const skE: Skin = { b: "#fbe0cc", s: "#e3a78f", l: "#9a5446", blush: "#f08a82", rim: "#fff4c8" };
-  const skS: Skin = { b: "#fde4cc", s: "#eaa98c", l: "#a0574a", blush: "#f5847e", rim: "#fff4c8" };
+  // ── 인물: 둘 다 해(왼쪽)를 본다 ──
   const rimC = "#fff2c0";
-  const EX = 720, EY = 280, ES = 1.2;
-  const SX = 890, SY = 380, SS = 1.05;
-  // 뒤쪽 후광(두 사람 윤곽 블룸)
-  b += `<ellipse cx="820" cy="420" rx="360" ry="420" fill="${c.glow("#fff6d0", 0.55, 0.25)}"/>`;
-  // 엘리오스(오른쪽을 봄 = 반전)
+  const skE: Skin = { b: "#fbe2d0", s: "#e2a894", l: "#9a5446", blush: "#f08a82", rim: rimC };
+  const skS: Skin = { b: "#fde6d0", s: "#eaab90", l: "#a0574a", blush: "#f5847e", rim: rimC };
+  const EX = 900, EY = 240, ES = 1.22;
+  const SX = 760, SY = 372, SS = 1.1;
+  b += `<ellipse cx="820" cy="430" rx="380" ry="440" fill="${c.glow("#fff6d0", 0.5, 0.22)}"/>`;
+  // 엘리오스(뒤)
   const eH = hairElios({ streaks: 5 });
-  b += place(EX, EY, ES, 8, true, eH.back);
-  b += place(EX, EY, ES, 0, true, eliosTorso(rimC));
-  b += place(EX, EY, ES, 8, true, face(c, { sex: "m", skin: skE, near: IRIS.gold, far: IRIS.red, lash: "#0a0a14", eyes: "soft", brow: "soft", mouth: "soft", blush: 0.35, rim: [4, -2], shade: -1, tears: 1 }) + elfEar(skE) + eH.front);
-  // 서하(왼쪽을 봄)
+  b += place(EX, EY, ES, -14, false, eH.back);
+  b += place(EX, EY, ES, 0, false, neck("m", skE) + eliosTorso(rimC));
+  b += place(EX, EY, ES, -14, false, elfEar(skE) + face(c, { sex: "m", skin: skE, near: IRIS.red, far: IRIS.gold, lash: "#0a0a14", eyes: "down", brow: "soft", mouth: "soft", blush: 0.35, rim: [5, -2], noNeck: true, tears: 1 }) + eH.front);
+  // 서하(앞)
   const sH = hairSeoha();
-  b += place(SX, SY, SS, 0, false, seohaTorsoFantasy(rimC));
-  b += place(SX, SY, SS, -10, false, sH.back + face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "soft", brow: "soft", mouth: "smile", tears: 2, blush: 0.6, rim: [4, -2], shade: 1, bags: true }) + sH.front);
-  // 서하의 손: 그의 가슴 위
-  b += place(772, 560, 1.05, -20, false, hand(skS.b, skS.s, skS.l));
-  // 그의 팔: 그녀의 등을 감싼다(장갑)
-  b += cel("M980 520C1010 560 1020 640 1000 720C980 800 930 860 880 900H1010C1060 840 1090 740 1080 640C1074 580 1050 530 1010 500Z", COAT.b, COAT.l, 2.8);
-  b += fl("M1030 540C1060 590 1070 680 1050 760C1034 820 1010 860 990 900H1010C1060 840 1090 740 1080 640C1074 580 1054 540 1030 520Z", COAT.s);
-  b += place(1000, 520, 1.1, 150, false, hand(GLOVE.b, GLOVE.s, GLOVE.l));
-  b += ln("M1010 500C1050 530 1074 580 1080 640", rimC, 4, 0.9);
-
-  // ── 재 → 금빛 모래: 둘 사이로 흘러오른다 ──
-  let ash = "";
-  const band = (t: number): Pt => [520 + t * 700 + gauss(r) * 70, 860 - t * 820 + gauss(r) * 50];
+  b += place(SX, SY, SS, 0, false, sH.back + neck("f", skS) + seohaTorsoFantasy(rimC));
+  b += place(SX, SY, SS, 6, false, face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "soft", brow: "soft", mouth: "smile", tears: 2, blush: 0.6, rim: [5, -2], bags: true, noNeck: true }) + sH.front);
+  // 그의 팔: 그녀의 가슴 앞을 가로질러 먼쪽 어깨에(장갑 낀 손)
+  const arm = "M1060 470C1000 520 900 560 800 580C740 590 690 586 650 574L640 628C700 648 770 650 840 636C940 616 1030 580 1100 530Z";
+  b += cel(arm, COAT.b, COAT.l, 2.8) + fl("M1100 530C1030 580 940 616 840 636C770 650 700 648 640 628L644 612C720 630 800 628 880 610C960 590 1040 556 1090 516Z", COAT.s);
+  b += cel("M700 572C690 590 690 612 698 630L650 630C640 610 640 590 648 574Z", "#f6f4f0", "#8a8aa0", 1.6);
+  b += place(654, 578, 1.08, 30, false, hand(GLOVE.b, GLOVE.s, GLOVE.l));
+  b += ln("M1060 470C1000 520 900 560 800 580C740 590 690 586 650 574", rimC, 3.5, 0.8);
+  // 그녀의 손: 그의 소매를 잡는다
+  b += place(846, 612, 1.05, -70, false, hand(skS.b, skS.s, skS.l));
+  // ── 재 → 금빛 모래: 오른쪽 아래 재가 둘 사이를 지나 해 쪽으로 ──
+  const band = (t: number): Pt => [1300 - t * 900 + gauss(r) * 60, 820 - t * 560 - Math.sin(t * 3.1) * 120 + gauss(r) * 50];
   const grey: Pt[] = [];
-  const gold: Pt[] = [];
-  for (let i = 0; i < 260; i++) {
-    const t = Math.pow(r(), 0.9);
-    const pt = band(t);
-    (t < 0.3 ? grey : gold).push(pt);
+  for (let i = 0; i < 90; i++) grey.push(band(r() * 0.3));
+  let ash = dots(grey, 5, "#8a8784", 0.75);
+  for (let i = 0; i < 16; i++) {
+    const [x, y] = band(r() * 0.32);
+    ash += `<path d="M${Math.round(x)} ${Math.round(y)}l${Math.round(6 + r() * 6)} ${Math.round(-3 - r() * 3)}l${Math.round(-2 - r() * 3)} ${Math.round(7 + r() * 4)}z" fill="#9a9690" opacity=".85"/>`;
   }
-  ash += dots(grey, 5, "#8a8784", 0.7);
-  for (let i = 0; i < 18; i++) {
-    const [x, y] = band(r() * 0.3);
-    ash += `<path d="M${n1(x)} ${n1(y)}l${n1(6 + r() * 6)} ${n1(-3 - r() * 3)}l${n1(-2 - r() * 3)} ${n1(7 + r() * 4)}z" fill="#9a9690" opacity=".8"/>`;
-  }
-  b += `<g filter="${c.blur(5)}">${dots(gold.slice(0, 80), 12, "#ffd27a", 0.6)}</g>`;
-  b += ash + sandStream(c, r, () => band(0.25 + r() * 0.75), 220, 26, "up");
-  // 두 얼굴 사이의 빛번짐
-  b += `<circle cx="812" cy="330" r="110" fill="${c.glow("#fff8e0", 0.7, 0.3)}"/>`;
+  const glowPts: Pt[] = [];
+  for (let i = 0; i < 60; i++) glowPts.push(band(0.3 + r() * 0.7));
+  b += `<g filter="${c.blur(6)}">${dots(glowPts, 14, "#ffd27a", 0.55)}</g>`;
+  b += ash + sandStream(c, r, () => band(0.28 + r() * 0.72), 240, 26, "up");
+  b += `<circle cx="770" cy="300" r="120" fill="${c.glow("#fff8e0", 0.55, 0.25)}"/>`;
   // 전경 난간(흰 돌, 금빛 역광)
-  b += cel("M0 820L1600 800V900H0Z", "#d8c4a4", "#8a7050", 3) + fl("M0 820L1600 800V812L0 832Z", "#fff0cc", 0.9);
-  // 전체 색보정: 따뜻한 빛 번짐
-  b += `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#ffd9a0", 0], [0.6, "#ffd9a0", 0.12], [1, "#ffb070", 0.25]])}" style="mix-blend-mode:screen"/>`;
+  b += cel("M0 836L1600 816V900H0Z", "#d8c4a4", "#8a7050", 3) + fl("M0 836L1600 816V828L0 848Z", "#fff0cc", 0.9);
+  b += `<rect width="1600" height="900" fill="${c.lgu(0, 0, 1600, 0, [[0, "#ffd08a", 0.3], [0.5, "#ffd9a0", 0.05], [1, "#8a70c0", 0.12]])}" style="mix-blend-mode:screen"/>`;
   return svg(c, b);
 }
 export const CGS_B: Record<string, string> = {
