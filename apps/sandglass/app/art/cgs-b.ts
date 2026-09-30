@@ -287,8 +287,8 @@ function face(c: Ctx, o: FaceO): string {
   if (o.bags) s += ln("M4 46C12 50 24 50 32 44", "#b58aa0", 2.2, 0.45) + ln("M-46 46C-42 48 -36 48 -32 45", "#b58aa0", 1.8, 0.4);
   // 눈
   const ey = male ? 24 : o.sex === "c" ? 26 : 22;
-  const sy = male ? 0.86 : o.sex === "c" ? 1.08 : 1;
-  const sx = o.sex === "c" ? 1.06 : 1;
+  const sy = male ? 0.95 : o.sex === "c" ? 1.2 : 1.12;
+  const sx = male ? 1.04 : o.sex === "c" ? 1.14 : 1.1;
   const wet = (o.tears ?? 0) > 0;
   if (!o.noNearEye) s += `<g transform="translate(18 ${ey}) scale(${sx} ${sy})">${eyeUnit(c, o.near, o.lash, sk, eyes, male, wet)}</g>`;
   if (o.nearEyeExtra) s += `<g transform="translate(18 ${ey}) scale(${sx} ${sy})">${o.nearEyeExtra}</g>`;
@@ -327,9 +327,9 @@ function face(c: Ctx, o: FaceO): string {
   // 눈물
   const te = o.tears ?? 0;
   if (te >= 2) {
-    const tr = `M8 ${ey + 20}C6 ${ey + 34} 10 ${ey + 50} 8 ${ey + 66}C7 ${ey + 72} 11 ${ey + 74} 13 ${ey + 68}C15 ${ey + 50} 12 ${ey + 34} 13 ${ey + 20}Z`;
-    s += `<path d="${tr}" fill="#e8f4ff" stroke="#8ab0dc" stroke-width="1.2" opacity=".9"/>` + ln(`M10 ${ey + 26}C9 ${ey + 40} 11 ${ey + 52} 10 ${ey + 62}`, "#ffffff", 1.4);
-    s += `<path d="M-38 ${ey + 20}C-40 ${ey + 34} -38 ${ey + 44} -40 ${ey + 54}C-40 ${ey + 58} -36 ${ey + 58} -36 ${ey + 54}C-34 ${ey + 44} -36 ${ey + 34} -35 ${ey + 20}Z" fill="#e8f4ff" stroke="#8ab0dc" stroke-width="1" opacity=".85"/>`;
+    const tr = `M12 ${ey + 20}C9 ${ey + 34} 13 ${ey + 48} 10 ${ey + 64}C9 ${ey + 70} 13 ${ey + 72} 14 ${ey + 66}C16 ${ey + 50} 13 ${ey + 34} 15 ${ey + 20}Z`;
+    s += `<path d="${tr}" fill="#dff0ff" stroke="#8ab0dc" stroke-width="1" opacity=".75"/>` + ln(`M13 ${ey + 26}C12 ${ey + 38} 14 ${ey + 50} 12 ${ey + 60}`, "#ffffff", 1.2, 0.9);
+    s += `<path d="M-38 ${ey + 20}C-40 ${ey + 32} -38 ${ey + 42} -40 ${ey + 50}C-40 ${ey + 54} -37 ${ey + 54} -37 ${ey + 50}C-35 ${ey + 42} -37 ${ey + 32} -36 ${ey + 20}Z" fill="#dff0ff" stroke="#8ab0dc" stroke-width="0.8" opacity=".7"/>`;
   }
   if (te >= 1) s += `<path d="M30 ${ey + 14}c-3 5 -3 9 0 9s3 -4 0 -9z" fill="#f4faff" stroke="#8ab0dc" stroke-width="1"/>`;
   if (o.extra) s += o.extra;
@@ -434,6 +434,28 @@ function hairElios(o: { streaks: number; full?: boolean; horns?: boolean }): Hai
 /** 엘리오스의 뾰족한 귀(가까운 쪽) */
 function elfEar(sk: Skin): string {
   return cel("M52 -2C64 -12 82 -28 94 -36C88 -16 80 8 68 26C62 34 56 36 50 32Z", sk.b, sk.l, 2.4) + fl("M58 6C66 -4 76 -14 84 -22C80 -8 74 6 66 18C62 22 58 18 58 6Z", sk.s);
+}
+
+/** 보통 귀(가까운 쪽) */
+function ear(sk: Skin): string {
+  return cel("M52 0C62 -8 72 0 70 16C68 28 62 36 52 34Z", sk.b, sk.l, 2.4) + ln("M58 8C64 6 66 14 62 22", sk.l, 1.4, 0.6);
+}
+
+/** 라젤: 수염 자국 + 콧등 흉터 */
+function razelMarks(): string {
+  const r = rng(31);
+  const pts: Pt[] = [];
+  for (let i = 0; i < 70; i++) {
+    const t = r();
+    const x = -34 + t * 80;
+    const yb = 108 - Math.abs(x + 6) * 0.5;
+    pts.push([x, yb - 4 - r() * 26]);
+  }
+  return (
+    fl("M-38 70C-30 100 -10 116 10 106C30 92 44 72 50 54C40 80 20 98 2 100C-14 100 -28 90 -38 70Z", "#b88670", 0.35) +
+    `<path d="${pts.map(([x, y]) => `M${n1(x)} ${n1(y)}h0`).join("")}" stroke="#8a5a44" stroke-width="1.8" stroke-linecap="round" opacity=".45"/>` +
+    ln("M-40 36L28 44", "#c8806e", 4) + ln("M-40 36L28 44", "#f4c8b4", 1.6) + ln("M-22 32L-26 42M-4 36L-8 46M12 38L8 48", "#c8806e", 1.4)
+  );
 }
 
 function hairSeoha(): HairSet {
@@ -643,7 +665,7 @@ function cgSheet(): string {
   const f = (o: Partial<FaceO>): FaceO => ({ sex: "f", skin: sk, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", ...o });
   b += place(170, 250, 1.1, 0, false, head(c, f({ bags: true }), hairSeoha()));
   b += place(440, 250, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.red, far: IRIS.gold, lash: "#0a0a14", brow: "soft", mouth: "soft" }), hairElios({ streaks: 4 }), elfEar(sk)));
-  b += place(710, 250, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.amber, far: IRIS.amber, lash: "#2a1608", mouth: "laugh", eyes: "happy", browC: "#5a3418" }), hairRazel()));
+  b += place(710, 250, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.amber, far: IRIS.amber, lash: "#2a1608", mouth: "laugh", eyes: "happy", browC: "#5a3418", extra: razelMarks() }), hairRazel(), ear(sk)));
   b += place(980, 250, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.gold, far: IRIS.steel, lash: "#2a3450", mouth: "smile", nearEyeExtra: dialIris() }), hairSian()));
   b += place(1250, 250, 1.1, 0, false, head(c, f({ sex: "m", thin: true, near: IRIS.ashRed, far: IRIS.ash, lash: "#2a2628", eyes: "soft", brow: "sad" }), hairAged(), elfEar(sk)));
   b += place(170, 660, 1.1, 0, true, head(c, f({ eyes: "closed", mouth: "soft", tears: 2 }), hairSeoha()));

@@ -482,7 +482,7 @@ const LH: Pal = { b: "#f7954a", s: "#d8692f", l: "#8f3d1d", h: "#ffd49e" };
 const LT: Pal = { b: "#fff8f0", s: "#ecd9cc", l: "#9a6e5a" };
 const lili: Char = {
   draw(b, ex) {
-    const HT = "translate(302 302) rotate(-3) scale(.9)";
+    const HT = "translate(302 310) rotate(-3) scale(.98)";
     // 꼬리
     const tail: Pt[] = [[340, 700], [420, 700], [478, 640], [498, 548], [470, 452]];
     const tid = b.pc(fur(tail, 116, 9), LH, sp([[330, 720], [440, 720], [506, 640], [520, 560], [480, 600], [440, 690]]), "", 2.4);
@@ -560,7 +560,7 @@ const lili: Char = {
       [[[44, -120], [64, -90], [74, -58], [80, -28]], 30],
     ];
     const bids = bangs.map(([c, w]) => b.pc(lock(c, w, 1, 0.3), LH, "", HT));
-    b.inside([cap, ...bids], HT, pa(sp([[40, -140], [100, -110], [100, 0], [60, -40], [56, -80]]), LH.s, op(0.7)) + pa(band(-66, 86, -94, 12, 6, 14, 0.12), LH.h));
+    b.inside([cap, ...bids], HT, pa(sp([[40, -140], [100, -110], [100, 0], [60, -40], [56, -80]]), LH.s, op(0.7)) + pa(band(-70, 90, -78, 14, 6, 14, 0.14), LH.h));
     b.lines(bids, LH.l);
     // 여우 귀
     const ear = (o: Pt[], i: Pt[], shd: Pt[]) => {
@@ -573,16 +573,16 @@ const lili: Char = {
     const kid = b.pc(sp([[-74, -88], [-70, -118], [-40, -142], [4, -154], [52, -148], [90, -122], [104, -88], [102, -60], [88, -78], [60, -100], [20, -112], [-26, -108], [-56, -98]]), LT, sp([[40, -160], [110, -120], [110, -50], [80, -84], [60, -120]]), HT);
     void kid;
     let sc = "";
-    for (let i = 0; i < 9; i++) {
-      const t = i / 8, x = -72 + t * 172, y = -92 - Math.sin(t * Math.PI) * 20 + t * 30;
-      sc += `<circle cx="${f(x)}" cy="${f(y)}" r="6.5"/>`;
+    for (let i = 0; i < 13; i++) {
+      const t = i / 12, x = -72 + t * 172, y = -92 - Math.sin(t * Math.PI) * 20 + t * 30;
+      sc += `<circle cx="${f(x)}" cy="${f(y)}" r="5.5"/>`;
     }
     b.g(HT, `<g fill="${LT.b}" stroke="${LT.l}" stroke-width="1.8">${sc}</g>`);
     // 매듭 꼬리
     b.pi(sp([[98, -76], [132, -54], [124, -32, 1], [96, -56]]), LT, HT, 2);
     b.pi(sp([[96, -70], [118, -30], [102, -18, 1], [90, -58]]), LT, HT, 2);
     // 눈썹(앞머리 위, 반투명)
-    b.g(HT, `<g opacity=".85">${fs.brows.map((br, i) => drawBrow(br, ex, fs, i === 0)).join("")}</g>`);
+    b.g(HT, `<g opacity=".7">${fs.brows.map((br, i) => drawBrow(br, ex, fs, i === 0)).join("")}</g>`);
   },
 };
 
