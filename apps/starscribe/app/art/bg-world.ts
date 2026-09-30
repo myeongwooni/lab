@@ -417,7 +417,7 @@ function cityD(
     }
     // lit wall strip on the light side
     const W = Math.round(w);
-    if (r.n() < 0.45) lit += L > 0 ? `M${X + W - Math.max(2, Math.round(W * 0.16))} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z` : `M${X} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z`;
+    if (r.n() < 0.25) lit += L > 0 ? `M${X + W - Math.max(2, Math.round(W * 0.16))} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z` : `M${X} ${top}h${Math.max(2, Math.round(W * 0.16))}v${Math.round(Math.min(h, 60))}h${-Math.max(2, Math.round(W * 0.16))}Z`;
     if (o.win && r.n() < 0.7) {
       const cols = Math.max(1, Math.floor(w / 8));
       const rows = Math.min(o.winMax ?? 5, Math.floor(h / 10));
@@ -605,28 +605,35 @@ function forestD(r: Rng, x0: number, x1: number, base: (x: number) => number, hm
   return d + `L${q(x)} ${q(base(x) + 40)}Z`;
 }
 function glyphD(r: Rng, x: number, y: number, s: number): string {
+  // a compact "syllable block" of 2–3 calligraphic strokes (jamo-like)
   let d = "";
   const k = r.i(2, 3);
   const h = s / 2;
   for (let j = 0; j < k; j++) {
     const v = r.n();
-    if (v < 0.22) {
-      const rr = s * r.r(0.14, 0.24);
-      const cx = x + r.r(-h, h) * 0.6;
-      const cy = y + r.r(-h, h) * 0.6;
+    // each stroke lives in a sub-cell of the block
+    const cx = x + (j === 1 ? h * 0.35 : -h * 0.3) + r.r(-h, h) * 0.15;
+    const cy = y + (j === 2 ? h * 0.4 : -h * 0.2) + r.r(-h, h) * 0.15;
+    const L = s * r.r(0.4, 0.75);
+    if (v < 0.18) {
+      const rr = s * r.r(0.12, 0.2);
       d += `M${f(cx - rr)} ${f(cy)}a${f(rr)} ${f(rr)} 0 1 0 ${f(rr * 2)} 0a${f(rr)} ${f(rr)} 0 1 0 ${f(-rr * 2)} 0`;
-    } else if (v < 0.55) {
-      const horiz = r.n() < 0.5;
-      const ax = x + (horiz ? -h : r.r(-h, h) * 0.7);
-      const ay = y + (horiz ? r.r(-h, h) * 0.7 : -h);
-      const bx = x + (horiz ? h : r.r(-h, h) * 0.7);
-      const by = y + (horiz ? r.r(-h, h) * 0.7 : h);
-      d += `M${f(ax)} ${f(ay)}Q${f((ax + bx) / 2 + r.r(-h, h) * 0.5)} ${f((ay + by) / 2 + r.r(-h, h) * 0.5)} ${f(bx)} ${f(by)}`;
+    } else if (v < 0.6) {
+      const hz = r.n() < 0.5;
+      const bend = r.r(-0.18, 0.18) * L;
+      d += hz
+        ? `M${f(cx - L / 2)} ${f(cy)}q${f(L / 2)} ${f(bend)} ${f(L)} ${f(r.r(-0.1, 0.1) * L)}`
+        : `M${f(cx)} ${f(cy - L / 2)}q${f(bend)} ${f(L / 2)} ${f(r.r(-0.15, 0.15) * L)} ${f(L)}`;
+      if (r.n() < 0.35) d += `l${f(r.r(-0.2, 0.2) * L)} ${f(-0.18 * L)}`;
     } else {
-      d += `M${f(x + r.r(-h, h))} ${f(y + r.r(-h, h))}C${f(x + r.r(-s, s))} ${f(y + r.r(-s, s))} ${f(x + r.r(-s, s))} ${f(y + r.r(-s, s))} ${f(x + r.r(-h, h))} ${f(y + r.r(-h, h))}`;
+      // sweeping curve with a flick
+      const a = r.r(0, Math.PI * 2);
+      const dx = Math.cos(a) * L;
+      const dy = Math.sin(a) * L;
+      d += `M${f(cx - dx / 2)} ${f(cy - dy / 2)}q${f(dx / 2 - dy * 0.45)} ${f(dy / 2 + dx * 0.45)} ${f(dx)} ${f(dy)}l${f(-dx * 0.18)} ${f(-dy * 0.1 + L * 0.12)}`;
     }
   }
-  if (r.n() < 0.4) d += `M${f(x + r.r(-h, h))} ${f(y - h * 1.1)}h0`;
+  if (r.n() < 0.3) d += `M${f(x + r.r(-h, h) * 0.8)} ${f(y - h * 1.05)}h0`;
   return d;
 }
 
@@ -957,7 +964,7 @@ function capital(
       const small = c.wins.filter((w) => !big.includes(w));
       s += dots(small, 2.2 * ws, wc, (L.winOp ?? 0.8) * 0.75) + dots(big, 3.1 * ws, wc, L.winOp ?? 0.8);
       // warm bloom over the densest window clusters
-      for (let j = 0; j < 5; j++) {
+      for (let j = 0; j < (ws >= 1 ? 4 : 0); j++) {
         const w = c.wins[Math.floor(r.n() * c.wins.length)];
         s += ell(w[0], w[1], 70 * ws, 30 * ws, P.glow(wc), 0.1);
       }
@@ -978,8 +985,8 @@ function sTitle(): string {
   P.add(ell(200, 10, 420, 320, P.glow("#8a9ce0"), 0.35));
   // ring glow wash
   P.add(ell(1250, 260, 700, 460, P.glow("#3c4fb0"), 0.55));
-  P.add(starField(P, r, { n: 300, box: [0, 0, 1600, 580], keep: (x, y) => (1 - y / 720) * (x < 820 && y < 380 ? 0.35 : 1) }));
-  P.add(ring(P, r, { a: [1760, 700], c: [1230, 30], b: [520, -150], w: 100, n: 1300, glow: 1.2, fs, bright: 8 }));
+  P.add(starField(P, r, { n: 240, box: [0, 0, 1600, 580], keep: (x, y) => (1 - y / 720) * (x < 820 && y < 380 ? 0.35 : 1) }));
+  P.add(ring(P, r, { a: [1760, 700], c: [1230, 30], b: [520, -150], w: 100, n: 1050, glow: 1.35, fs, bright: 8 }));
   // city glow on the horizon
   P.add(ell(950, 640, 900, 200, P.glow("#7b8ee0"), 0.5));
   P.add(ell(950, 330, 130, 380, P.glow("#8ea4ff"), 0.35));
@@ -990,10 +997,10 @@ function sTitle(): string {
       light: -1,
       spread: 560,
       layers: [
-        { y: 612, hill: 80, h: [8, 26], w: [22, 44], c: "#3a4a94", lit: "#7084cc", litOp: 0.5, mist: mistC, mistOp: 0.5, win: 0.05, winOp: 0.5, winS: 0.7 },
+        { y: 612, hill: 80, h: [8, 26], w: [26, 50], c: "#3a4a94", lit: "#7084cc", litOp: 0.5, mist: mistC, mistOp: 0.5, win: 0.05, winOp: 0.5, winS: 0.7 },
         { y: 672, hill: 110, h: [16, 46], w: [30, 60], c: "#222d6c", lit: "#6275c4", litOp: 0.45, win: 0.2, winOp: 0.85, winS: 0.9, mist: "#4a5cb0", mistOp: 0.4 },
         { y: 755, hill: 80, h: [26, 70], w: [44, 86], spire: 0.025, turret: 0.04, c: "#111842", lit: "#40519c", litOp: 0.45, win: 0.16, winOp: 0.9, mist: "#2c3a80", mistOp: 0.3 },
-        { y: 865, hill: 30, h: [34, 90], w: [70, 130], spire: 0, turret: 0, c: "#070b24", lit: "#27346e", litOp: 0.4, win: 0.05, winOp: 0.8, winS: 1.3 },
+        { y: 865, hill: 30, h: [34, 90], w: [80, 140], spire: 0, turret: 0, c: "#070b24", win: 0.05, winOp: 0.8, winS: 1.3 },
       ],
       tower: { at: 1, base: 640, top: 84, lit: "#f7f8ff", mid: "#c3ccef", shade: "#5967ad", win: "#a8c8ff", rim: "#ffffff", glow: "#a9baff" },
     }),
@@ -1685,6 +1692,321 @@ function sVillage(): string {
   return P.svg();
 }
 
+/* glyph field helper: returns path d for n glyphs in a box with a size function */
+function glyphField(r: Rng, n: number, gen: () => [number, number, number]): string {
+  let d = "";
+  for (let k = 0; k < n; k++) {
+    const [x, y, s] = gen();
+    d += glyphD(r, x, y, s);
+  }
+  return d;
+}
+const gstroke = (d: string, c: string, w: number, op: number, extra = ""): string =>
+  `<path d="${d}" fill="none" stroke="${c}" stroke-width="${f(w)}" stroke-linecap="round" stroke-linejoin="round" stroke-opacity="${f2(op)}"${extra}/>`;
+
+/** glowing glyph strokes: the path is defined once and drawn twice (bloom + core) */
+let gbN = 0;
+function gbloom(P: Pic, d: string, c: string, w: number, op: number, bloom = 4): string {
+  const id = P.id("gl" + (gbN++).toString(36));
+  P.def(`<path id="${id}" d="${d}"/>`);
+  return `<g fill="none" stroke="${c}" stroke-linecap="round" stroke-linejoin="round"><use href="#${id}" stroke-width="${f(w * bloom)}" stroke-opacity="${f2(op * 0.13)}"/><use href="#${id}" stroke-width="${f(w)}" stroke-opacity="${f2(op)}"/></g>`;
+}
+
+/* 무명해 — the Nameless Sea */
+function sSea(): string {
+  const P = new Pic("sea");
+  const r = new Rng(808);
+  const HZ = 452;
+  P.add(rect(P.lin([[0, "#04060c"], [0.35, "#0a0f1a"], [0.5, "#1b2330"], [0.502, "#0c1018"], [0.7, "#06080e"], [1, "#030408"]])));
+  P.add(ell(800, HZ, 900, 160, P.glow("#3a4a60"), 0.6));
+  P.add(starField(P, r, { n: 120, box: [0, 0, 1600, 400], keep: (_x, y) => 1 - y / 440, op: 0.6 }));
+  P.add(ring(P, r, { a: [-140, 380], c: [760, -80], b: [1740, 300], w: 60, n: 360, glow: 0.3, tone: ["#4a5a70", "#9aa8c0", "#dfe6ff"], lane: false }));
+  // the rising pillar of names
+  P.add(ell(800, 300, 190, 360, P.glow("#9fb2d8"), 0.4));
+  P.add(ell(800, 400, 70, 200, P.glow("#dfe6ff"), 0.25));
+  P.add(ell(800, HZ, 260, 40, P.glow("#dfe6ff", true), 0.55));
+  const sky: string[] = [];
+  const groups = 8;
+  for (let g = 0; g < groups; g++) {
+    const d = glyphField(r, 11, () => {
+      const pillar = r.n() < 0.75;
+      const y = pillar ? HZ - Math.pow(r.n(), 0.8) * 400 : r.r(180, HZ - 10);
+      const spread = pillar ? 30 + (HZ - y) * 0.25 : 700;
+      const x = 800 + r.g() * spread * (pillar ? 0.8 : 0.6);
+      const s = pillar ? r.r(8, 18) : r.r(6, 12) * (0.6 + (y - 180) / 400);
+      return [x, y, s];
+    });
+    sky.push(d);
+  }
+  const skyAll = `<g id="${P.id("gs")}">${sky.map((d, g) => `<g ${P.drift(8 + g, g * 1.3, -8 - (g % 3) * 4, g % 2 ? 4 : -4)}>${gbloom(P, d, "#e6ecff", 1.3, 0.85)}</g>`).join("")}</g>`;
+  P.add(skyAll);
+  // horizon line
+  P.add(`<path d="M-20 ${HZ}H1620" stroke="#c8d2e8" stroke-opacity=".35" stroke-width="1.5"/>`);
+  // glassy water: reflection of the pillar, sheen lines
+  P.add(`<use href="#${P.id("gs")}" transform="translate(0 ${HZ * 2}) scale(1 -1)" opacity=".22"/>`);
+  P.add(ell(800, HZ + 90, 120, 200, P.glow("#8fa0c8"), 0.25));
+  let sheen = "";
+  let sheen2 = "";
+  for (let k = 0; k < 34; k++) {
+    const t = k / 34;
+    const y = HZ + 6 + t * t * 330;
+    const x = r.r(-100, 1500);
+    const w = r.r(60, 280) * (0.4 + t);
+    const seg = `M${q(x)} ${q(y)}h${q(w)}`;
+    if (k % 2) sheen += seg;
+    else sheen2 += seg;
+  }
+  P.add(`<g ${P.tw(6, 0, 0.3)}><path d="${sheen}" stroke="#9aa8c8" stroke-opacity=".12" stroke-width="1.2"/></g>`);
+  P.add(`<g ${P.tw(7.5, 3, 0.3)}><path d="${sheen2}" stroke="#c8d2ec" stroke-opacity=".09" stroke-width="1"/></g>`);
+  // glyphs resting on the water (perspective) with glints under them
+  for (let g = 0; g < 4; g++) {
+    const pts: [number, number, number][] = [];
+    const d = glyphField(r, 9, () => {
+      const t = r.n();
+      const y = HZ + 12 + t * t * 260;
+      const x = 800 + r.g() * (200 + t * 500);
+      const s = 5 + t * 18;
+      pts.push([x, y, s]);
+      return [x, y - s * 0.4, s];
+    });
+    P.add(`<g ${P.drift(9 + g * 2, g * 2, -3, g % 2 ? 6 : -6)}>${gbloom(P, d, "#dfe6ff", 1.2, 0.55)}</g>`);
+  }
+  // pale shore
+  P.add(path(`M-40 800Q400 760 800 772Q1200 784 1640 752V900H-40Z`, P.lin([[0, "#9aa0ac"], [0.25, "#5c6270"], [1, "#1a1d24"]])));
+  P.add(`<g ${P.tw(4.5, 1, 0.4)}><path d="M-40 800Q400 760 800 772Q1200 784 1640 752" fill="none" stroke="#e8eef8" stroke-opacity=".55" stroke-width="2.5"/></g>`);
+  P.add(`<path d="M-40 790Q400 752 800 764Q1200 776 1640 744" fill="none" stroke="#c8d2e8" stroke-opacity=".2" stroke-width="6"/>`);
+  // washed-up faint letters on the sand
+  P.add(gstroke(glyphField(r, 10, () => [r.r(100, 1500), r.r(800, 860), r.r(12, 22)]), "#c8d0e0", 1.6, 0.18));
+  P.add(bottomShade(P, "#020305", 0.5, 0.7));
+  P.add(vignette(P, "#000", 0.7, 0.45));
+  return P.svg();
+}
+
+/* 무명해 속 — the memory sea's depth */
+function sDepth(): string {
+  const P = new Pic("depth");
+  const r = new Rng(909);
+  P.add(rect(P.lin([[0, "#4a6cc0"], [0.12, "#2a3e90"], [0.38, "#141e5c"], [0.68, "#080c2e"], [1, "#020309"]])));
+  // surface caustics
+  let wav = "";
+  for (let k = 0; k < 5; k++) {
+    let d = `M-20 ${10 + k * 12}`;
+    for (let x = -20; x < 1640; x += 80) d += `q40 ${q(r.r(-10, 10))} 80 0`;
+    wav += d;
+  }
+  P.add(`<g ${P.drift(7, 0, 0, 30)}><path d="${wav}" fill="none" stroke="#dfe8ff" stroke-width="7" stroke-opacity=".08"/></g>`);
+  P.add(ell(800, 0, 900, 160, P.glow("#bcd0ff"), 0.6));
+  // light shafts (blurred, static) + two breathing shafts
+  const bl = P.blur(14, "sh");
+  const shaft = (x: number, w: number, lean: number, len: number) => `M${q(x - w / 2)} -20L${q(x + w / 2)} -20L${q(x + lean + w * 1.6)} ${q(len)}L${q(x + lean - w * 1.6)} ${q(len)}Z`;
+  const sg = P.lin([[0, "#dfe8ff", 0.5], [0.6, "#a8c0ff", 0.12], [1, "#a8c0ff", 0]]);
+  P.add(`<g filter="${bl}">${path(shaft(560, 60, -120, 720) + shaft(760, 90, -30, 860) + shaft(980, 50, 90, 700) + shaft(1240, 70, 200, 640) + shaft(330, 50, -200, 600), sg)}</g>`);
+  P.add(`<g ${P.pulse(7, 0)}>${path(shaft(820, 40, 10, 800), sg, 0.8)}</g>`, `<g ${P.pulse(9, 3)}>${path(shaft(650, 30, -80, 700), sg, 0.6)}</g>`);
+  // central luminous column
+  P.add(ell(800, 460, 220, 420, P.glow("#8fb8ff"), 0.35));
+  // motes
+  const mt: Pt[] = [];
+  for (let k = 0; k < 140; k++) mt.push([r.r(0, 1600), r.r(0, 900)]);
+  P.add(dots(mt, 1.6, "#bcd0ff", 0.35));
+  // glyph layers: far (small, dim) → near (large, bright)
+  const layer = (n: number, groups: number, smin: number, smax: number, c: string, w: number, op: number, sink: number, spread: number) => {
+    let s = "";
+    for (let g = 0; g < groups; g++) {
+      const d = glyphField(r, n, () => {
+        const y = r.r(40, 860);
+        const x = 800 + r.g() * spread * (0.6 + y / 1400);
+        return [x, y, r.r(smin, smax)];
+      });
+      s += `<g ${P.drift(10 + g * 1.7, g * 2.3, sink, g % 2 ? 6 : -6)}>${w > 1.2 ? gbloom(P, d, c, w, op) : gstroke(d, c, w, op)}</g>`;
+    }
+    return s;
+  };
+  P.add(layer(16, 5, 5, 10, "#6f8fd8", 1, 0.55, 10, 700));
+  P.add(layer(12, 6, 10, 18, "#9fc0ff", 1.5, 0.75, 14, 520));
+  // glows behind the near letters
+  for (let k = 0; k < 10; k++) P.add(ell(800 + r.g() * 300, r.r(120, 620), 60, 60, P.glow("#8fb8ff"), 0.25));
+  P.add(layer(6, 5, 20, 34, "#e8f0ff", 2.2, 0.9, 18, 380));
+  P.add(bottomShade(P, "#010208", 0.7, 0.55));
+  P.add(vignette(P, "#01020a", 0.7, 0.45));
+  return P.svg();
+}
+
+/* 성서관 옥상 의식장 — the Archive rooftop ritual platform */
+function sRitual(): string {
+  const P = new Pic("ritual");
+  const r = new Rng(1111);
+  const fs = flareDef(P);
+  P.add(rect(P.lin([[0, "#060920"], [0.3, "#10173e"], [0.5, "#26306a"], [0.58, "#3c3a78"]])));
+  P.add(starField(P, r, { n: 260, box: [0, 0, 1600, 500], keep: (_x, y) => 1 - y / 560 }));
+  P.add(ring(P, r, { a: [-160, 460], c: [620, -150], b: [1760, 120], w: 90, n: 1000, glow: 1.1, fs, bright: 7 }));
+  const mg = meteorDef(P);
+  for (let k = 0; k < 11; k++) {
+    const x = r.r(100, 1500);
+    const y = r.r(40, 380);
+    P.add(meteor(P, mg, x, y, r.r(80, 220), -150 + r.r(-6, 6), r.r(1.4, 3), r.r(0.5, 1)));
+  }
+  // capital far below: a sea of lights beyond the parapet
+  P.add(ell(800, 520, 1000, 110, P.glow("#a88ac8"), 0.5));
+  const c = cityD(r, -40, 1640, (x) => 530 + Math.sin(x / 90) * 4, { h: [6, 20], w: [10, 24], spire: 0.06, turret: 0.05, win: 0.4, winMax: 2 });
+  P.add(path(c.d, "#1e2250"), dots(c.wins, 2, "#f6d48f", 0.8));
+  const lights: Pt[] = [];
+  for (let k = 0; k < 160; k++) lights.push([r.r(-20, 1620), r.r(536, 560)]);
+  P.add(path(`M-20 540H1620V600H-20Z`, "#141838"), dots(lights, 2.2, "#f0c070", 0.7));
+  P.add(ell(800, 548, 900, 30, P.glow("#e0a060"), 0.3));
+  // parapet with balusters
+  P.add(path(`M-20 560H1620V600H-20Z`, P.lin([[0, "#5a6090"], [1, "#262a50"]])));
+  let bal = "";
+  for (let x = -10; x < 1620; x += 26) bal += `M${x} 566v30`;
+  P.add(`<path d="${bal}" stroke="#141838" stroke-width="10" stroke-opacity=".7"/>`);
+  P.add(`<path d="M-20 560H1620" stroke="#a8b0e0" stroke-width="3" stroke-opacity=".6"/>`);
+  // flanking rune obelisks
+  const glyphRun = (x: number, y0: number, y1: number, s: number) => {
+    let d = "";
+    for (let y = y0; y < y1; y += s * 1.4) d += glyphD(r, x, y, s);
+    return d;
+  };
+  for (const [x, w, top] of [
+    [300, 46, 250],
+    [1300, 46, 250],
+    [60, 80, 120],
+    [1540, 80, 120],
+  ]) {
+    P.add(path(`M${x - w / 2} 600V${top + w}L${x} ${top}L${x + w / 2} ${top + w}V600Z`, P.lin([[0, "#6a72a8"], [0.5, "#2e3466"], [1, "#161a3c"]], 0, 0, 1, 0)));
+    if (w < 60) P.add(`<g ${P.pulse(4 + x / 900, x / 400)}>${gstroke(glyphRun(x, top + w + 30, 560, 16), "#8fb8ff", 2, 0.9)}</g>`, ell(x, top + 200, 60, 180, P.glow("#5e8fe8"), 0.3));
+  }
+  // platform floor
+  const FC = 700;
+  P.add(path(`M-20 600H1620V900H-20Z`, P.lin([[0, "#2a2e58"], [0.4, "#1a1d40"], [1, "#0a0b1e"]])));
+  P.add(ell(800, FC, 760, 200, P.rad([[0, "#4a4a78"], [0.6, "#2c2e5a"], [1, "#1a1c40", 0]]), 1));
+  // slabs
+  let sl = "";
+  for (let k = 1; k < 5; k++) sl += `<ellipse cx="800" cy="${FC}" rx="${k * 170}" ry="${k * 44}" fill="none"/>`;
+  P.add(`<g stroke="#0c0d24" stroke-width="3" stroke-opacity=".6">${sl}</g>`);
+  // star-ink rune circles
+  const rune = (rx: number, ry: number, n: number, s: number) => {
+    let d = "";
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2;
+      d += glyphD(r, 800 + Math.cos(a) * rx, FC + Math.sin(a) * ry, s * (0.8 + 0.2 * Math.sin(a)));
+    }
+    return d;
+  };
+  P.add(`<ellipse cx="800" cy="${FC}" rx="520" ry="136" fill="none" stroke="#5e8fe8" stroke-width="16" stroke-opacity=".15"/>`);
+  P.add(`<g ${P.pulse(5, 0)}><ellipse cx="800" cy="${FC}" rx="520" ry="136" fill="none" stroke="#8fb8ff" stroke-width="2.5" stroke-opacity=".85"/><ellipse cx="800" cy="${FC}" rx="470" ry="122" fill="none" stroke="#8fb8ff" stroke-width="1.5" stroke-opacity=".6"/>${gstroke(rune(495, 129, 44, 14), "#bcd4ff", 1.6, 0.85)}</g>`);
+  P.add(`<g ${P.pulse(6.5, 2)}><ellipse cx="800" cy="${FC}" rx="330" ry="86" fill="none" stroke="#8fb8ff" stroke-width="2" stroke-opacity=".7"/>${gstroke(rune(300, 78, 28, 12), "#bcd4ff", 1.4, 0.75)}</g>`);
+  let star = "";
+  for (let k = 0; k < 8; k++) {
+    const a = (k / 8) * Math.PI * 2;
+    const b = ((k + 3) / 8) * Math.PI * 2;
+    star += `M${q(800 + Math.cos(a) * 470)} ${q(FC + Math.sin(a) * 122)}L${q(800 + Math.cos(b) * 470)} ${q(FC + Math.sin(b) * 122)}`;
+  }
+  P.add(`<path d="${star}" stroke="#8fb8ff" stroke-width="1.2" stroke-opacity=".35"/>`);
+  // altar
+  P.add(ell(800, FC - 40, 320, 110, P.glow("#ffb060"), 0.35));
+  const stone = P.lin([[0, "#3a3c6a"], [0.35, "#9a98c0"], [0.6, "#6a6a98"], [1, "#22244a"]], 0, 0, 1, 0);
+  P.add(path(`M620 ${FC - 50}V${FC - 16}A180 44 0 0 0 980 ${FC - 16}V${FC - 50}Z`, stone), ell(800, FC - 50, 180, 44, "#6a6a98"));
+  P.add(path(`M680 ${FC - 96}V${FC - 60}A120 30 0 0 0 920 ${FC - 60}V${FC - 96}Z`, stone), ell(800, FC - 96, 120, 30, P.rad([[0, "#e0b890"], [1, "#6e6c9a"]])));
+  // brazier: tripod + bowl
+  const BY = FC - 190;
+  P.add(`<path d="M800 ${BY + 30}L760 ${FC - 100}M800 ${BY + 30}L840 ${FC - 100}M800 ${BY + 30}V${FC - 96}" stroke="#1a1418" stroke-width="7" stroke-linecap="round"/>`);
+  P.add(path(`M730 ${BY}Q800 ${BY + 64} 870 ${BY}Z`, P.lin([[0, "#2a1c18"], [0.45, "#c88a3e"], [0.6, "#6a4020"], [1, "#1a0e08"]], 0, 0, 1, 0)));
+  P.add(ell(800, BY, 70, 12, "#3a1c0c"));
+  // fire
+  P.add(ell(800, BY - 60, 300, 260, P.glow("#ffa040"), 0.55));
+  const fl = (sx: number, h: number, w: number) => `M${800 + sx - w} ${BY + 2}C${800 + sx - w} ${BY - h * 0.45} ${800 + sx - w * 0.2} ${BY - h * 0.6} ${800 + sx} ${BY - h}C${800 + sx + w * 0.3} ${BY - h * 0.6} ${800 + sx + w} ${BY - h * 0.4} ${800 + sx + w} ${BY + 2}Z`;
+  P.add(`<g ${P.flick(1.5, 0)}>${path(fl(-26, 110, 34) + fl(26, 120, 34) + fl(0, 160, 40), P.lin([[0, "#f6a040"], [1, "#c8401a", 0]], 0, 1, 0, 0))}</g>`);
+  P.add(`<g ${P.flick(1.1, 0.4)}>${path(fl(-10, 100, 24) + fl(14, 90, 22), P.lin([[0, "#fff0c0"], [0.5, "#f6c060"], [1, "#e5a654", 0]], 0, 1, 0, 0))}</g>`);
+  P.add(`<g ${P.flick(0.8, 0.2)}>${path(fl(2, 60, 14), "#fffbe8", 0.9)}</g>`);
+  const sparks: Pt[] = [];
+  for (let k = 0; k < 16; k++) sparks.push([800 + r.g() * 40, BY - r.r(100, 240)]);
+  P.add(`<g ${P.drift(3, 0, -20)}>${dots(sparks, 2.4, "#ffd080", 0.8)}</g>`);
+  // warm light on floor
+  P.add(ell(800, FC - 20, 520, 130, P.glow("#ff9a48"), 0.25));
+  P.add(bottomShade(P, "#04040e", 0.55, 0.66));
+  P.add(vignette(P, "#02030c", 0.65, 0.5));
+  return P.svg();
+}
+
+/* 기억의 공간 — white-silver memory void */
+function sMemory(): string {
+  const P = new Pic("memory");
+  const r = new Rng(1212);
+  const fs = flareDef(P, "#b8c4f0");
+  P.add(rect(P.rad([[0, "#ffffff"], [0.3, "#f3f3fa"], [0.7, "#d6dbec"], [1, "#aeb8d4"]], 0.5, 0.45, 0.75)));
+  // pastel light pools
+  for (const [x, y, rx, c, o] of [
+    [300, 220, 420, "#e6dcff", 0.5],
+    [1300, 260, 460, "#dce8ff", 0.5],
+    [1120, 640, 380, "#fff0dc", 0.45],
+    [420, 640, 360, "#f0e4ff", 0.4],
+  ] as [number, number, number, string, number][])
+    P.add(ell(x, y, rx, rx * 0.7, P.glow(c), o));
+  // soft rays from the heart of the void (blurred)
+  const bl = P.blur(22, "ry");
+  let rays = "";
+  for (let k = 0; k < 14; k++) {
+    const a = (k / 14) * Math.PI * 2 + r.r(-0.1, 0.1);
+    const w = r.r(0.04, 0.09);
+    rays += `M800 400L${q(800 + Math.cos(a - w) * 1100)} ${q(400 + Math.sin(a - w) * 1100)}L${q(800 + Math.cos(a + w) * 1100)} ${q(400 + Math.sin(a + w) * 1100)}Z`;
+  }
+  P.add(`<g filter="${bl}">${path(rays, P.rad([[0, "#ffffff", 0.9], [0.5, "#ffffff", 0.35], [1, "#ffffff", 0]], 800, 400, 800, true))}</g>`);
+  P.add(ell(800, 400, 420, 340, P.glow("#ffffff"), 0.95));
+  // bokeh
+  const bk = P.rad([[0, "#ffffff", 0.0], [0.7, "#ffffff", 0.35], [0.9, "#ffffff", 0.7], [1, "#ffffff", 0]]);
+  let bo = "";
+  for (let k = 0; k < 26; k++) {
+    const rr = r.r(10, 46);
+    bo += `<circle cx="${q(r.r(0, 1600))}" cy="${q(r.r(0, 860))}" r="${q(rr)}" fill="${bk}" opacity="${f2(r.r(0.3, 0.8))}"/>`;
+  }
+  P.add(`<g ${P.pulse(8, 0)}>${bo}</g>`);
+  // fragments
+  const paper = P.lin([[0, "#fffdf8"], [1, "#e6e0d2"]], 0, 0, 1, 1);
+  const petalG = P.lin([[0, "#ffffff"], [0.6, "#f2f2fb"], [1, "#aeb8dc"]], 0, 0, 0, 1);
+  const frag = (x: number, y: number, s: number, rot: number, depth: number) => {
+    const w = r.r(26, 56) * s;
+    const h = r.r(16, 36) * s;
+    const pts: Pt[] = [
+      [0, r.r(0, 6) * s],
+      [w * r.r(0.3, 0.5), r.r(-3, 3) * s],
+      [w * r.r(0.55, 0.7), r.r(2, 7) * s],
+      [w, r.r(-2, 4) * s],
+      [w - r.r(0, 10) * s, h],
+      [w * r.r(0.4, 0.6), h - r.r(0, 7) * s],
+      [r.r(0, 8) * s, h + r.r(-3, 3) * s],
+    ];
+    let lines = "";
+    for (let k = 1; k < 4; k++) if (r.n() < 0.8) lines += `M${f(w * r.r(0.08, 0.2))} ${f((h * k) / 4)}c${f(w * 0.2)} ${f(r.r(-1, 1) * s)} ${f(w * 0.4)} ${f(r.r(-1, 1) * s)} ${f(w * r.r(0.4, 0.7))} 0`;
+    return (
+      `<g transform="translate(${q(x)} ${q(y)}) rotate(${q(rot)})" opacity="${f2(depth)}">` +
+      path(poly(pts), "#7a86b0", 0.14, ` transform="translate(${f(5 * s)} ${f(8 * s)})"`) +
+      path(poly(pts), paper) +
+      `<path d="${lines}" fill="none" stroke="#6a7cc0" stroke-opacity=".28" stroke-width="${f(1.1 * s)}"/></g>`
+    );
+  };
+  const petal = (x: number, y: number, s: number, rot: number, depth: number) =>
+    `<path d="M0 0C${f(10 * s)} ${f(-9 * s)} ${f(32 * s)} ${f(-9 * s)} ${f(42 * s)} 0C${f(32 * s)} ${f(7 * s)} ${f(10 * s)} ${f(7 * s)} 0 0Z" fill="${petalG}" transform="translate(${q(x)} ${q(y)}) rotate(${q(rot)})" opacity="${f2(depth)}"/>`;
+  for (let g = 0; g < 14; g++) {
+    let s = "";
+    for (let k = 0; k < 5; k++) {
+      const x = r.r(-40, 1640);
+      const y = r.r(20, 820);
+      if (Math.hypot((x - 800) / 1.4, y - 400) < 200) continue;
+      const depth = r.r(0.3, 1);
+      const sc = 0.45 + depth * 0.9;
+      s += r.n() < 0.45 ? frag(x, y, sc, r.r(-40, 40), depth) : petal(x, y, sc, r.r(0, 360), depth);
+    }
+    P.add(`<g ${P.drift(11 + g * 1.3, g * 1.7, -14 - (g % 3) * 5, g % 2 ? 10 : -10)}>${s}</g>`);
+  }
+  // glints
+  for (let k = 0; k < 14; k++) P.add(flare(P, fs, r.r(80, 1520), r.r(60, 720), r.r(0.4, 1), k < 9 ? P.tw(r.r(2.5, 5), r.r(0, 4), 0.15) : ""));
+  const dust: Pt[] = [];
+  for (let k = 0; k < 140; k++) dust.push([r.r(0, 1600), r.r(0, 900)]);
+  P.add(dots(dust, 2, "#8e9ad0", 0.3));
+  P.add(bottomShade(P, "#8e98bc", 0.35, 0.66));
+  P.add(vignette(P, "#7e88b0", 0.55, 0.5));
+  return P.svg();
+}
+
 export const WORLD_BACKGROUNDS: Record<string, string> = {
   black: sBlack(),
   white: sWhite(),
@@ -1697,4 +2019,8 @@ export const WORLD_BACKGROUNDS: Record<string, string> = {
   cabin: sCabin(),
   wasteland: sWasteland(),
   village: sVillage(),
+  sea: sSea(),
+  depth: sDepth(),
+  ritual: sRitual(),
+  memory: sMemory(),
 };

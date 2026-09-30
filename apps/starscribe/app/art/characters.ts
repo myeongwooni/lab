@@ -4,8 +4,9 @@
 
 type Pt = [number, number] | [number, number, number]; // 세 번째 값 1 = 모서리(날카로운 점)
 
+// 캔버스 규모(|n|≥100) 좌표는 정수로, 얼굴 쪽 작은 좌표는 소수 한 자리로 — 문자열 크기 절약
 const f = (n: number): string => {
-  const v = Math.round(n * 10) / 10;
+  const v = Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 10) / 10;
   return Object.is(v, -0) ? "0" : String(v);
 };
 
@@ -90,8 +91,8 @@ class B {
   /** 도형 정의(실루엣 포함 여부 선택) → id */
   def(d: string, tf = "", sil = true): string {
     const id = this.id("p" + this.n++);
-    this.defs.push(`<path id="${id}" d="${d}"/>`);
-    if (sil) this.sil.push(`<use href="#${id}"${tf ? ` transform="${tf}"` : ""}/>`);
+    this.defs.push(`<path id="${id}" d="${d}"${tf ? ` transform="${tf}"` : ""}/>`);
+    if (sil) this.sil.push(`<use href="#${id}"/>`);
     return id;
   }
   use(id: string, fill: string, tf = "", extra = ""): void {
@@ -100,15 +101,15 @@ class B {
   /** 실루엣에 포함되는 부위(정의 1회 + 사용). tf = 머리 좌표계 변환 등 */
   part(d: string, fill: string, tf = "", sil = true, extra = ""): string {
     const id = this.def(d, tf, sil);
-    this.use(id, fill, tf, extra);
+    this.use(id, fill, "", extra);
     return id;
   }
   /** 머리 가닥 묶음: 가닥마다 어두운 그림자 사본을 살짝 비껴 깔아 층을 만든다 */
   locks(tf: string, list: [Pt[], number, number?][], fill: string, sh: string, off = "2 1.6"): void {
     for (const [c, w, bu] of list) {
       const id = this.def(lock(c, w, 1, bu ?? 0.5), tf);
-      this.use(id, sh, `${tf} translate(${off})`);
-      this.use(id, fill, tf);
+      this.use(id, sh, `translate(${off})`);
+      this.use(id, fill);
     }
   }
   add(s: string): void {
@@ -421,7 +422,7 @@ function head(b: B, tf: string, o: {
   const fid = b.part(sp(o.face), skinG, tf);
   const fc = b.clip("fc", `<use href="#${fid}"/>`);
   b.add(
-    `<g transform="${tf}"><g clip-path="${fc}">${path(sp(o.shade), s.sh, ` opacity=".75"`)}</g>` +
+    `<g clip-path="${fc}"><g transform="${tf}">${path(sp(o.shade), s.sh, ` opacity=".75"`)}</g></g><g transform="${tf}">` +
       path(sp(o.noseSh), s.sh, ` opacity=".8"`) +
       stroke(sp(o.nose, false), "#fffaf6", 1.1, ` opacity=".55"`) +
       `</g>`,
@@ -484,7 +485,7 @@ function headGeo(b: B, tf: string, g: Geo, skin?: Skin, noEar = false, neckDone 
 }
 /** 앞머리가 이마에 드리우는 그림자 */
 function bangShadow(b: B, tf: string, fc: string, pts: Pt[], skin: Skin = SKIN, op = 0.55): void {
-  b.add(`<g transform="${tf}"><g clip-path="${fc}">${path(sp([...pts, [100, -100], [-80, -100]]), skin.sh, ` opacity="${op}"`)}</g></g>`);
+  b.add(`<g clip-path="${fc}"><g transform="${tf}">${path(sp([...pts, [100, -100], [-80, -100]]), skin.sh, ` opacity="${op}"`)}</g></g>`);
 }
 function strands(b: B, tf: string, list: [Pt[], number][], col: string, op = 0.8): void {
   b.add(`<g transform="${tf}">` + list.map(([c, w]) => path(lock(c, w, 2), col, ` opacity="${op}"`)).join("") + `</g>`);
@@ -573,7 +574,7 @@ const cassian: Char = {
       noseSh: [[2, 8], [-1, 24], [-3, 36], [2, 40, 1], [-6, 40], [-10, 37, 1], [-5, 37], [-2, 26]],
     });
     // 앞머리 그림자(이마)
-    b.add(`<g transform="${HT}"><g clip-path="${fc}">${path(sp([[-60, -40], [-40, -18], [-20, -24], [0, -8], [20, -18], [40, -14], [60, -10], [80, -20], [80, -90], [-60, -90]]), SKIN.sh, ` opacity=".6"`)}</g></g>`);
+    b.add(`<g clip-path="${fc}"><g transform="${HT}">${path(sp([[-60, -40], [-40, -18], [-20, -24], [0, -8], [20, -18], [40, -14], [60, -10], [80, -20], [80, -90], [-60, -90]]), SKIN.sh, ` opacity=".6"`)}</g></g>`);
     const fs: FaceSpec = {
       eyes: [
         { x: 10, y: 4, w: 42, h: 15.5, s: 1 },
@@ -710,7 +711,7 @@ const lucien: Char = {
       nose: [[-4, 10], [-6, 22]],
       noseSh: [[2, 8], [-1, 24], [-3, 36], [2, 40, 1], [-6, 40], [-10, 37, 1], [-5, 37], [-2, 26]],
     });
-    b.add(`<g transform="${HT}"><g clip-path="${fc}">${path(sp([[-60, -30], [-44, -12], [-20, -20], [0, -6], [24, -14], [50, -10], [80, -18], [80, -90], [-60, -90]]), SKIN.sh, ` opacity=".5"`)}</g></g>`);
+    b.add(`<g clip-path="${fc}"><g transform="${HT}">${path(sp([[-60, -30], [-44, -12], [-20, -20], [0, -6], [24, -14], [50, -10], [80, -18], [80, -90], [-60, -90]]), SKIN.sh, ` opacity=".5"`)}</g></g>`);
     const fs: FaceSpec = {
       eyes: [
         { x: 10, y: 4, w: 41, h: 15, s: 1 },
@@ -1138,7 +1139,7 @@ const ferryman: Char = {
   halo: 0.4,
   draw(b, _ex, e) {
     const [rot, shd, wet] = FERRY[e] ?? FERRY.normal;
-    const HT = `translate(292 198) rotate(${rot} 20 60) scale(.95)`;
+    const HT = `translate(292 210) rotate(${rot} 20 60) scale(.95)`;
     const g = GEO.f;
     const hairG = b.lg("hg", 200, 60, 580, 700, [[0, "#f4f6f4"], [0.4, "#b8c4cc"], [1, "#5a6a80"]]);
     const hD = "#4a5a70";
@@ -1181,9 +1182,9 @@ const ferryman: Char = {
     const maskG = b.lg("mk", -50, -80, 70, 80, [[0, "#fbfaf6"], [0.5, "#e4e2e0"], [1, "#b0aebe"]]);
     const mid = b.part(sp([[-46, -82], [-52, -44], [-52, -10], [-49, 10], [-48, 32], [-40, 52], [-28, 68], [-14, 78], [0, 82], [14, 79], [32, 66], [50, 44], [60, 22], [64, -10], [62, -60], [30, -92], [-16, -94]]), maskG, HT);
     const mc = b.clip("mc", `<use href="#${mid}"/>`);
-    b.add(`<g transform="${HT}"><g clip-path="${mc}">` +
+    b.add(`<g clip-path="${mc}"><g transform="${HT}">` +
       path(sp([[40, -100], [46, -40], [38, 10], [30, 44], [16, 70], [0, 100], [100, 100], [100, -100]]), "#8a88a0", ` opacity="${shd}"`) +
-      `<ellipse cx="30" cy="0" rx="18" ry="9" fill="#9a98b0" opacity="${f(shd * 0.55)}"/><ellipse cx="-26" cy="0" rx="11" ry="8" fill="#9a98b0" opacity="${f(shd * 0.45)}"/>` +
+      `<ellipse cx="30" cy="0" rx="18" ry="9" fill="#9a98b0" opacity="${f(shd * 0.3)}"/><ellipse cx="-26" cy="0" rx="11" ry="8" fill="#9a98b0" opacity="${f(shd * 0.25)}"/>` +
       path(sp([[-2, 2], [-6, 26], [-10, 36], [-2, 38]]), "#8a88a0", ` opacity="${f(0.2 + shd * 0.4)}"`) +
       stroke(sp([[-44, -30], [-10, -40], [30, -36], [62, -26]], false), "#a8a6bc", 1.2, ` opacity=".6"`) +
       stroke(sp([[-40, 40], [-10, 56], [20, 54], [50, 36]], false), "#a8a6bc", 1.2, ` opacity=".5"`) +
@@ -1196,13 +1197,212 @@ const ferryman: Char = {
     // 앞머리 몇 가닥 (가면 위로 흩날림)
     b.locks(HT, [
       [[[20, -118], [-20, -100], [-50, -72], [-66, -40]], 30, 0.4],
-      [[[40, -116], [10, -104], [-20, -86], [-34, -64]], 22],
       [[[-44, -80], [-64, -40], [-70, 10], [-80, 60]], 16, 0.4],
     ], hairG, hD, "1.6 1.4");
   },
 };
 
-const CHARS: Record<string, Char> = { cassian, lucien, isolde, gregor, mirelle, theo, ferryman };
+// ── 노엘 ──
+const noel: Char = {
+  rim: "#f0d080",
+  fade: [600, 960],
+  tweak: (ex, e) => ({ ...ex, arc: e === "smile", pu: ex.pu * 1.06, m: e === "smile" ? "grin" : ex.m }),
+  draw(b, ex) {
+    const HT = "translate(300 250) rotate(3) scale(1)";
+    const g = GEO.c;
+    const hD = "#3a2418", hL = "#f0d0a0";
+    const hairG = b.lg("hg", -70, -110, 110, 90, [[0, "#c8a07a"], [0.45, "#8a6448"], [1, "#3e2a22"]]);
+    const coat = b.lg("co", 200, 380, 440, 900, [[0, "#7a6a60"], [0.4, "#4a3e40"], [1, "#1e1a26"]]);
+    // 헝클어진 뒷머리 (어깨까지)
+    b.part(sp([[-58, 0], [-66, -50], [-52, -94], [-10, -116], [44, -114], [90, -90], [112, -50], [118, 0], [124, 50, 1], [106, 36], [110, 80, 1], [90, 60], [86, 100, 1], [70, 70], [60, 30], [20, 0]]), hairG, HT);
+    drawNeck(b, HT, g.neck, g.neckSh, g.neckLine);
+    // 너무 큰 낡은 외투 (어깨가 흘러내림)
+    const torso = b.part(sp([[300, 350], [262, 362], [226, 388], [196, 440, 1], [188, 540], [196, 660], [186, 800], [176, 1000, 1], [440, 1000, 1], [432, 800], [424, 660], [428, 540], [428, 450, 1], [404, 392], [370, 364], [338, 350]]), coat);
+    const tc = b.clip("tc", `<use href="#${torso}"/>`);
+    b.add(`<g clip-path="${tc}">` +
+      path(sp([[320, 372], [346, 480], [340, 640], [336, 1000, 1], [440, 1000, 1], [440, 372, 1]]), "#241e2a", ` opacity=".55"`) +
+      stroke(sp([[320, 374], [346, 480], [340, 640], [336, 1000]], false), "#a89080", 1.4, ` opacity=".6"`) +
+      [470, 560, 650].map((y) => `<circle cx="${f(338 + (y - 470) * -0.02)}" cy="${y}" r="5" fill="#2a2226" stroke="#a89080" stroke-width="1.2"/>`).join("") +
+      // 기운 조각
+      path(`M226 700L262 694L266 736L230 742Z`, "#5a4a3c") + stroke(`M226 700L262 694L266 736L230 742Z`, "#c8b090", 1, ` stroke-dasharray="3 3" opacity=".7"`) +
+      stroke(sp([[240, 460], [250, 580], [244, 700]], false), "#1a1620", 2, ` opacity=".7"`) +
+      stroke(sp([[400, 480], [394, 620], [404, 780]], false), "#1a1620", 2, ` opacity=".6"`) +
+      `</g>`);
+    // 긴 소매 (손을 덮음)
+    b.part(sp([[200, 436], [182, 500], [174, 600], [176, 700], [184, 760], [232, 760], [230, 690], [228, 600], [226, 500]]), coat);
+    b.add(stroke(`M186 752L230 752`, "#a89080", 2, ` opacity=".6"`) + stroke(sp([[200, 520], [196, 640], [204, 740]], false), "#1a1620", 1.6, ` opacity=".6"`));
+    b.part(sp([[426, 444], [446, 510], [452, 620], [452, 720], [444, 770], [398, 766], [402, 680], [404, 580], [406, 500]]), b.lg("na", 400, 450, 450, 770, [[0, "#4a3e40"], [1, "#1a1620"]]));
+    b.add(stroke(`M400 758L446 762`, "#a89080", 2, ` opacity=".5"`));
+    // 세운 깃
+    b.part(sp([[282, 330], [300, 356], [322, 372], [300, 390], [262, 380], [252, 356]]), "#6a5a52");
+    b.part(sp([[360, 324], [372, 350], [390, 372], [362, 388], [336, 374], [346, 348]]), "#3a3034");
+    // 머리
+    const fc = headGeo(b, HT, g, SKIN, false, true);
+    bangShadow(b, HT, fc, [[-60, -40], [-40, -20], [-18, -30], [4, -16], [26, -28], [50, -18], [80, -26]]);
+    const fs = spec(g, {
+      iris: ["#3a3020", "#8a7040", "#e8d090"], lash: "#2a1a14", lashW: 1.05, female: true, child: true, browC: "#6a4a34", browW: 3.2, lip: "#8a5a60",
+      eyes: [{ x: 8, y: 8, w: 44, h: 23, s: 1 }, { x: -12, y: 8, w: 29, h: 22, s: -1 }],
+      mouth: [-3, 52, 6, 8],
+    });
+    b.add(`<g transform="${HT}">`);
+    drawFace(b, fs, ex);
+    b.add(stroke(`M-40 34l-3 4M-34 36l-3 4M30 36l-3 4M38 34l-3 4`, "#d8a0a0", 1, ` opacity=".35"`));
+    b.add(`</g>`);
+    // 헝클어진 앞머리
+    b.part(sp([[-56, -30], [-54, -80], [-20, -110], [24, -116], [66, -104], [92, -74], [94, -40], [60, -70], [20, -80], [-20, -72]]), hairG, HT);
+    b.locks(HT, [
+      [[[-24, -100], [-48, -76], [-62, -46], [-70, -20], [-78, -4]], 26],
+      [[[-8, -106], [-26, -78], [-36, -48], [-38, -18]], 26],
+      [[[12, -108], [4, -78], [-8, -50], [-12, -20]], 22],
+      [[[30, -106], [30, -78], [24, -50], [28, -24]], 22],
+      [[[50, -102], [58, -76], [56, -46], [66, -24]], 22],
+      [[[72, -90], [88, -56], [88, -16], [80, 26], [88, 56]], 24],
+      [[[-44, -76], [-62, -40], [-66, 4], [-58, 50], [-66, 80]], 18],
+      [[[10, -114], [40, -128], [60, -140]], 12, 0.2],
+      [[[40, -110], [66, -118], [80, -132]], 10, 0.2],
+    ], hairG, hD, "1.6 1.4");
+    strands(b, HT, [
+      [[[-20, -98], [-40, -76], [-50, -54]], 3],
+      [[[10, -104], [2, -80], [-6, -60]], 2.4],
+      [[[-30, -104], [4, -114], [40, -110]], 3],
+      [[[78, -70], [86, -40], [84, -6]], 2.4],
+    ], hL, 0.7);
+    drawBrows(b, HT, fs, ex, 0.9);
+  },
+};
+
+// ── 황제 ──
+const emperor: Char = {
+  rim: "#eadcae",
+  tweak: (ex) => ({ ...ex, o: ex.o * 0.72, lo: ex.lo + 0.12, t: ex.t - 0.2, pu: ex.pu * 0.9 }),
+  draw(b, ex) {
+    const HT = "translate(290 232) rotate(3) scale(.95)";
+    const g = GEO.o;
+    const gold = "#e2c47a", goldD = "#8a6a30";
+    const whiteG = b.lg("wh", -60, -100, 120, 160, [[0, "#eeeae4"], [0.5, "#b4b0c4"], [1, "#6a6684"]]);
+    const crimG = b.lg("cr", 150, 360, 470, 900, [[0, "#b8445a"], [0.4, "#7c1f33"], [1, "#2e0a16"]]);
+    const skin = { lit: "#e2d2cc", mid: "#bca6b6", sh: "#8e7a9c", deep: "#56466e", line: "#7a6282" };
+    // 진홍 망토 (뒤판)
+    b.part(sp([[300, 340], [220, 364], [172, 420], [150, 560], [140, 760], [132, 1000, 1], [480, 1000, 1], [470, 760], [458, 560], [440, 420], [396, 364]]), crimG);
+    // 가늘고 긴 흰 머리
+    b.part(sp([[-56, -30], [-62, -70], [-40, -104], [10, -114], [70, -104], [104, -70], [114, -20], [112, 40], [106, 110], [96, 150, 1], [80, 100], [66, 50], [56, 10], [0, -10]]), whiteG, HT);
+    drawNeck(b, HT, g.neck, g.neckSh, undefined, skin);
+    // 속옷 (짙은 예복 + 금 띠)
+    const torso = b.part(sp([[300, 346], [262, 360], [240, 400], [236, 520], [240, 700], [236, 1000, 1], [390, 1000, 1], [388, 700], [392, 520], [388, 400], [370, 360], [340, 346]]), b.lg("in", 240, 360, 390, 800, [[0, "#3e3050"], [1, "#120c1a"]]));
+    const tc = b.clip("tc", `<use href="#${torso}"/>`);
+    b.add(`<g clip-path="${tc}">` + path(`M296 360L330 360L336 1000L300 1000Z`, gold, ` opacity=".85"`) +
+      [430, 520, 610, 700].map((y) => `<circle cx="316" cy="${y}" r="6" fill="#7c1f33" stroke="${goldD}" stroke-width="1.5"/>`).join("") + `</g>`);
+    // 망토 앞자락 (양옆으로 늘어짐)
+    b.part(sp([[250, 380], [200, 430], [186, 560], [190, 760], [196, 1000, 1], [262, 1000, 1], [262, 760], [260, 560], [270, 440]]), crimG);
+    b.part(sp([[376, 380], [430, 430], [444, 560], [446, 760], [450, 1000, 1], [380, 1000, 1], [372, 760], [370, 560], [360, 440]]), crimG);
+    b.add(stroke(sp([[262, 450], [260, 560], [262, 760], [262, 1000]], false), gold, 3) + stroke(sp([[362, 450], [370, 560], [372, 760], [380, 1000]], false), gold, 3));
+    b.add(stroke(sp([[216, 500], [212, 640], [220, 820]], false), "#2e0a16", 2, ` opacity=".7"`) + stroke(sp([[420, 500], [424, 660], [428, 820]], false), "#2e0a16", 2, ` opacity=".7"`));
+    // 흰 털 깃 (담비 무늬)
+    const fur = b.part(sp([[300, 330], [240, 342], [196, 370], [176, 410], [194, 450], [240, 460], [280, 440], [320, 452], [360, 440], [400, 460], [446, 450], [462, 410], [440, 370], [396, 342], [346, 330]]), b.lg("fr", 180, 330, 460, 470, [[0, "#f4f0ea"], [0.5, "#c4c0d0"], [1, "#6e6a86"]]));
+    void fur;
+    let spots = "";
+    for (const [x, y] of [[214, 408], [252, 430], [290, 420], [350, 424], [392, 436], [430, 414], [236, 384], [410, 384]] as [number, number][]) spots += `<path d="M${x} ${y}l2.5 7l-2.5 3l-2.5-3Z"/>`;
+    b.add(`<g fill="#1a1420" opacity=".8">${spots}</g>`);
+    b.add(stroke(`M186 420Q200 446 240 452M398 452Q440 448 456 418`, "#8a86a0", 1.4, ` opacity=".6"`));
+    // 여윈 손 (지팡이 대신 가슴께의 홀)
+    b.add(stroke(`M300 470L286 700`, gold, 5) + `<circle cx="302" cy="462" r="11" fill="#c63a52" stroke="${gold}" stroke-width="3"/>`);
+    b.add(path(sp([[274, 540], [300, 530], [312, 548], [304, 572], [278, 574]]), "#c8b4bc") + stroke(`M280 548Q294 542 308 548M278 560Q294 554 308 562`, "#7a6282", 1, ` opacity=".7"`));
+    b.part(sp([[250, 520], [274, 540], [278, 574], [248, 590], [236, 560]]), crimG);
+    // 머리
+    const fc = headGeo(b, HT, g, skin, true, true);
+    // 여윈 볼과 깊은 눈두덩
+    b.add(`<g clip-path="${fc}"><g transform="${HT}">` +
+      path(sp([[20, 30], [40, 20], [50, 50], [36, 70], [24, 56]]), skin.sh, ` opacity=".6"`) +
+      path(sp([[-44, 30], [-36, 24], [-34, 50], [-40, 62]]), skin.sh, ` opacity=".4"`) +
+      `<ellipse cx="32" cy="2" rx="28" ry="14" fill="${skin.sh}" opacity=".45"/><ellipse cx="-26" cy="2" rx="18" ry="12" fill="${skin.sh}" opacity=".35"/>` +
+      `</g>` +
+      stroke(`M16 22Q30 30 48 22M-16 22Q-28 26 -38 20M8 44Q14 58 10 74M-22 44Q-28 58 -26 72`, skin.line, 1.1, ` opacity=".6"`) +
+      stroke(`M-36 -44Q-6 -52 28 -46M-30 -32Q-4 -38 24 -34`, skin.line, 1, ` opacity=".45"`) +
+      `</g>`);
+    const fs = spec(g, {
+      iris: ["#3a2e2a", "#6e5a4e", "#b8a488"], lash: "#2e2430", lashW: 0.9, browC: "#e8e4dc", browW: 4.5, lip: "#5e3a48", skinSh: skin.line, mouthLater: true,
+    });
+    b.add(`<g transform="${HT}">`);
+    drawFace(b, fs, ex);
+    // 가는 콧수염과 턱수염
+    b.add(path(sp([[-2, 56], [-16, 60], [-28, 72, 1], [-12, 64], [-2, 62], [12, 64], [30, 74, 1], [16, 60]]), "#dcd8d0"));
+    drawMouth(b, { ...fs, mouth: [-3, 69, 8, 11] }, ex);
+    b.add(path(sp([[-12, 80], [4, 82], [16, 80], [8, 110], [2, 124, 1], [-6, 108]]), "#d8d4cc", ` opacity=".9"`));
+    b.add(`</g>`);
+    // 이마를 덮는 흰 머리 몇 가닥
+    b.locks(HT, [
+      [[[10, -106], [-20, -90], [-42, -64], [-56, -30], [-60, 10]], 22, 0.3],
+      [[[70, -96], [84, -60], [88, -10], [84, 40], [80, 90]], 22, 0.3],
+    ], whiteG, "#5a5674", "1.4 1.2");
+    b.add(`<g transform="${HT} translate(1.2 1.6)" opacity=".7">`);
+    fs.brows.forEach((br, i) => drawBrow(b, br, ex, { ...fs, browC: "#6e6888" }, i === 1));
+    b.add(`</g>`);
+    drawBrows(b, HT, fs, ex, 1);
+    // 무거운 제관
+    const crG = b.lg("cw", -60, -170, 110, -90, [[0, "#f6e2a6"], [0.5, gold], [1, goldD]]);
+    b.part(`M-52 -86L-58 -140L-34 -120L-20 -168L0 -124L22 -176L42 -126L66 -164L76 -118L100 -134L96 -80Q24 -104 -52 -86Z`, crG, HT);
+    b.add(`<g transform="${HT}">` + path(`M-54 -90Q24 -110 98 -86L96 -74Q24 -96 -52 -78Z`, goldD) +
+      `<circle cx="22" cy="-100" r="7" fill="#c63a52" stroke="#fff2c8" stroke-width="1.4"/><circle cx="-18" cy="-94" r="5" fill="#4a6ab8"/><circle cx="62" cy="-94" r="5" fill="#4a6ab8"/>` +
+      `<circle cx="-20" cy="-168" r="4" fill="#fff2c8"/><circle cx="22" cy="-176" r="4.5" fill="#fff2c8"/><circle cx="66" cy="-164" r="4" fill="#fff2c8"/>` +
+      stroke(`M-40 -100L-44 -130M8 -110L14 -150M50 -110L58 -140`, "#fff2c8", 1.4, ` opacity=".6"`) + `</g>`);
+  },
+};
+
+// ── 소년 기사 ──
+const young: Char = {
+  rim: "#dfe6ff",
+  halo: 0.5,
+  draw(b, ex) {
+    const HT = "translate(290 226) rotate(-2) scale(.96)";
+    const g = GEO.c;
+    const hD = "#05060e";
+    const hairG = b.lg("hg", -50, -120, 90, 60, [[0, "#262a48"], [0.5, "#141630"], [1, "#07080f"]]);
+    const dark = { lit: "#6a6488", mid: "#4a4668", sh: "#34304e", deep: "#1e1c34", line: "#2a2640" };
+    const tun = b.lg("tu", 210, 380, 430, 800, [[0, "#2c3050"], [0.5, "#181a30"], [1, "#0a0b16"]]);
+    const steel = b.lg("stl", 230, 380, 420, 620, [[0, "#8a94b8"], [0.35, "#454e74"], [1, "#161a2e"]]);
+    // 뒷머리 (짧음)
+    b.part(sp([[-56, -14], [-64, -56], [-48, -98], [0, -120], [52, -114], [92, -88], [110, -50], [112, -10], [102, 18], [106, 40, 1], [88, 30], [80, 50, 1], [64, 24], [20, -6]]), hairG, HT);
+    drawNeck(b, HT, g.neck, g.neckSh, undefined, dark);
+    // 몸통 (튜닉)
+    b.part(sp([[302, 340], [258, 354], [228, 376], [214, 408, 1], [218, 500], [230, 600], [232, 660], [222, 780], [218, 1000, 1], [418, 1000, 1], [414, 780], [402, 660], [402, 600], [410, 500], [424, 412, 1], [406, 378], [372, 354], [340, 340]]), tun);
+    // 팔
+    b.part(sp([[218, 404], [200, 460], [192, 540], [196, 630], [202, 700], [230, 700], [232, 630], [236, 540], [240, 470]]), tun);
+    b.add(path(sp([[198, 694], [230, 694], [232, 720], [214, 732], [198, 718]]), "#3a3654"));
+    b.part(sp([[422, 408], [444, 460], [452, 540], [450, 630], [446, 700], [418, 702], [414, 630], [412, 540], [408, 470]]), b.lg("na", 410, 410, 450, 700, [[0, "#1c1e36"], [1, "#07080f"]]));
+    b.add(path(sp([[418, 696], [446, 696], [448, 722], [430, 732], [416, 718]]), "#2a2640"));
+    // 가벼운 흉갑 + 견갑
+    const cu = b.part(sp([[262, 380], [322, 392], [384, 378], [404, 430], [398, 520], [376, 580], [322, 598], [270, 582], [246, 520], [240, 430]]), steel);
+    void cu;
+    b.add(stroke(sp([[322, 396], [322, 596]], false), "#c8d0ec", 1.4, ` opacity=".5"`) + stroke(sp([[250, 440], [262, 520], [286, 576]], false), "#dfe6ff", 1.6, ` opacity=".7"`) + stroke(`M262 380Q322 400 384 378`, "#dfe6ff", 2, ` opacity=".6"`));
+    b.part(sp([[214, 404], [224, 376], [262, 366], [274, 392], [250, 430], [218, 440]]), steel);
+    b.part(sp([[424, 408], [414, 378], [380, 368], [372, 394], [398, 430], [428, 440]]), b.lg("pa", 370, 370, 430, 440, [[0, "#3a4264"], [1, "#101224"]]));
+    b.add(path(`M232 600L408 592L410 626L234 636Z`, "#0e0f1c") + stroke(`M234 604L408 596`, "#8a94b8", 1.2, ` opacity=".6"`));
+    // 깃
+    b.part(sp([[294, 316], [322, 330], [352, 312], [360, 352], [322, 366], [290, 354]]), "#1c1e36");
+    // 머리 — 달빛 역광으로 얼굴은 거의 그림자
+    const fc = headGeo(b, HT, g, dark, false, true);
+    const fs = spec(g, { iris: ["#1a1e30", "#3a4460", "#6a7894"], lash: "#05060e", lashW: 1, browC: "#0a0b16", browW: 4.4, lip: "#2a2238", sclera: "#5a5878", skinSh: dark.line });
+    b.add(`<g transform="${HT}">`);
+    drawFace(b, fs, ex);
+    // 얼굴을 덮는 그림자, 옆얼굴 가장자리만 은빛
+    b.add(`</g>`);
+    b.add(`<g clip-path="${fc}"><g transform="${HT}">${path(sp([[-40, -100], [-44, -20], [-40, 40], [-24, 70], [0, 90], [100, 100], [100, -100]]), "#0e0f22", ` opacity=".72"`)}</g></g>`);
+    // 앞머리
+    b.part(sp([[-56, -40], [-54, -84], [-20, -112], [24, -120], [66, -110], [92, -80], [94, -46], [60, -74], [20, -84], [-20, -76]]), hairG, HT);
+    b.locks(HT, [
+      [[[-20, -100], [-44, -80], [-58, -54], [-64, -34]], 26],
+      [[[-2, -106], [-22, -80], [-34, -52], [-40, -30]], 26],
+      [[[18, -108], [6, -80], [-6, -52], [-10, -26]], 22],
+      [[[38, -108], [34, -80], [28, -52], [26, -30]], 22],
+      [[[58, -104], [62, -78], [60, -50], [66, -30]], 22],
+      [[[76, -90], [90, -56], [90, -20], [84, 14]], 20],
+    ], hairG, hD, "1.6 1.4");
+    b.add(`<g transform="${HT}">` + path(lock([[-24, -104], [-46, -84], [-58, -60]], 3.4, 2), "#dfe6ff", ` opacity=".55"`) + path(lock([[-30, -108], [0, -118], [34, -116]], 3, 2), "#dfe6ff", ` opacity=".45"`) + `</g>`);
+    drawBrows(b, HT, fs, ex, 0.7);
+  },
+};
+
+const CHARS: Record<string, Char> = { cassian, lucien, isolde, gregor, mirelle, theo, ferryman, noel, emperor, young };
 
 export function characterSvg(id: string, expr: string): string {
   const c = CHARS[id];
@@ -1210,7 +1410,7 @@ export function characterSvg(id: string, expr: string): string {
   const e = EXPR[expr] ? expr : "normal";
   const ex0 = EXPR[e];
   const ex = c.tweak ? c.tweak({ ...ex0 }, e) : { ...ex0 };
-  const b = new B(`ch-${id}-${e}`);
+  const b = new B(`ch-${id}-${Object.keys(EXPR).indexOf(e)}`);
   c.draw(b, ex, e);
   return finish(b, c);
 }
