@@ -153,7 +153,7 @@ const FACE =
 const FACE_GAUNT =
   "M-50 -40C-54 -10 -54 10 -52 26C-50 46 -34 72 -20 88C-14 94 -8 96 -2 93C16 82 34 62 46 42C54 26 62 4 62 -30C60 -80 30 -102 0 -102C-30 -102 -50 -78 -50 -40Z";
 const EAR = "M57 -4C68 -12 78 -2 74 14C72 28 64 36 55 34";
-const NECK = "M-16 78L-20 170L40 170L36 50Z";
+const NECK = "M-14 78L-18 150L38 150L34 50Z";
 
 let clipN = 0;
 
@@ -505,7 +505,7 @@ function cgFall(): string {
   b += frag(820, -40, 0.7, 4, 13);
   // fragments dissolving into sand (dust trails upward from them)
   const dust: Pt[] = [];
-  for (let i = 0; i < 220; i++) {
+  for (let i = 0; i < 120; i++) {
     const src = [[1280, 140], [300, 100], [820, 20]][i % 3];
     dust.push([src[0] + (r() - 0.5) * 260, src[1] - 10 + r() * 150]);
   }
@@ -522,8 +522,8 @@ function cgFall(): string {
   ];
   let sd1: Pt[] = [], sd2: Pt[] = [];
   streams.forEach(([xa, xb, ya, yb, sw], i) => {
-    sd1 = sd1.concat(sandStream(r, 260, xa, xb, ya, yb, sw, i));
-    sd2 = sd2.concat(sandStream(r, 60, xa, xb, ya, yb, sw * 0.6, i));
+    sd1 = sd1.concat(sandStream(r, 130, xa, xb, ya, yb, sw, i));
+    sd2 = sd2.concat(sandStream(r, 30, xa, xb, ya, yb, sw * 0.6, i));
   });
   let rib = "";
   streams.forEach(([xa, xb, ya, yb, sw], i) => {
@@ -538,70 +538,79 @@ function cgFall(): string {
   b += ln(rib, "#fff1c4", 4, 0.3);
   b += dots(sd1, 2.4, "#ffd27a", 0.75) + dots(sd2, 4.2, "#fff6d8", 0.9);
 
-  // ── Seoha, falling (upper body big, reaching up-left) ──
-  const HX = 800, HY = 360, HS = 1.35, HR = 18;
-  // glow behind her
-  b += `<ellipse cx="820" cy="470" rx="360" ry="330" fill="url(#${p}-sun)" opacity=".45"/>`;
-  const lineN = "#141a38";
-  const lineG = "#4e5262";
-  // hoodie flapping upward behind (back layer)
-  b += cel("M720 470C660 420 610 330 640 250C660 300 690 330 730 350C712 300 716 250 744 214C752 290 790 330 850 350C880 300 930 270 990 262C960 300 950 350 960 400C1000 380 1040 380 1070 396C1030 430 1000 470 990 520Z", "#8e929f", lineG, 2.6);
-  b += `<path d="M744 214C752 290 790 330 850 350L820 380C780 350 752 300 744 214ZM990 262C960 300 950 350 960 400L930 410C930 360 950 300 990 262Z" fill="#6c707e"/>`;
-  // torso (scrubs) angled down-right with hoodie open
-  const torso = "M716 470C730 440 770 420 820 420C880 420 930 440 960 470C990 520 1000 600 1010 700C1020 780 1040 850 1060 920L700 920C690 820 690 720 696 620C700 560 704 500 716 470Z";
+  // ── Seoha, falling backwards through the light, reaching up-left ──
+  b += `<ellipse cx="820" cy="480" rx="380" ry="340" fill="url(#${p}-sun)" opacity=".4"/>`;
+  const lineN = "#141a38", lineG = "#4a4e5e", sk = SK_SEOHA;
+  const HX = 796, HY = 372, HS = 1.5, HR = -16;
+  // hair streaming upward (world coords, behind everything of her)
+  let hl = "";
+  const roots: [Pt, Pt, Pt, Pt, number][] = [
+    [[700, 360], [670, 300], [650, 250], [620, 200], 70],
+    [[730, 300], [714, 240], [700, 200], [676, 150], 80],
+    [[780, 280], [776, 220], [770, 180], [760, 120], 84],
+    [[840, 280], [850, 220], [866, 180], [880, 130], 84],
+    [[890, 300], [916, 250], [940, 220], [972, 190], 76],
+    [[920, 350], [950, 320], [980, 300], [1020, 290], 60],
+  ];
+  for (const [a0, c1, c2, e, w] of roots) hl += lock(a0, c1, c2, e, w, 0.8);
+  b += cel(hl, `url(#${p}-hair)`, "#0e0c14", 2.4);
+  b += ln("M730 290C716 240 700 200 684 170M790 270C788 220 782 180 772 140M850 270C860 220 868 190 878 150M900 310C930 270 950 240 970 214", "#5a5874", 2, 0.8);
+  // hood flapping up behind the neck
+  b += cel("M760 540C720 500 700 440 730 400C770 430 810 460 860 460C910 460 950 440 980 420C1010 460 1000 520 960 560Z", "#9a9eab", lineG, 2.6);
+  b += `<path d="M770 520C750 490 744 460 752 430C790 452 830 470 870 470C910 470 940 458 966 444C976 480 970 510 950 540Z" fill="#6b6f7d"/>`;
+  // trailing right arm (sleeve) flung out to the right and down
+  b += cel("M960 580C1010 590 1060 620 1110 670C1150 710 1180 750 1200 790L1150 820C1120 780 1090 740 1050 710C1010 680 970 660 930 650Z", `url(#${p}-hood)`, lineG, 2.6);
+  b += `<path d="M930 650C970 660 1010 680 1050 710C1090 740 1120 780 1150 820L1170 810C1140 760 1100 720 1060 690C1020 664 980 650 940 636Z" fill="#6f7382"/>`;
+  b += cel("M1160 800C1170 790 1190 786 1204 792L1236 790C1246 790 1246 802 1236 804L1212 808L1240 818C1250 822 1246 834 1236 830L1206 822L1226 840C1232 848 1224 856 1216 850L1190 832C1176 834 1162 826 1160 816Z", sk.base, sk.line, 2.2);
+  // torso: scrub top, tilted, narrowing to the waist, dissolving into the light below
+  const torso = "M740 548C770 530 820 524 870 530C930 538 980 560 1000 590C1010 640 1000 700 990 760C986 800 990 850 1000 900L760 900C752 850 744 800 738 750C730 680 720 600 740 548Z";
   b += cel(torso, `url(#${p}-scrub)`, lineN, 2.8);
-  // V neck + scrub shadow
-  b += `<path d="M790 424L846 520L900 428C880 440 820 440 790 424Z" fill="${SK_SEOHA.base}" stroke="${SK_SEOHA.line}" stroke-width="2"/>`;
-  b += `<path d="M786 426L846 526L906 430L912 446L846 548L780 444Z" fill="#2c3a6c" stroke="${lineN}" stroke-width="2"/>`;
-  b += `<path d="M940 470C980 540 990 640 1000 720C1010 800 1030 860 1044 920L960 920C950 820 950 700 930 600Z" fill="#18203f" opacity=".7"/>`;
-  // hoodie front panels
-  b += cel("M716 470C700 520 690 620 690 720C690 800 694 860 700 920L780 920C770 840 764 740 772 640C780 560 780 500 770 440C750 440 728 452 716 470Z", `url(#${p}-hood)`, lineG, 2.6);
-  b += cel("M960 470C990 520 1004 620 1010 720C1016 800 1030 860 1046 920L1100 920C1090 850 1080 780 1080 700C1082 620 1060 520 1010 470C994 456 976 452 960 470Z", `url(#${p}-hood)`, lineG, 2.6);
-  b += `<path d="M1010 470C1060 520 1082 620 1080 700C1080 780 1090 850 1100 920L1070 920C1060 820 1060 700 1040 600C1030 540 1020 500 1010 470Z" fill="#6f7382"/>`;
-  b += ln("M740 520C738 600 730 700 736 820M1030 560C1040 640 1046 740 1060 840", "#9ea2ae", 2, 0.8);
-  // ID lanyard floating upward from neck, card flipping
-  b += ln("M808 430C790 380 760 330 720 290M880 430C900 380 900 320 880 270", "#2f6fb8", 5);
-  b += `<g transform="translate(760 262) rotate(-24)"><rect x="-38" y="-52" width="76" height="104" rx="8" fill="#f4f7fb" stroke="#2a3048" stroke-width="3"/><rect x="-38" y="-52" width="76" height="22" rx="8" fill="#2f6fb8"/><rect x="-26" y="-18" width="30" height="36" rx="3" fill="#c9d0dc"/><path d="M12 -12h16M12 -2h16M12 8h10M-26 30h52M-26 40h36" stroke="#8a93a6" stroke-width="3"/></g>`;
-  // near arm (her left) reaching up-left, palm open toward the sky, hourglass mark glowing
-  const arm = "M760 470C730 440 690 390 660 330C640 290 626 250 616 214C612 200 626 190 638 196C650 222 668 262 690 300C716 344 748 388 790 430Z";
-  b += cel("M770 480C730 450 690 400 650 330C630 290 612 250 596 214L636 188C656 226 676 268 700 310C724 350 760 396 810 440Z", `url(#${p}-hood)`, lineG, 2.6);
-  b += `<path d="M596 214L636 188C656 226 676 268 700 310C724 350 760 396 810 440L790 454C740 410 700 350 666 280C650 248 630 220 596 214Z" fill="#7a7e8c" opacity=".8"/>`;
-  void arm;
-  // hand (palm toward viewer, fingers spread up-left)
-  const hand = "M600 206C592 190 590 176 596 164L580 132C576 124 586 118 592 126L610 154L604 116C602 106 614 104 616 114L624 150L630 110C632 100 644 102 642 112L640 152L652 124C656 116 666 120 662 130L648 172C652 186 648 200 636 210C624 218 608 216 600 206Z";
-  b += cel(hand, SK_SEOHA.base, SK_SEOHA.line, 2.4);
-  b += `<path d="M636 210C648 200 652 186 648 172L640 176C640 190 634 202 622 212Z" fill="${SK_SEOHA.shade}"/>`;
-  // hourglass mark on LEFT palm
-  b += `<circle cx="622" cy="184" r="34" fill="url(#${p}-gold)" opacity=".9" ${A(p, "pu", 0, 3.4)}/>`;
-  b += ln("M612 172L632 172L612 196L632 196Z", "#e0a030", 2.2) + ln("M612 172L632 172L612 196L632 196Z", "#fff1c4", 1);
-
-  // head: surprised-but-quiet, eyes toward the reaching hand, hair flowing UP
-  const hairFall =
-    "M-60 -40C-86 -80 -100 -150 -80 -220C-70 -170 -56 -140 -40 -124C-50 -170 -44 -220 -20 -250C-20 -200 -10 -160 10 -130C20 -170 44 -200 76 -210C60 -170 60 -130 70 -100C90 -120 110 -130 130 -130C112 -100 100 -60 90 -20C84 20 70 40 56 40L-50 40Z";
+  b += `<path d="M1000 590C1010 640 1000 700 990 760C986 800 990 850 1000 900L930 900C940 820 950 740 960 660C966 620 980 596 1000 590Z" fill="#161d3c" opacity=".75"/>`;
+  b += ln("M800 620C820 680 840 760 850 880M900 600C910 660 920 760 916 880", "#4a5c98", 2, 0.6);
+  // V-neck with skin
+  b += `<path d="M806 532C830 560 850 590 868 612C884 586 902 560 920 542C890 530 840 526 806 532Z" fill="${sk.base}" stroke="${sk.line}" stroke-width="2"/>`;
+  b += `<path d="M806 532C830 560 850 590 868 612C884 586 902 560 920 542L930 552C908 578 888 606 868 634C848 606 824 574 796 544Z" fill="#2a386a" stroke="${lineN}" stroke-width="2"/>`;
+  // open hoodie panels (billowing up and outward)
+  b += cel("M744 548C716 600 704 680 706 760C708 820 716 860 724 900L800 900C790 850 780 780 782 700C784 640 790 590 806 548C786 538 760 538 744 548Z", `url(#${p}-hood)`, lineG, 2.6);
+  b += cel("M930 546C960 560 990 580 1010 600C1030 660 1036 720 1040 780C1044 830 1054 870 1066 900L1010 900C1000 850 994 800 990 740C986 680 980 620 960 580C952 566 940 556 930 546Z", `url(#${p}-hood)`, lineG, 2.6);
+  b += `<path d="M1010 600C1030 660 1036 720 1040 780C1044 830 1054 870 1066 900L1040 900C1026 840 1020 770 1014 700C1010 660 1008 630 1010 600Z" fill="#6f7382"/>`;
+  b += ln("M760 600C748 660 744 740 752 840", "#c4c7cf", 2.4, 0.8);
+  // drawstrings floating up
+  b += ln("M812 552C800 520 796 490 804 460M912 552C930 520 940 490 936 456", "#e6e8ee", 3.4);
+  // ID lanyard floating upward, card turning
+  b += ln("M826 540C806 500 780 460 740 420M902 546C920 500 930 460 916 420", "#2f6fb8", 5);
+  b += `<g transform="translate(724 392) rotate(-30)"><rect x="-36" y="-50" width="72" height="100" rx="8" fill="#f4f7fb" stroke="#2a3048" stroke-width="3"/><rect x="-36" y="-50" width="72" height="22" rx="8" fill="#2f6fb8"/><rect x="-24" y="-16" width="28" height="34" rx="3" fill="#c9d0dc"/><path d="M12 -10h14M12 0h14M12 10h9M-24 30h48M-24 40h32" stroke="#8a93a6" stroke-width="3"/></g>`;
+  // reaching left arm (hoodie sleeve) up-left to the open palm
+  b += `<g transform="translate(-60 -30) rotate(-6 800 540)">`;
+  b += cel("M790 560C760 520 720 470 690 400C670 350 650 300 628 250L680 226C696 276 716 326 740 370C766 420 800 470 840 510Z", `url(#${p}-hood)`, lineG, 2.6);
+  b += `<path d="M628 250L680 226C696 276 716 326 740 370C766 420 800 470 840 510L820 530C776 490 740 440 710 380C690 340 668 290 640 256Z" fill="#7a7e8c" opacity=".85"/>`;
+  b += ln("M650 258C660 244 672 238 684 236", "#c9ccd4", 3);
+  // palm toward the viewer, fingers spread; the hourglass mark on the LEFT palm
+  const hand = "M632 246C620 234 614 218 618 204L596 176C590 168 600 160 608 166L630 192L618 150C615 140 628 136 632 146L644 184L646 138C647 127 660 128 660 139L660 182L674 150C678 141 690 145 687 155L676 196C680 214 676 230 664 242C654 252 640 254 632 246Z";
+  b += `<circle cx="646" cy="210" r="120" fill="url(#${p}-gold)" opacity=".7"/>`;
+  b += cel(hand, sk.base, sk.line, 2.4);
+  b += `<path d="M664 242C676 230 680 214 676 196L668 200C668 216 662 230 650 240Z" fill="${sk.shade}"/>`;
+  b += `<circle cx="646" cy="218" r="30" fill="url(#${p}-gold)" ${A(p, "pu", 0, 3.4)}/>`;
+  b += ln("M636 206L656 206L636 230L656 230Z", "#d9901c", 2.6) + ln("M636 206L656 206L636 230L656 230Z", "#fff6d8", 1.1);
+  b += `</g>`;
+  // head
   const headS = head({
-    p, id: "s", skin: SK_SEOHA, lash: "#1a1418", near: IR_BROWN, far: IR_BROWN,
-    open: 0.92, look: [-0.8, -0.8], brow: 0.7, browColor: "#231c24", mouth: "part", blush: 0.7, tears: 1,
-    shadeSide: 1, rim: "#fff1c4", noNeck: false,
-    back: hairFall, backFill: `url(#${p}-hair)`, hairLine: "#0e0c14",
-    front: SEOHA_FRONT,
-    frontFill: `url(#${p}-hair)`, hairShade: "#e3ad9c",
-    extraOver:
-      `<path d="${hiBand(-50, 60, -80, 16, 8, 9)}" fill="#6c6a8e" opacity=".85"/>` +
-      ln("M-30 -60Q-36 -100 -30 -130M10 -60Q8 -110 20 -150M40 -60Q50 -100 70 -120", "#4d4a66", 1.8, 0.8) +
-      // loose tie + stray locks
-      `<path d="M58 30C64 60 60 90 70 110C60 104 52 84 50 60Z" fill="#1b1924" stroke="#0e0c14" stroke-width="2"/>` +
-      `<path d="M-58 20C-66 40 -64 60 -70 72C-60 66 -54 50 -52 30Z" fill="#1b1924" stroke="#0e0c14" stroke-width="2"/>`,
+    p, id: "s", skin: sk, lash: "#1a1418", near: IR_BROWN, far: IR_BROWN,
+    open: 1, look: [-0.9, -0.9], brow: 0.9, browColor: "#231c24", mouth: "o", blush: 0.75, tears: 1,
+    shadeSide: 1, rim: "#fff1c4",
+    back: SEOHA_BACK, backFill: `url(#${p}-hair)`, hairLine: "#0e0c14",
+    front: SEOHA_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#e2ab9a",
+    side: lock([-52, -40], [-66, -20], [-76, -30], [-86, -60], 26, 0.8) + lock([58, -30], [74, -10], [86, -20], [100, -46], 28, 0.8),
+    hi: "#6a6890", strands: "#4a4864",
   });
   b += place(HX, HY, HS, HR, false, headS);
-  // hoodie collar/hood around neck
-  b += cel("M718 470C700 440 704 410 730 396C760 430 800 440 840 440C880 440 920 430 950 410C980 420 990 450 970 480C930 460 880 452 840 452C790 452 750 460 718 470Z", "#9da1ad", lineG, 2.6);
-
-  // tears rising (small droplets floating up from her eyes)
+  // floating tear droplets rising from her eyes
   b += `<g fill="#eef8ff" stroke="#a9c8e8" stroke-width="1">`;
-  for (const [x, y, s] of [[760, 300, 5], [744, 262, 3.5], [790, 250, 4], [772, 220, 2.6]] as [number, number, number][])
-    b += `<ellipse cx="${x}" cy="${y}" rx="${s * 0.7}" ry="${s}" ${A(p, "tw", x * 0.01, 3)}/>`;
+  for (const [x, y, s] of [[770, 250, 5], [748, 214, 3.5], [796, 200, 4], [770, 170, 2.6]] as [number, number, number][])
+    b += `<ellipse cx="${x}" cy="${y}" rx="${n1(s * 0.7)}" ry="${s}" ${A(p, "tw", x * 0.01, 3)}/>`;
   b += `</g>`;
-
+  // she dissolves into the other world's light at the bottom
+  b += `<rect y="640" width="1600" height="260" fill="url(#${p}-bot)"/>`;
   // animated sand motes rising
   for (let i = 0; i < 26; i++) {
     const x = 200 + r() * 1200;
