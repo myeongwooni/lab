@@ -927,7 +927,7 @@ function alley(): string {
   const r = mulberry32(6606);
   const blur = A.blur("soft", 10);
   const P = persp(800, 420, 700);
-  const FL = 1.4, W = 1.05, ZE = 12;
+  const FL = 1.4, W = 1.7, ZE = 12;
   A.add(A.rect(0, 0, 1600, 900, A.v("sky", 0, 470, [[0, "#3c3a78"], [0.35, "#8a5a8a"], [0.7, "#e88a6a"], [1, "#ffc98a"]])));
   A.add(A.ell(820, 420, 360, 300, A.glowG("sun", "#ffb070", "#fff0c8"), 1));
   A.add(`<circle cx="820" cy="430" r="40" fill="#fff0c8"/>`);
@@ -935,8 +935,8 @@ function alley(): string {
   // 끝의 성벽 실루엣
   A.add(A.path(`M560 470V404h20v-10h14v10h40v-14h14v14h60v-8h14v8h140v-12h14v12h60v-10h14v10h40V470z`, "#5a3a5a"));
   // 좌우 벽 (거친 흰 벽이 노을에 물듦)
-  A.add(A.path(wallX(P, -W, -4, FL, 1, ZE), A.lin("lw", 0, 0, 1, 0, [[0, "#3a2e44"], [0.7, "#8a5a6a"], [1, "#d28a74"]])));
-  A.add(A.path(wallX(P, W, -4, FL + 0.5, 1, ZE), A.lin("rw", 1, 0, 0, 0, [[0, "#2e2a40"], [0.7, "#6a4a64"], [1, "#b8746a"]])));
+  A.add(A.path(wallX(P, -W, -4, FL, 1, ZE), A.lin("lw", 0, 0, 1, 0, [[0, "#6a4a5a"], [0.6, "#b87a7a"], [1, "#f0a888"]])));
+  A.add(A.path(wallX(P, W, -4, FL + 0.5, 1, ZE), A.lin("rw", 1, 0, 0, 0, [[0, "#4a3a54"], [0.6, "#8a5a70"], [1, "#d08a7a"]])));
   // 벽 위쪽 햇빛 띠
   A.add(A.path(wallX(P, -W, -4, -1.6, 2.2, ZE), "#ffb88a", 'opacity=".35"'));
   // 창, 문, 나무 덧판
@@ -951,7 +951,7 @@ function alley(): string {
   const lg = A.glowG("lamp", "#ffc070", "#fff0c8");
   lampP.forEach(([x, y], i) => A.add(A.ell(x, y, 50, 50, lg, 0.8, i < 5 ? A.a("fl", i, 2.5 + i * 0.3) : "") + `<circle cx="${i0(x)}" cy="${i0(y)}" r="4" fill="#fff4d6"/>`));
   // 길 (왼쪽) + 운하 (오른쪽)
-  A.add(A.path(flatY(P, FL, -W, 0.05, 1, ZE), A.v("walk", 420, 900, [[0, "#b8847a"], [1, "#4a3444"]])));
+  A.add(A.path(flatY(P, FL, -W, 0.05, 1, ZE) + wallX(P, W, FL, FL + 0.6, 1, ZE), A.v("walk", 420, 900, [[0, "#b8847a"], [1, "#4a3444"]])));
   A.add(A.path(flatY(P, FL + 0.35, 0.05, W, 1, ZE), A.v("water", 420, 900, [[0, "#ffc08a"], [0.3, "#b86a7a"], [1, "#2a2440"]])));
   A.add(A.path(wallX(P, 0.05, FL, FL + 0.35, 1, ZE), "#5a3a44"));
   // 물 반짝임
@@ -964,7 +964,7 @@ function alley(): string {
   A.add(A.path(quad(P, [[0.05, FL - 0.05, 5], [W, FL - 0.05, 5], [W, FL - 0.05, 5.5], [0.05, FL - 0.05, 5.5]]), "#6a4232") + A.path(frontZ(P, 5, 0.05, W, FL - 0.05, FL + 0.08), "#4a2e28"));
   // 빨랫줄 + 빨래
   const cloth = ["#f4ede0", "#e0764a", "#4a8ab8", "#f2d27a", "#d8a0b0", "#ffffff", "#8ab870"];
-  for (const [z, y] of [[2.0, -2.2], [3.2, -1.9], [5, -2.4], [7.5, -2.0]] as P2[]) {
+  for (const [z, y] of [[2.2, -1.5], [3.4, -1.2], [5, -1.5], [7.5, -1.3]] as P2[]) {
     const a = P(-W, y, z), b = P(W, y, z * 1.05);
     const sag = 140 / z;
     A.add(A.line(`M${i0(a[0])} ${i0(a[1])}Q${i0((a[0] + b[0]) / 2)} ${i0((a[1] + b[1]) / 2 + sag)} ${i0(b[0])} ${i0(b[1])}`, "#2a2030", 1.5));
@@ -1067,7 +1067,8 @@ function slums(): string {
   A.add(A.rect(0, 584, 1600, 6, "#8a7a6a"));
   A.add(A.path("M700 648V600q100-50 200 0v48h-20v-30q-80-36-160 0v30z", "#d8cab4") + A.rect(690, 592, 220, 8, "#efe6d6"));
   // 앞 판잣집 (크게)
-  A.add(shanty(A, { seed: 75, x0: -40, x1: 1640, base: () => 760, hMin: 90, hMax: 130, wMin: 110, wMax: 170, haze: 0, hazeC: HZ }));
+  A.add(A.rect(0, 648, 1600, 252, A.v("gnd", 648, 900, [[0, "#a8927a"], [1, "#6a5a5a"]])));
+  A.add(shanty(A, { seed: 75, x0: -40, x1: 1640, base: () => 900, hMin: 190, hMax: 240, wMin: 110, wMax: 170, haze: 0, hazeC: HZ }));
   // 굴뚝 연기
   const sm = A.glowG("smoke", "#ffffff");
   for (const [x, y] of [[340, 470], [980, 450], [1240, 520]] as P2[]) A.add(A.ell(x, y, 30, 22, sm, 0.7) + A.ell(x + 20, y - 34, 40, 28, sm, 0.5) + A.ell(x + 50, y - 74, 54, 34, sm, 0.35, A.a("br", x, 7)));
@@ -1093,6 +1094,15 @@ function southgate(): string {
   A.add(A.path(ridge(r, -20, 1620, 30, (x) => HOR - 20 - 36 * bell(x, 300, 250) - 26 * bell(x, 1350, 200), 3), "#a88aa8"));
   A.add(A.path(ridge(r, -20, 1620, 40, (x) => HOR + 6 + 10 * Math.sin(x / 150), 2), "#8e7aa0"));
   A.add(A.rect(0, HOR + 10, 1600, 200, A.v("plain", HOR + 10, HOR + 210, [[0, "#b89ab0"], [0.4, "#8a9a8a"], [1, "#5a7a5a"]])));
+  // 밭 조각
+  const fc = ["#9aa878", "#b8b080", "#7a9a6a", "#c8b88a"];
+  for (let i = 0; i < 4; i++) {
+    let d = "";
+    for (let k = 0; k < 14; k++) { const x = r() * 1600, y = HOR + 40 + Math.pow(r(), 0.8) * 150, w = 60 + (y - HOR) * 1.2 * r(), h = 4 + (y - HOR) * 0.08; d += pr([[x, y], [x + w, y - h * 0.3], [x + w * 1.1, y + h], [x + w * 0.1, y + h * 1.2]]); }
+    A.add(A.path(d, fc[i], 'opacity=".7"'));
+  }
+  // 멀리 이어지는 성벽과 작은 망루 (오른쪽)
+  A.add(A.path(`M1100 520L1600 470V540L1100 548Z`, "#b8a0ac") + A.rect(1440, 400, 40, 90, "#c8b0b4") + A.path("M1434 402h52l-26-40z", "#b0503a"));
   // 숲, 강, 길
   let tr: P2[] = [];
   for (let i = 0; i < 160; i++) { const x = r() * 1600, y = HOR + 14 + Math.pow(r(), 1.4) * 60; if (Math.abs(x - 960) > 80) tr.push([x, y]); }
