@@ -133,16 +133,83 @@ export function makeAmbience(e: Engine, id: string, dry: AudioNode, wet: AudioNo
       };
       break;
     }
-    case "sea": {
-      const lp = filt(ctx, "lowpass", 700, 0.5);
-      const g1 = bed(e.brown, [lp], 0.4);
-      lfo(ctx, lp.frequency, 800, 550, 0.105, t, srcs);
-      lfo(ctx, g1.gain, 0.3, 0.18, 0.105, t, srcs);
-      const hp = filt(ctx, "highpass", 1800);
-      const g2 = bed(e.pink, [hp, filt(ctx, "lowpass", 8000)], 0.05);
-      lfo(ctx, g2.gain, 0.045, 0.04, 0.105, t + 1.2, srcs);
-      const g3 = bed(e.pink, [filt(ctx, "bandpass", 400, 0.7)], 0.06);
-      lfo(ctx, g3.gain, 0.06, 0.03, 0.061, t, srcs);
+    case "clock": {
+      // a room full of clocks: several escapements at slightly different rates
+      // and phases, a faint mechanical hum, and now and then a chime
+      bed(e.brown, [filt(ctx, "lowpass", 260)], 0.05);
+      bed(e.pink, [filt(ctx, "bandpass", 3200, 0.8)], 0.006);
+      const clocks = Array.from({ length: 7 }, (_, i) => ({
+        period: [1, 0.5, 1.02, 0.75, 1.5, 0.98, 0.33][i],
+        next: t + r() * 1.2,
+        k: 0,
+        pan: [-0.7, 0.55, -0.2, 0.8, -0.5, 0.25, 0.05][i],
+        f: [2300, 3100, 1900, 2700, 1500, 2100, 4200][i],
+        amp: [0.07, 0.035, 0.06, 0.04, 0.08, 0.05, 0.02][i],
+      }));
+      let chime = t + 12 + r() * 10;
+      const tickAt = (at: number, f: number, amp: number, pan: number): void => {
+        blip(at, e.noise, f, 9, "bandpass", amp, 0.012, pan);
+        blip(at, e.noise, f * 0.42, 5, "bandpass", amp * 0.5, 0.02, pan);
+      };
+      event = (at) => {
+        let soonest = Infinity;
+        for (const c of clocks) {
+          while (c.next < at + 0.001) {
+            const tock = c.k++ % 2 === 1;
+            tickAt(Math.max(c.next, at), c.f * (tock ? 0.82 : 1), c.amp * (tock ? 0.8 : 1), c.pan);
+            c.next += c.period * (0.995 + r() * 0.01);
+          }
+          soonest = Math.min(soonest, c.next);
+        }
+        if (at >= chime) {
+          chime = at + 18 + r() * 16;
+          const base = [659, 523, 587, 784][Math.floor(r() * 4)];
+          const pan = r() * 1.2 - 0.6;
+          const n = 2 + Math.floor(r() * 3);
+          for (let i = 0; i < n; i++) {
+            tone(at + i * 0.9, base * (i % 2 ? 0.75 : 1), 0.03, 2.2, pan);
+            tone(at + i * 0.9, base * 2.76 * (i % 2 ? 0.75 : 1), 0.008, 1.2, pan);
+          }
+        }
+        return Math.max(0.01, soonest - at);
+      };
+      break;
+    }
+    case "hospital": {
+      // ventilation hum, a distant ECG monitor, faint footsteps down the corridor
+      const hum = bed(e.pink, [filt(ctx, "lowpass", 420), filt(ctx, "peaking", 120, 2, 5)], 0.1);
+      lfo(ctx, hum.gain, 0.1, 0.015, 0.09, t, srcs);
+      bed(e.pink, [filt(ctx, "bandpass", 1800, 0.5)], 0.012);
+      const mains = ctx.createOscillator();
+      mains.frequency.value = 60;
+      const mg = ctx.createGain();
+      mg.gain.value = 0.006;
+      chain(mains, mg, out);
+      mains.start(t);
+      srcs.push(mains);
+      let beep = t + 0.4;
+      let steps = t + 5 + r() * 6;
+      let stepN = 0;
+      let stepPan = -0.8;
+      event = (at) => {
+        let gap = 0.5;
+        if (at >= beep - 0.001) {
+          tone(at, 960, 0.018, 0.1, 0.55, "sine");
+          beep = at + 0.82 + r() * 0.06;
+        }
+        if (at >= steps - 0.001) {
+          blip(at, e.pink, 700 + r() * 200, 1.2, "bandpass", 0.05, 0.05, stepPan);
+          blip(at + 0.01, e.noise, 3000, 2, "bandpass", 0.01, 0.02, stepPan);
+          stepPan += 0.12;
+          if (++stepN > 12) {
+            stepN = 0;
+            stepPan = r() < 0.5 ? -0.8 : 0.8;
+            steps = at + 10 + r() * 14;
+          } else steps = at + 0.52 + r() * 0.05;
+        }
+        gap = Math.min(beep, steps) - at;
+        return Math.max(0.01, gap);
+      };
       break;
     }
     case "crowd": {

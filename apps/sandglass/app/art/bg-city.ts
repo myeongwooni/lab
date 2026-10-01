@@ -1428,7 +1428,7 @@ function sewer(): string {
     const t = Math.min(1, (z - 1) / (ZE - 1));
     const col = mix("#30323c", "#0e1016", t);
     A.add(`<path d="${ringD(z, R)}" fill="none" stroke="${col}" stroke-width="${f((0.9 * 700) / z)}"/>`);
-    A.add(`<path d="${ringD(z, R - 0.06)}" fill="none" stroke="${mix("#5a5e6a", "#1a1c24", t)}" stroke-width="${f(Math.max(1, 40 / z))}" opacity=".7"/>`);
+    A.add(`<path d="${ringD(z, R - 0.06)}" fill="none" stroke="${mix("#5a5e6a", "#1a1c24", t)}" stroke-width="${f(Math.max(1, 30 / z))}" opacity=".35"/>`);
   }
   // 벽돌 줄 (가까운 구간만)
   let br = "";
@@ -1451,31 +1451,274 @@ function sewer(): string {
   }
   // 잿빛 수정 무리 (벽에서 돋아남, 은은한 빛)
   const cg = A.glowG("cg", "#d8dce4", "#ffffff");
-  const clusters: [number, number][] = [[-Math.PI * 0.85, 2.0], [-Math.PI * 0.2, 2.6], [-Math.PI * 0.6, 4.2], [-Math.PI * 0.1, 5.5], [-Math.PI * 0.92, 6.5], [-Math.PI * 0.4, 8.5], [-Math.PI * 0.75, 10.5]];
+  // [x, y, z, 방향(라디안), 크기]
+  const clusters: [number, number, number, number, number][] = [
+    [-1.9, FL, 2.2, -Math.PI / 2 + 0.25, 1], [1.85, FL, 2.8, -Math.PI / 2 - 0.25, 0.9], [-1.8, FL, 4.6, -Math.PI / 2 + 0.3, 1.1], [1.8, FL, 6.0, -Math.PI / 2 - 0.3, 1],
+    [-1.8, FL, 8.5, -Math.PI / 2 + 0.3, 1], [1.7, FL, 10.5, -Math.PI / 2 - 0.3, 1], [-1.2, -1.75, 3.4, Math.PI / 2 - 0.4, 0.7], [1.3, -1.7, 5.2, Math.PI / 2 + 0.4, 0.6],
+  ];
   let anim = 8;
   let refl = "";
-  for (const [a, z] of clusters) {
-    const [cx, cy] = P(Math.cos(a) * R * 0.95, Math.sin(a) * R * 0.95, z), s = 700 / z;
-    A.add(A.ell(cx, cy, 0.9 * s, 0.9 * s, cg, 0.5, anim-- > 0 ? A.a("br", z, 5 + z * 0.3) : ""));
+  for (const [x0, y0, z, a, k] of clusters) {
+    const [cx, cy] = P(x0, y0, z), s = 700 / z;
+    A.add(A.ell(cx, cy + Math.sin(a) * 0.3 * s, 0.8 * s * k, 0.8 * s * k, cg, 0.45, anim-- > 0 ? A.a("br", z, 5 + z * 0.3) : ""));
     let lit = "", sh = "";
-    const n = 7 + Math.floor(r() * 4);
-    for (let k = 0; k < n; k++) {
-      const ang = a + Math.PI + (r() - 0.5) * 2.2, L = (0.12 + r() * 0.3) * s, w = (0.035 + r() * 0.035) * s;
+    const n = 5 + Math.floor(r() * 3);
+    for (let m = 0; m < n; m++) {
+      const off = (m / (n - 1) - 0.5) * 1.3;
+      const ang = a + off + (r() - 0.5) * 0.2, L = (0.2 + r() * 0.35) * s * k * (1 - Math.abs(off) * 0.5), w = (0.05 + r() * 0.03) * s * k;
       const dx = Math.cos(ang), dy = Math.sin(ang), nx = -dy, ny = dx;
-      const bx = cx + (r() - 0.5) * 0.2 * s, by = cy + (r() - 0.5) * 0.2 * s;
+      const bx = cx + off * 0.2 * s * k, by = cy;
       const tip: P2 = [bx + dx * L, by + dy * L];
-      lit += pr([[bx + nx * w, by + ny * w], [bx + dx * L * 0.8 + nx * w, by + dy * L * 0.8 + ny * w], tip, [bx + dx * L * 0.8, by + dy * L * 0.8], [bx, by]]);
-      sh += pr([[bx, by], [bx + dx * L * 0.8, by + dy * L * 0.8], tip, [bx + dx * L * 0.8 - nx * w, by + dy * L * 0.8 - ny * w], [bx - nx * w, by - ny * w]]);
+      lit += pr([[bx + nx * w, by + ny * w], [bx + dx * L * 0.82 + nx * w, by + dy * L * 0.82 + ny * w], tip, [bx + dx * L * 0.82, by + dy * L * 0.82], [bx, by]]);
+      sh += pr([[bx, by], [bx + dx * L * 0.82, by + dy * L * 0.82], tip, [bx + dx * L * 0.82 - nx * w, by + dy * L * 0.82 - ny * w], [bx - nx * w, by - ny * w]]);
     }
-    A.add(A.path(sh, "#6e6c70") + A.path(lit, "#c9c6c4"));
-    const [rx, ry] = P(Math.cos(a) * 0.9, WY, z);
-    refl += ep(rx, ry + 6, 0.4 * s, 0.05 * s);
+    A.add(A.path(sh, "#76747a") + A.path(lit, "#d4d1ce"));
+    const [rx, ry] = P(Math.sign(x0) * 0.9, WY, z);
+    refl += ep(rx, ry + 6, 0.35 * s, 0.05 * s);
   }
   A.add(A.path(refl, "#c9c4bc", `opacity=".3" filter="${blur}"`));
   // 물방울 떨어지는 관
   const [px, py] = P(1.2, -1.2, 3), [, py2] = P(1.2, -0.7, 3);
   A.add(A.path(ep(px, py, 26, 26), "#1a1c22") + A.path(ep(px, py, 18, 18), "#050608") + A.line(`M${i0(px)} ${i0(py + 18)}V${i0(py2 + 80)}`, "#6a7a8a", 3, 'opacity=".4" stroke-dasharray="6 18"'));
   finish(A, "#020306", 0.7, 0.45);
+  return A.svg();
+}
+
+
+/** 풍등 떼: 먼 것은 점, 가까운 것은 몸통 + 빛번짐 */
+function skyLanterns(A: Art, r: Rnd, n: number, x0: number, x1: number, y0: number, y1: number, anim: number, big = 1): string {
+  const gl = A.glowG("lglow", "#f0a04a", "#ffe2a0");
+  const far: P2[] = [], mid: P2[] = [];
+  let bodies = "", s = "", gs = "";
+  for (let i = 0; i < n; i++) {
+    const t = r();
+    const x = x0 + r() * (x1 - x0), y = y1 - t * (y1 - y0);
+    const sc = (0.25 + (1 - t) * (1 - t) * 1.3 * r()) * big;
+    if (sc < 0.45) { (sc < 0.32 ? far : mid).push([x, y]); continue; }
+    const w = 10 * sc, h = 13 * sc;
+    bodies += rel(`M${i0(x - w * 0.55)} ${i0(y - h / 2)}h${i0(w * 1.1)}l${f(w * 0.25)} ${i0(h)}h${f(-w * 1.6)}z`);
+    const g = A.ell(x, y, w * 2.8, w * 2.8, gl, 0.6, anim > 0 && sc > 0.7 ? A.a("br", r() * 8, 4 + r() * 4) : "");
+    if (anim > 0 && sc > 0.7) anim--;
+    gs += g;
+  }
+  s = gs + dots(far, "#f6c878", 2.6, 0.8) + dots(mid, "#ffd89a", 4, 0.9);
+  s += A.path(bodies, A.lin("lbody", 0, 0, 0, 1, [[0, "#ffe7b0"], [0.6, "#f2a24e"], [1, "#c8662a"]]));
+  return s;
+}
+
+// ───────────────────────── 새벽제의 밤 (운하의 등불) ─────────────────────────
+
+function festival(): string {
+  const A = new Art("festival");
+  const r = mulberry32(1313);
+  const blur = A.blur("soft", 12);
+  const HZ = "#2a3470";
+  A.add(A.rect(0, 0, 1600, 900, A.v("sky", 0, 560, [[0, "#070b24"], [0.45, "#18205a"], [0.8, "#3a3478"], [1, "#6a4a7a"]])));
+  A.add(starField(r, 110, 0, 0, 1600, 380, "#e8eeff", 0.9));
+  A.add(A.ell(800, 520, 900, 260, A.glowG("haze", "#ffa060"), 0.35));
+  // 여명탑 (불 밝힌)
+  A.add(A.ell(800, 160, 170, 240, A.glowG("tg", "#8aa0f0"), 0.3));
+  A.add(dawnTower(A, 800, 400, 10, 0.25, HZ, true, 1.05));
+  A.add(A.ell(800, 150, 60, 60, A.glowG("clk", "#ffd27a", "#fff1c4"), 0.8, A.a("br", 0, 6)));
+  // 도시 (양 둑)
+  const lights: P2[] = [];
+  const hb = (k: number) => (x: number) => 420 + k * 34 - (80 - k * 20) * bell(x, 800, 500);
+  A.add(town(A, { seed: 131, x0: -20, x1: 1620, base: hb(0), hMin: 14, hMax: 26, wMin: 18, wMax: 30, haze: 0.55, hazeC: HZ, win: 0.5, wall: "#8a90c0", wallS: "#4a4f80", roof: "#7a4a6a", roofS: "#4a3050", winC: "#3a3a6a", lit: "#ffc870", litP: 0.6 }));
+  A.add(town(A, { seed: 132, x0: -20, x1: 1620, base: hb(1), hMin: 20, hMax: 34, wMin: 26, wMax: 42, haze: 0.4, hazeC: HZ, win: 0.6, wall: "#8a90c0", wallS: "#4a4f80", roof: "#8a4a5a", roofS: "#4a3050", winC: "#3a3a6a", lit: "#ffc870", litP: 0.6 }));
+  A.add(town(A, { seed: 133, x0: -30, x1: 1630, base: (x) => 540, hMin: 50, hMax: 90, wMin: 60, wMax: 100, haze: 0.2, hazeC: HZ, win: 0.7, wall: "#6a70a8", wallS: "#34386a", roof: "#7a3a4a", roofS: "#3a2440", winC: "#2a2a50", lit: "#ffc870", litP: 0.65, lights }));
+  // 등불 줄 (건물 사이)
+  const lg = A.glowG("lg", "#ffb050");
+  A.add(lanternLine(A, r, [0, 440], [620, 470], 30, 9, 9, ["#ff7a4a", "#ffc24a", "#ff9a5a"], lg, 4, "#1a1430") + lanternLine(A, r, [980, 470], [1600, 430], 30, 9, 9, ["#ff7a4a", "#ffc24a", "#ff9a5a"], lg, 4, "#1a1430"));
+  // 풍등 (하늘로)
+  A.add(skyLanterns(A, r, 110, 0, 1600, 40, 520, 10, 1.3));
+  // 다리
+  A.add(A.path("M300 560q500-110 1000 0v14q-500-100-1000 0z", "#2a2450") + A.rect(300, 548, 1000, 4, "#4a4080", 'opacity=".0"'));
+  let bl: P2[] = [];
+  for (let k = 0; k <= 12; k++) { const x = 300 + k * 1000 / 12; bl.push([x, 560 - 110 * 4 * (k / 12) * (1 - k / 12) * 0.5 - 6]); }
+  A.add(dots(bl, "#ffd890", 5));
+  // 운하
+  A.add(A.rect(0, 560, 1600, 170, A.v("water", 560, 730, [[0, "#3a3070"], [0.5, "#1a1a44"], [1, "#0a0a20"]])));
+  A.add(A.path(rp(0, 560, 1600, 170), "#ff9a50", `opacity=".08" filter="${blur}"`));
+  lights.slice(0, 26).forEach(([x]) => A.add(A.rect(x - 2, 566 + r() * 20, 4, 30 + r() * 40, "#ffc870", 'opacity=".35"')));
+  // 물에 뜬 등불
+  const fg = A.glowG("fg", "#ffb050", "#fff0c8");
+  for (let i = 0; i < 26; i++) {
+    const t = r(), y = 575 + t * t * 140, x = r() * 1600, sc = 0.4 + t * 1.2;
+    A.add(A.ell(x, y, 26 * sc, 12 * sc, fg, 0.7, i < 8 ? A.a("br", r() * 6, 4 + r() * 3) : "") + A.ell(x, y + 10 * sc, 8 * sc, 22 * sc, "#ffc870", 0.25) + A.path(rel(`M${f(x - 7 * sc)} ${f(y)}h${f(14 * sc)}l${f(-3 * sc)} ${f(-10 * sc)}h${f(-8 * sc)}z`), "#ffe0a0"));
+  }
+  // 군중 실루엣 (앞 둑)
+  let crowd = "";
+  const rim: string[] = [];
+  for (let x = -20; x < 1620; x += 22 + r() * 16) {
+    const h = 90 + r() * 40, y = 900 - 130 + r() * 12, hw = 12 + r() * 5;
+    crowd += cp(x, y - h, hw) + rel(`M${f(x - hw * 2)} ${f(900)}V${f(y - h + hw * 2.6)}q${f(hw * 2)} ${f(-hw * 1.8)} ${f(hw * 4)} 0V900z`);
+    rim.push(`M${f(x + hw * 0.6)} ${f(y - h - hw * 0.8)}a${f(hw)} ${f(hw)} 0 0 1 ${f(hw * 0.4)} ${f(hw * 0.8)}`);
+  }
+  A.add(A.path(crowd, "#0c0a1c") + A.line(rel(rim.join("")), "#ffb870", 2, 'opacity=".7"'));
+  A.add(A.ell(800, 470, 800, 300, A.glowG("bloom", "#ffb870"), 0.18));
+  finish(A, "#05050f", 0.55, 0.2);
+  return A.svg();
+}
+
+// ───────────────────────── 광장 종탑 꼭대기 (밤) ─────────────────────────
+
+function belltower(): string {
+  const A = new Art("belltower");
+  const r = mulberry32(1414);
+  const HZ = "#1e2a60";
+  A.add(A.rect(0, 0, 1600, 900, A.v("sky", 0, 700, [[0, "#060a22"], [0.5, "#16205a"], [1, "#3a3a7a"]])));
+  A.add(starField(r, 120, 0, 0, 1600, 500, "#e8eeff", 1));
+  A.add(A.ell(1180, 170, 180, 180, A.glowG("moon", "#dfe8ff", "#ffffff"), 0.5) + `<circle cx="1180" cy="170" r="34" fill="#f4f6ff"/><circle cx="1170" cy="178" r="8" fill="#d4dcf0"/>`);
+  // 아래로 내려다보는 도시 (등불의 바다)
+  const lights: P2[] = [];
+  A.add(A.path(ridge(r, -20, 1620, 40, (x) => 470 - 40 * bell(x, 300, 300), 3), "#1a2050"));
+  for (let k = 0; k < 4; k++) A.add(town(A, { seed: 141 + k, x0: -20, x1: 1620, base: (x) => 500 + k * 60 + 10 * Math.sin(x / 130 + k), hMin: 14 + k * 8, hMax: 26 + k * 12, wMin: 20 + k * 10, wMax: 34 + k * 14, haze: 0.5 - k * 0.12, hazeC: HZ, win: 0.7, wall: "#6a70a8", wallS: "#34386a", roof: "#6a3a5a", roofS: "#34203a", winC: "#2a2a50", lit: "#ffc870", litP: 0.7, lights }));
+  const gl = A.glowG("sg", "#ffb050");
+  A.add(`<g fill="${gl}" opacity=".45">${lights.filter((_, i) => i % 3 === 0).slice(0, 60).map(([x, y]) => `<circle cx="${i0(x)}" cy="${i0(y)}" r="${i0(14 + r() * 14)}"/>`).join("")}</g>`);
+  A.add(skyLanterns(A, r, 40, 0, 1600, 300, 700, 6, 1));
+  // 종탑 안쪽 틀: 기둥 둘 + 위 아치 + 난간
+  A.add(A.path(`M0 0H1600V900H1340V250A540 360 0 0 0 260 250V900H0Z`, A.lin("fr", 0, 0, 1, 0, [[0, "#1a1426"], [0.5, "#2a2238"], [1, "#1a1426"]])));
+  A.add(A.path(`M260 250A540 360 0 0 1 1340 250`, "none", 'stroke="#4a3e5e" stroke-width="10"'));
+  A.add(A.rect(220, 250, 40, 650, "#3a3048") + A.rect(1340, 250, 40, 650, "#2a2238") + A.line("M258 250V900", "#8a90c8", 2, 'opacity=".5"'));
+  A.add(A.rect(260, 690, 1080, 30, "#3a3048") + A.rect(260, 686, 1080, 6, "#6a6a9a"));
+  let bal = "";
+  for (let x = 280; x < 1340; x += 40) bal += `M${x} 720v180`;
+  A.add(A.line(bal, "#2a2238", 14));
+  // 들보와 종
+  A.add(A.rect(400, 40, 800, 44, "#3a2a24") + A.rect(400, 40, 800, 8, "#6a5040") + A.rect(770, 84, 60, 70, "#2a1e1a"));
+  const bg = A.lin("bell", 0, 0, 1, 0, [[0, "#5a3a1a"], [0.3, "#c8903a"], [0.45, "#f0c060"], [0.6, "#b87a2a"], [1, "#3a240e"]]);
+  A.add(A.ell(800, 380, 360, 260, A.glowG("bglow", "#f0c060"), 0.2));
+  A.add(A.path("M720 150Q720 120 800 120Q880 120 880 150Q900 200 910 330Q920 440 1000 480Q1010 500 990 510H610Q590 500 600 480Q680 440 690 330Q700 200 720 150Z", bg));
+  A.add(A.path("M610 500H990Q1000 520 980 530H620Q600 520 610 500Z", "#8a5a24") + A.line("M700 300Q800 290 900 300M695 350Q800 340 905 350", "#6a4418", 4, 'opacity=".7"'));
+  A.add(A.path("M745 150Q748 250 735 420", "none", 'stroke="#fff1c4" stroke-width="6" opacity=".6" stroke-linecap="round"'));
+  A.add(A.path("M784 510h32v30q-16 18-32 0z", "#5a3a1a"));
+  // 달빛 테두리
+  A.add(A.path("M880 150Q900 200 910 330Q920 440 1000 480", "none", 'stroke="#c8d4ff" stroke-width="3" opacity=".6"'));
+  finish(A, "#04040c", 0.55, 0.3);
+  return A.svg();
+}
+
+// ───────────────────────── 왕도 밖 언덕, 잿빛 새벽 ─────────────────────────
+
+function hill(): string {
+  const A = new Art("hill");
+  const r = mulberry32(1515);
+  const blur = A.blur("soft", 8);
+  const HZ = "#b8b4b0";
+  A.add(A.rect(0, 0, 1600, 900, A.v("sky", 0, 520, [[0, "#5d5a62"], [0.4, "#8a8784"], [0.8, "#c9c4bc"], [1, "#dcd6cc"]])));
+  // 잿빛 해 (회색 원반)
+  A.add(A.ell(1000, 250, 300, 300, A.glowG("sun", "#e8e4dc", "#f4f0ea"), 0.5) + `<circle cx="1000" cy="250" r="52" fill="#b8b4ae"/><circle cx="1000" cy="250" r="52" fill="none" stroke="#e8e4dc" stroke-width="3"/>`);
+  A.add(streaks(r, 14, 0, 1600, 120, 420, "#a8a4a0", 0.6, 12) + streaks(r, 8, 0, 1600, 200, 400, "#e0dcd4", 0.5, 5));
+  A.add(cloud(r, 330, 260, 460, 90, { lit: "#d8d4ce", mid: "#b0aca8", shade: "#8a8784" }, 1, 0.85));
+  // 먼 산
+  A.add(A.path(ridge(r, -20, 1620, 30, (x) => 440 - 60 * bell(x, 1350, 260) - 30 * bell(x, 200, 200), 3), "#a09c9a"));
+  // 멀리 보이는 왕도 (언덕 위 층층, 탑)
+  A.add(A.path(ridge(r, 400, 1200, 20, (x) => 470 - 70 * bell(x, 760, 200), 1), mix("#8a8680", HZ, 0.3)));
+  A.add(dawnTower(A, 760, 420, 170, 0.55, HZ, false, 1.1));
+  for (let k = 0; k < 3; k++) A.add(town(A, { seed: 151 + k, x0: 520, x1: 1000, base: (x) => 420 + k * 20 - (50 - k * 12) * bell(x, 760, 180), hMin: 8, hMax: 16, wMin: 10, wMax: 18, haze: 0.6 - k * 0.08, hazeC: HZ, win: 0.2, roof: "#b08a78", roofS: "#8a6e64" }));
+  A.add(A.path("M520 480V440h24l6-10 6 10h420l6-10 6 10h24V480z", mix("#a8a098", HZ, 0.4)));
+  // 안개
+  A.add(A.rect(0, 440, 1600, 120, A.v("mist", 440, 560, [[0, "#dcd6cc", 0], [0.5, "#dcd6cc", 0.85], [1, "#dcd6cc", 0.3]])));
+  // 언덕 (가까운 풀밭)
+  A.add(A.path(ridge(r, -20, 1620, 40, (x) => 560 + 60 * Math.sin(x / 400) + 30 * bell(x, 1300, 200), 2), "#7a8074"));
+  A.add(A.path(ridge(r, -20, 1620, 40, (x) => 640 - 70 * bell(x, 300, 400) + 20 * Math.sin(x / 170), 3), A.v("g1", 560, 900, [[0, "#6a7266"], [1, "#3a403a"]])));
+  // 길
+  A.add(A.path("M760 560Q700 620 840 680T700 900H880Q980 760 880 690T790 560Z", "#9a948a", 'opacity=".75"'));
+  // 풀잎
+  let gr = "", gr2 = "";
+  for (let i = 0; i < 220; i++) {
+    const x = r() * 1600, y = 620 + Math.pow(r(), 0.7) * 280, h = 10 + (y - 600) * 0.12 * (0.6 + r() * 0.8), lean = (r() - 0.3) * h * 0.4;
+    const d = rel(`M${i0(x)} ${i0(y)}q${f(lean * 0.3)} ${f(-h * 0.6)} ${f(lean)} ${f(-h)}`);
+    if (r() < 0.5) gr += d; else gr2 += d;
+  }
+  A.add(A.line(gr, "#8a927e", 2, 'opacity=".7"') + A.line(gr2, "#4a524a", 2.4, 'opacity=".8"'));
+  // 외로운 나무 (오른쪽)
+  A.add(A.path("M1250 600q-6-80 4-150q-30-20-50-50q30 20 54 30q0-40 20-70q-10 40-4 80q30-10 50-40q-20 40-46 60q-6 70 4 140z", "#3a3a38"));
+  A.add(A.path(cp(1260, 420, 50) + cp(1310, 400, 40) + cp(1210, 410, 36) + cp(1270, 370, 40), "#56584e", 'opacity=".85"'));
+  A.add(A.ell(1000, 260, 700, 380, A.glowG("bloom", "#f0ece4"), 0.25));
+  A.add(A.path(pr([[1000, 250], [700, 900], [1300, 900]]), "#f0ece4", `opacity=".08" filter="${blur}"`));
+  finish(A, "#2a2828", 0.45, 0.35);
+  return A.svg();
+}
+
+/** 자작나무: 흰 줄기 + 검은 옹이 + 노란 잎 무리 */
+function birch(A: Art, r: Rnd, x: number, yb: number, h: number, w: number, lean: number, leaves: string[], anim: boolean): string {
+  const top = yb - h;
+  let s = A.path(rel(`M${f(x - w / 2)} ${f(yb)}Q${f(x - w * 0.4 + lean * 0.5)} ${f(yb - h * 0.5)} ${f(x - w * 0.2 + lean)} ${f(top)}h${f(w * 0.4)}Q${f(x + w * 0.4 + lean * 0.5)} ${f(yb - h * 0.5)} ${f(x + w / 2)} ${f(yb)}z`), "#f2eee6");
+  s += A.path(rel(`M${f(x + w * 0.1)} ${f(yb)}Q${f(x + w * 0.2 + lean * 0.5)} ${f(yb - h * 0.5)} ${f(x + w * 0.05 + lean)} ${f(top)}h${f(w * 0.15)}Q${f(x + w * 0.4 + lean * 0.5)} ${f(yb - h * 0.5)} ${f(x + w / 2)} ${f(yb)}z`), "#c8c0b4");
+  let mk = "";
+  for (let y = yb - 20; y > top + 20; y -= 16 + r() * 26) {
+    const t = (yb - y) / h, cx = x + lean * t * t * 0.9, ww = w * (1 - t * 0.6);
+    mk += rel(`M${f(cx - ww * 0.5)} ${f(y)}h${f(ww * (0.3 + r() * 0.4))}v${f(2 + r() * 3)}h${f(-ww * 0.3)}z`);
+  }
+  s += A.path(mk, "#2a2622");
+  // 가지
+  let br = "";
+  for (let k = 0; k < 5; k++) { const t = 0.45 + k * 0.1, y = yb - h * t, cx = x + lean * t * t, sd = k % 2 ? 1 : -1; br += rel(`M${f(cx)} ${f(y)}q${f(sd * h * 0.08)} ${f(-h * 0.05)} ${f(sd * h * 0.16)} ${f(-h * 0.12)}`); }
+  s += A.line(br, "#5a524a", Math.max(1.5, w * 0.12));
+  // 잎
+  const lv: string[] = leaves.map(() => "");
+  for (let k = 0; k < 26; k++) {
+    const t = 0.5 + r() * 0.55, cx = x + lean * t * t + gauss(r) * h * 0.2, cy = yb - h * t + gauss(r) * h * 0.08;
+    lv[k % leaves.length] += cp(cx, cy, h * (0.035 + r() * 0.04));
+  }
+  const g = lv.map((d, i) => A.path(d, leaves[i])).join("");
+  s += anim ? `<g ${A.a("sw", r() * 5, 7)}>${g}</g>` : g;
+  return s;
+}
+
+// ───────────────────────── 북쪽 레벤의 폐허 (가을) ─────────────────────────
+
+function ruins(): string {
+  const A = new Art("ruins");
+  const r = mulberry32(1616);
+  const HZ = "#dfe6ea";
+  A.add(A.rect(0, 0, 1600, 900, A.v("sky", 0, 520, [[0, "#6a9ac8"], [0.5, "#aac8e0"], [1, "#f2ead8"]])));
+  A.add(A.ell(1200, 150, 420, 320, A.glowG("sun", "#fff0cc", "#ffffff"), 0.6));
+  const CC: CloudC = { lit: "#ffffff", mid: "#eef2f6", shade: "#bccad8" };
+  A.add(cloud(r, 360, 190, 420, 90, CC, 1, 0.9) + streaks(r, 10, 0, 1600, 80, 300, "#ffffff", 0.5));
+  // 먼 산과 가을 숲
+  A.add(A.path(ridge(r, -20, 1620, 30, (x) => 430 - 70 * bell(x, 1200, 300) - 40 * bell(x, 250, 220), 3), mix("#9aa0b0", HZ, 0.4)));
+  let fr: string[] = ["", "", ""];
+  for (let i = 0; i < 90; i++) { const x = r() * 1600, y = 460 + r() * 30; fr[i % 3] += cp(x, y, 14 + r() * 16); }
+  A.add(A.path(fr[0], mix("#d8a040", HZ, 0.35)) + A.path(fr[1], mix("#c87a3a", HZ, 0.35)) + A.path(fr[2], mix("#9a9a5a", HZ, 0.35)));
+  // 잿빛 땅
+  A.add(A.path(ridge(r, -20, 1620, 40, (x) => 500 + 10 * Math.sin(x / 200), 2), A.v("gnd", 490, 900, [[0, "#b8b4ae"], [0.5, "#9a9690"], [1, "#6a6662"]])));
+  // 무너진 벽들
+  const wall = (x0: number, x1: number, yb: number, h: number, seed: number, win: boolean) => {
+    const rr = mulberry32(seed);
+    let top = `M${x0} ${yb}V${yb - h * (0.5 + rr() * 0.3)}`;
+    for (let x = x0; x < x1; x += (x1 - x0) / 8) top += `L${i0(x + (x1 - x0) / 16)} ${i0(yb - h * (0.4 + rr() * 0.6))}`;
+    top += `L${x1} ${i0(yb - h * 0.3)}V${yb}Z`;
+    let s = A.path(top, "#d4ccbe") + A.path(`M${x1 - (x1 - x0) * 0.15} ${yb}V${i0(yb - h * 0.3)}L${x1} ${i0(yb - h * 0.3)}V${yb}Z`, "#a8a092");
+    let st = "";
+    for (let y = yb - 18; y > yb - h; y -= 18) st += `M${x0} ${i0(y)}H${x1}`;
+    s += `<g clip-path="${A.clip("wc" + seed, top)}">` + A.line(st, "#b0a898", 1.5, 'opacity=".6"') + (win ? A.path(arch(x0 + (x1 - x0) * 0.35, yb - h * 0.12, (x1 - x0) * 0.3, yb - h * 0.62, 0.5), "#6a6660") : "") + "</g>";
+    s += A.path(ep((x0 + x1) / 2, yb + 4, (x1 - x0) * 0.6, 10), "#7a7670", 'opacity=".4"');
+    return s;
+  };
+  A.add(wall(160, 420, 540, 150, 1, false) + wall(1180, 1440, 545, 170, 2, true));
+  // 가운데: 아치문이 남은 벽
+  A.add(wall(600, 1000, 560, 300, 3, false));
+  A.add(A.path(arch(730, 560, 140, 350, 0.5), A.v("door", 350, 560, [[0, "#f6eed8"], [1, "#c8c4b8"]])));
+  A.add(A.path(arch(720, 560, 160, 338, 0.5) + arch(730, 560, 140, 350, 0.5), "#b0a898", 'fill-rule="evenodd"'));
+  // 돌무더기
+  let rb = "";
+  for (let k = 0; k < 30; k++) { const x = r() * 1600, y = 540 + Math.pow(r(), 0.8) * 330, s = 10 + (y - 500) * 0.12 * r(); rb += pr([[x, y], [x + s, y - s * 0.5], [x + s * 1.8, y - s * 0.1], [x + s * 1.5, y + s * 0.3], [x + s * 0.2, y + s * 0.3]]); }
+  A.add(A.path(rb, "#8a8680") + A.path(rb, "none", 'stroke="#c8c0b4" stroke-width="1" opacity=".5"'));
+  // 초록 새싹 (재를 뚫고)
+  const sp: string[] = ["", ""];
+  for (let i = 0; i < 140; i++) {
+    const x = r() * 1600, y = 520 + Math.pow(r(), 0.8) * 370, h = 4 + (y - 500) * 0.04;
+    sp[i % 2] += rel(`M${i0(x)} ${i0(y)}q${f(-h * 0.6)} ${f(-h * 0.4)} ${f(-h * 0.8)} ${f(-h)}q${f(h * 0.6)} 0 ${f(h * 0.8)} ${f(h)}q${f(h * 0.2)} ${f(-h)} ${f(h)} ${f(-h * 1.1)}q0 ${f(h * 0.7)} ${f(-h)} ${f(h * 1.1)}z`);
+  }
+  A.add(A.path(sp[0], "#7ab85a") + A.path(sp[1], "#a8d870"));
+  // 자작나무
+  const lv = ["#f2c24a", "#e8a038", "#f6d870", "#d8883a"];
+  A.add(birch(A, r, 520, 600, 420, 24, -20, lv, true) + birch(A, r, 1090, 610, 460, 26, 24, lv, true) + birch(A, r, 1250, 590, 300, 18, 10, lv, false) + birch(A, r, 360, 580, 280, 16, -8, lv, false));
+  A.add(birch(A, r, 120, 900, 820, 54, 30, lv, true) + birch(A, r, 1500, 900, 760, 48, -40, lv, false));
+  A.add(A.ell(1100, 200, 800, 400, A.glowG("bloom", "#fff4dc"), 0.3));
+  finish(A, "#4a4238", 0.35, 0.35);
   return A.svg();
 }
 
@@ -1574,4 +1817,8 @@ export const CITY_BACKGROUNDS: Record<string, string> = {
   inn: inn(),
   chapel: chapel(),
   sewer: sewer(),
+  festival: festival(),
+  belltower: belltower(),
+  hill: hill(),
+  ruins: ruins(),
 };

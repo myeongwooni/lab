@@ -4,8 +4,9 @@
 
 type Pt = [number, number] | [number, number, number]; // 세 번째 값 1 = 모서리
 
+let coarse = false; // 머리카락 등 큰 모양은 정수 좌표로(문자열 절약)
 const f = (n: number): string => {
-  const v = Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 10) / 10;
+  const v = coarse || Math.abs(n) >= 100 ? Math.round(n) : Math.round(n * 10) / 10;
   return Object.is(v, -0) ? "0" : String(v);
 };
 
@@ -326,7 +327,9 @@ interface Tone { b: string; s: string; l: string; h: string }
 function hairLocks(b: B, list: [Pt[], number, number?][], t: Tone, off = "2.5 2", w = 2): string[] {
   const ids: string[] = [];
   for (const [c, wd, bu] of list) {
+    coarse = true;
     const id = b.def(lock(c, wd, 1, bu ?? 0.5));
+    coarse = false;
     ids.push(id);
     b.add(`<use href="#${id}" fill="${t.s}" transform="translate(${off})"/><use href="#${id}" fill="${t.b}" stroke="${t.l}" stroke-width="${w}"/>`);
   }
@@ -336,19 +339,26 @@ function hairLocks(b: B, list: [Pt[], number, number?][], t: Tone, off = "2.5 2"
 /** 머리 광택 띠: 가닥들 모양으로 가린 띠 */
 function sheen(b: B, name: string, ids: string[], d: string, col: string, o = 1): void {
   const m = b.mask(name, ids.map((id) => `<use href="#${id}" fill="#fff"/>`).join(""));
-  b.add(`<path d="${d}" fill="${col}" mask="${m}"${op(o)}/>`);
+  b.add(`<g mask="${m}" fill="${col}"${op(o)}>${d.split("|").map((x) => `<path d="${x}"/>`).join("")}</g>`);
 }
 
 /** 광택: 머리 둥근 면을 따라 늘어선 짧은 반짝임 조각들. (cx,cy)=정수리 기준점, r=반지름 */
 function gleam(cx: number, cy: number, r: number, a0: number, a1: number, n: number, len = 17, w = 5): string {
   let d = "";
+  coarse = true;
   for (let i = 0; i < n; i++) {
     const a = ((a0 + ((a1 - a0) * i) / (n - 1)) * Math.PI) / 180;
     const ux = Math.cos(a), uy = Math.sin(a);
-    const L = len * (i % 2 ? 0.7 : 1);
-    const x = cx + ux * r, y = cy + uy * r;
-    d += lock([[x - ux * L * 0.5, y - uy * L * 0.5], [x, y], [x + ux * L * 0.5, y + uy * L * 0.5]], w * (i % 2 ? 0.75 : 1), 2);
+    const L = len * (i % 2 ? 0.8 : 1);
+    const x = cx + ux * (r + (i % 2 ? 2 : 0)), y = cy + uy * (r + (i % 2 ? 2 : 0));
+    d += lock([[x - ux * L * 0.5, y - uy * L * 0.5], [x, y], [x + ux * L * 0.5, y + uy * L * 0.5]], w * (i % 2 ? 0.8 : 1), 2);
   }
+  // 조각들을 잇는 얇은 띠
+  const A = (a: number) => [cx + Math.cos((a * Math.PI) / 180) * (r + 1), cy + Math.sin((a * Math.PI) / 180) * (r + 1)];
+  const [x0, y0] = A(a0 + 3), [x1, y1] = A(a1 - 3), [x2, y2] = A(a1 - 3), [x3, y3] = A(a0 + 3);
+  const R1 = r + 1 + w * 0.3, R2 = r + 1 - w * 0.3;
+  d += `|M${f(cx + ((x0 - cx) * R1) / (r + 1))} ${f(cy + ((y0 - cy) * R1) / (r + 1))}A${f(R1)} ${f(R1)} 0 0 1 ${f(cx + ((x1 - cx) * R1) / (r + 1))} ${f(cy + ((y1 - cy) * R1) / (r + 1))}L${f(cx + ((x2 - cx) * R2) / (r + 1))} ${f(cy + ((y2 - cy) * R2) / (r + 1))}A${f(R2)} ${f(R2)} 0 0 0 ${f(cx + ((x3 - cx) * R2) / (r + 1))} ${f(cy + ((y3 - cy) * R2) / (r + 1))}Z`;
+  coarse = false;
   return d;
 }
 
@@ -488,7 +498,7 @@ function eliosHead(b: B, ex: Ex, o: EHead): void {
     [[[10, -94], [4, -60], [-2, -26], [-6, 10]], 22],
   ], H);
   b.add(P(sp([[-58, -44], [-50, -78], [-6, -99], [36, -93], [62, -70], [68, -44], [44, -68], [20, -76], [0, -78], [-22, -76], [-42, -64]]), H.b), S(sp([[-60, -40], [-50, -79], [-6, -100], [36, -94], [62, -71], [69, -42]], false), H.l, 2));
-  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 15, 24, 6.5), H.h);
+  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 16, 26, 10), H.h);
   // 흰 가닥(인물의 오른쪽 = 관객 왼쪽 앞머리)
   if (!o.bare && !o.ash) {
     const W: Tone = { b: "#eef0f8", s: "#b6bbd0", l: "#6f7590", h: "#fff" };
@@ -623,8 +633,7 @@ function razelHead(b: B, ex: Ex): void {
   const H = R_HAIR, fc = FC_R;
   // 묶은 꼬리(머리 뒤 가까운 쪽으로 삐져나옴)
   hairLocks(b, [
-    [[[50, -24], [68, 6], [74, 46], [70, 96]], 28, 0.3],
-    [[[56, -14], [74, 30], [66, 80]], 12],
+    [[[46, -20], [62, 10], [66, 48], [62, 86]], 24, 0.3],
   ], H);
   b.add(P(sp([[-6, -100], [42, -96], [70, -70], [76, -30], [72, 4], [60, 24], [-60, 24], [-66, -20], [-58, -70]]), H.s, H.l, 2));
   // 뒷머리 흘러내린 잔머리(먼 쪽)
@@ -779,7 +788,7 @@ function sianHead(b: B, ex: Ex): void {
     [[[-2, -94], [-8, -62], [-12, -32], [-11, -6]], 22],
   ], H);
   b.add(P(sp([[-58, -44], [-50, -78], [-6, -99], [36, -93], [62, -70], [68, -44], [44, -68], [20, -76], [0, -78], [-22, -76], [-42, -64]]), H.b), S(sp([[-60, -40], [-50, -79], [-6, -100], [36, -94], [62, -71], [69, -42]], false), H.l, 2));
-  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 15, 24, 6.5), H.h);
+  sheen(b, "sh", [cap, ...bangs], gleam(6, -14, 58, 196, 338, 16, 26, 10), H.h);
   // 왼쪽(가까운 쪽) 가는 땋은 머리 + 푸른 구슬
   let br = "";
   for (let i = 0; i < 8; i++) {
@@ -853,8 +862,8 @@ function ashBody(b: B): void {
   // 긴 뒷머리(망토 뒤로)
   b.add(`<g transform="${ASH_TF}">`);
   hairLocks(b, [
-    [[[-56, -40], [-80, 40], [-92, 160], [-96, 290]], 44, 0.3],
-    [[[56, -40], [82, 50], [96, 170], [102, 300]], 46, 0.3],
+    [[[-54, 0], [-78, 60], [-92, 160], [-100, 290]], 32, 0.3],
+    [[[58, 0], [84, 66], [98, 170], [106, 300]], 34, 0.3],
     [[[-40, 0], [-64, 100], [-70, 220]], 30],
     [[[40, 0], [70, 110], [80, 240]], 30],
   ], H);
@@ -954,11 +963,11 @@ function ashMask(b: B, expr: string): void {
     [[5, 1, 1], [14, -9], [28, -12], [40, -6, 1], [30, 5], [16, 6]],
     [[-15, 1, 1], [-25, -9], [-37, -9], [-44, -3, 1], [-35, 5], [-23, 5]],
   ];
-  const gg = b.rgb("gg", [[0, "#f4f0e8", m.g], [0.5, "#b9b3aa", m.g * 0.55], [1, "#2a2729", 0]]);
+  const gg = b.rgb("gg", [[0, "#ffffff", m.g], [0.25, "#e6e1d8", m.g * 0.9], [0.6, "#9c968e", m.g * 0.5], [1, "#2a2729", 0]]);
   holes.forEach((h, i) => {
     b.add(P(sp(h), "#131113", "#4a4442", 1.6));
     const cx = i ? -30 : 22, cy = -2;
-    b.add(`<ellipse class="${m.flick ? b.p + "gw" : ""}" cx="${cx}" cy="${cy}" rx="${f((i ? 6 : 8) * m.gr)}" ry="${f(5.5 * m.gr)}" fill="${gg}"/>`);
+    b.add(`<ellipse${m.flick ? ` class="${b.p}gw"` : ""} cx="${cx}" cy="${cy}" rx="${f((i ? 7 : 9.5) * m.gr)}" ry="${f(6.5 * m.gr)}" fill="${gg}"/>`);
   });
   // 금
   b.add(S("M30 -64L24 -46 30 -36 22 -22 26 -12M24 -46l8-4M-38 6L-34 20-42 32-36 44-28 58M-34 20l-8 2M-42 32l6 4", "#4f4844", 1.3));
@@ -976,7 +985,7 @@ function ashking(b: B, _ex: Ex, expr: string): void {
 
 const FC_A: Face = {
   skin: "#efe6e0", skinSh: "#cfc2bc", skinLine: "#8f807b", blush: "#d99a98",
-  lash: "#3a3436", brow: "#bdb6b0", browW: 5,
+  lash: "#2a2426", brow: "#a9a19b", browW: 4.6,
   eyes: [
     { ix: 6, iy: 2, ox: 41, oy: -3, h: 13.6, rx: 9.6, ry: 12.4, u: 0.44 },
     { ix: -16, iy: 2, ox: -42, oy: -2.5, h: 13, rx: 7.6, ry: 12, u: 0.45 },
@@ -993,12 +1002,12 @@ function ashkingBare(b: B, ex: Ex): void {
   b.add(`<g transform="${ASH_TF}">`);
   // 목의 재 균열
   b.add(S("M10 70l6 10-4 9 7 12M16 80l6-2M-4 84l5 8", "#6a605c", 1.2, op(0.9)));
-  const gaunt = `${P(sp([[-47, 12], [-42, 30], [-44, 20]]), "#cfc2bc")}${S("M30 22Q26 34 18 42", "#b0a29c", 1.3, op(0.8))}`;
+  const gaunt = `${P(sp([[-49, 10], [-40, 22], [-44, 36], [-50, 30]]), "#cfc2bc")}${P(sp([[44, 8], [30, 20], [22, 36], [34, 34], [46, 22]]), "#cfc2bc")}${S("M-4 30Q-2 38-6 42M24 30Q22 40 14 46", "#a8988f", 1.2, op(0.8))}`;
   eliosHead(b, ex, {
     hair: A_HAIR, fc: FC_A, ash: true, shade: gaunt,
     after: () => {
       // 눈 밑 그늘 + 뺨 균열
-      b.add(S("M12 11Q24 15 36 9M-18 11Q-28 14-38 10", "#a8988f", 1.1, op(0.7)));
+      b.add(S("M10 12Q24 17 38 10M-18 12Q-28 16-39 11M14 16Q24 20 34 15", "#9a8a82", 1.2, op(0.75)));
       b.add(S("M34 16l5 8-3 7 6 9M39 24l6-1M-40 24l-4 8 3 6", "#6a605c", 1.2, op(0.85)));
     },
   });

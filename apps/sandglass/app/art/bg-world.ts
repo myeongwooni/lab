@@ -1388,7 +1388,7 @@ function sGuestroom(): string {
   for (let k = -10; k <= 10; k++) boards += `M${800 + k * 60} 680L${800 + k * 160} 900`;
   P.add(stroke(boards, "#6a4428", 2, 0.4));
   // window
-  const WX = 520;
+  const WX = 450;
   const WW = 330;
   P.add(ell(WX + WW / 2, 320, 520, 420, P.glow("#fffbe8"), 0.8));
   P.add(path(`M${WX - 20} 110H${WX + WW + 20}V540H${WX - 20}Z`, "#f8f1e4"));
@@ -1419,7 +1419,8 @@ function sGuestroom(): string {
   P.add(drape(WX + WW + 20, 1));
   P.add(path(`M${WX - 160} 84H${WX + WW + 160}V96H${WX - 160}Z`, "#8a6a45"));
   P.add(circ(WX - 166, 90, 9, "#e8c98a") + circ(WX + WW + 166, 90, 9, "#e8c98a"));
-  // wall clock (safe, ticking)
+  // wall clock (safe, ticking) + bed group, shifted toward the centre
+  P.add(`<g transform="translate(-90 0)">`);
   P.add(circ(1000, 200, 80, P.glow("#fff1c4"), 0.35));
   P.add(clock(1000, 200, 44, { rim: "#8a6a45", rimHi: "#fff1c4", face: "#fff6df", h: 240, m: 0, sec: P.spin(60, 0, 60), secC: "#c65a36", glass: true }));
   // bed
@@ -1450,6 +1451,7 @@ function sGuestroom(): string {
   P.add(path("M912 520V480h16v40Z", "#e8c98a"));
   P.add(path("M884 482L956 482L940 430L900 430Z", "#fff1d6"));
   P.add(path("M884 482L956 482L952 470L888 470Z", "#f0d8b0"));
+  P.add("</g>");
   // rug
   P.add(ell(700, 810, 360, 60, "#c98a7a"));
   P.add(ell(700, 810, 320, 48, "#e0a898"));

@@ -868,8 +868,225 @@ function cgEGood(): string {
   b += `<rect width="1600" height="900" fill="${c.lgu(0, 0, 1600, 0, [[0, "#ffd08a", 0.3], [0.5, "#ffd9a0", 0.05], [1, "#8a70c0", 0.12]])}" style="mix-blend-mode:screen"/>`;
   return svg(c, b);
 }
+
+// ── 뒷모습 도우미 (머리 로컬 좌표, 관객에게 등을 보임) ──
+
+/** 뒤통수 머리: tail = 목뒤 꽁지 길이, crownSpikes = 왕관처럼 뻗친 끝 */
+function backHair(H: Hair, o: { tail?: number; spiky?: boolean; len?: number } = {}): string {
+  const len = o.len ?? 100;
+  let tips = "";
+  const n = 9;
+  for (let i = 0; i <= n; i++) {
+    const x = 56 - (112 * i) / n;
+    tips += `L${n1(x)} ${n1(len + (i % 2 ? 14 : -4) + Math.sin(i * 1.7) * 4)}`;
+  }
+  let s = cel(`M-68 -20C-76 -82 -40 -116 0 -116C40 -116 76 -82 68 -20C72 20 68 60 58 ${len}${tips}C-68 60 -72 20 -68 -20Z`, H.b, H.l, 2.6);
+  // 그림자 면(아래쪽)
+  s += fl(`M-64 30C-40 44 40 44 64 30C62 60 60 80 56 ${len}L-58 ${len}C-62 80 -64 60 -64 30Z`, H.s, 0.8);
+  // 결(정수리 소용돌이에서 아래로)
+  s += strands(["M-6 -100C-30 -60 -44 0 -46 70", "M4 -100C10 -50 16 10 14 80", "M10 -100C40 -60 52 0 50 70", "M-10 -100C-50 -80 -62 -20 -62 30"], H, 1.6);
+  s += shine(0, -84, 50, 10, 11, H.h, 0.85, 0);
+  if (o.spiky) {
+    // 왕관처럼 흐트러져 위로 뻗친 가닥
+    s += cel("M-50 -90L-62 -128L-36 -104L-30 -140L-12 -110L0 -150L12 -110L30 -140L36 -104L62 -128L50 -90C30 -108 -30 -108 -50 -90Z", H.b, H.l, 2.2);
+    s += shine(0, -104, 40, 8, 8, H.h, 0.9, 0);
+  }
+  if (o.tail) s += cel(`M-14 ${len - 20}C-20 ${len + o.tail * 0.4} -10 ${len + o.tail * 0.8} 4 ${len + o.tail}C16 ${len + o.tail * 0.8} 22 ${len + o.tail * 0.4} 14 ${len - 20}Z`, H.b, H.l, 2.2) + fl(`M-10 ${len - 6}h22v10h-22z`, "#3a3040");
+  return s;
+}
+
+/** 뒷모습의 두 귀(뾰족) */
+function backElfEars(sk: Skin): string {
+  return cel("M-62 -6C-80 -18 -96 -30 -104 -36C-100 -14 -90 6 -72 24Z", sk.s, sk.l, 2.2) + cel("M62 -6C80 -18 96 -30 104 -36C100 -14 90 6 72 24Z", sk.s, sk.l, 2.2);
+}
+function backHorns(): string {
+  return cel("M-34 -100C-42 -118 -54 -128 -66 -132C-58 -118 -56 -104 -52 -90Z", "#1c1624", "#050408", 2) + cel("M34 -100C42 -118 54 -128 66 -132C58 -118 56 -104 52 -90Z", "#1c1624", "#050408", 2);
+}
+
+/** 시계 문자판 하나(벽시계) */
+function clockFace(x: number, y: number, rr: number, face: string, rim: string, hand: string, a1: number, a2: number): string {
+  let t = "";
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    t += `M${n1(x + Math.cos(a) * rr * 0.78)} ${n1(y + Math.sin(a) * rr * 0.78)}L${n1(x + Math.cos(a) * rr * 0.9)} ${n1(y + Math.sin(a) * rr * 0.9)}`;
+  }
+  return (
+    `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(rr)}" fill="${face}" stroke="${rim}" stroke-width="${n1(Math.max(2, rr * 0.12))}"/>` +
+    ln(t, hand, Math.max(1, rr * 0.05)) +
+    ln(`M${n1(x)} ${n1(y)}L${n1(x + Math.cos(a1) * rr * 0.5)} ${n1(y + Math.sin(a1) * rr * 0.5)}M${n1(x)} ${n1(y)}L${n1(x + Math.cos(a2) * rr * 0.72)} ${n1(y + Math.sin(a2) * rr * 0.72)}`, hand, Math.max(1.4, rr * 0.07))
+  );
+}
+
+/** 금빛 모래시계(로컬 중심 0,0, 높이 ≈ 200). broken: 금 간 유리, 흘러내린 모래 */
+function hourglass(c: Ctx, broken: boolean, glass = "#fff6d8", op = 1): string {
+  const gold = "#e8b048";
+  const gl = "#7a5010";
+  const sand = c.lg(0, 0, 0, 1, [[0, "#ffe9a8"], [1, "#f0a838"]]);
+  let s = `<g opacity="${op}">`;
+  s += cel("M-46 -86C-46 -40 -8 -16 -8 0C-8 16 -46 40 -46 86H46C46 40 8 16 8 0C8 -16 46 -40 46 -86Z", glass, "#c8a868", 2, ' fill-opacity=".35"');
+  s += fl("M-30 60C-20 44 -6 34 0 20C6 34 20 44 30 60L40 86H-40Z", sand);
+  if (!broken) s += fl("M-36 -70C-20 -50 -6 -30 0 -10C6 -30 20 -50 36 -70Z", sand);
+  else s += fl("M-20 -60C-10 -48 -4 -36 0 -22C4 -36 10 -48 20 -60Z", sand, 0.7);
+  s += ln("M-34 -76C-34 -44 -10 -24 -8 -6", "#ffffff", 3, 0.7);
+  if (broken) s += ln("M-44 -60L-26 -40L-34 -20M-26 -40L-10 -46M20 -80L30 -56L44 -50M30 -56L22 -36", "#ffffff", 2) + ln("M-44 -60L-26 -40L-34 -20M20 -80L30 -56L44 -50", "#8a7040", 0.8);
+  s += cel("M-58 -98H58V-84H-58Z", gold, gl, 2.2) + cel("M-58 84H58V98H-58Z", gold, gl, 2.2);
+  s += cel("M-54 -84H-46V84H-54Z", gold, gl, 1.8) + cel("M46 -84H54V84H46Z", gold, gl, 1.8);
+  s += fl("M-56 -96H56V-92H-56Z", "#fff0c0") + fl("M-56 86H56V90H-56Z", "#fff0c0");
+  if (broken) s += cel("M46 -30L60 -40L54 -22Z", gold, gl, 1.4);
+  return s + `</g>`;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_e_bad — 잿빛 공방. 흰 머리가 왕관처럼 선 엘리오스의 뒷모습, 깨진 금빛 모래시계.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_e_bad cgEBad
+function cgEBad(): string {
+  const c = new Ctx("cg-e-bad");
+  const p = c.p;
+  const r = rng(2002);
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#3a3836"], [0.6, "#5d5a58"], [1, "#2a2826"]])}"/>`;
+  // 벽 가득 멈춘 시계들
+  let clocks = "";
+  for (let i = 0; i < 46; i++) {
+    const x = r() * 1600;
+    const y = 40 + r() * 620;
+    if (x > 560 && x < 1040 && y > 80 && y < 560) continue;
+    const rr = 18 + r() * 46;
+    clocks += clockFace(x, y, rr, r() < 0.5 ? "#7a7672" : "#8a8580", "#4a4644", "#3a3634", r() * 6.28, r() * 6.28);
+  }
+  b += `<g opacity=".8">${clocks}</g>`;
+  // 가운데 큰 창: 잿빛 새벽
+  b += cel("M560 560V180Q800 20 1040 180V560Z", c.lgu(0, 80, 0, 560, [[0, "#b8b2aa"], [0.6, "#d4cfc8"], [1, "#9a948e"]]), "#2e2c2a", 10);
+  b += `<circle cx="800" cy="330" r="56" fill="#e6e2dc" opacity=".9"/><circle cx="800" cy="330" r="200" fill="${c.glow("#f4f0ea", 0.6, 0.2)}"/>`;
+  b += fl("M560 470C640 440 700 460 800 440C900 420 960 450 1040 430V560H560Z", "#8a8680", 0.8);
+  b += ln("M800 60V560M560 330H1040", "#2e2c2a", 8);
+  // 창에서 드는 잿빛 빛기둥
+  b += fl("M560 560L420 900H1180L1040 560Z", "#e8e4de", 0.1);
+  // 작업대와 톱니
+  b += cel("M0 700H560L600 760H0Z", "#4a4644", "#1e1c1a", 3) + fl("M0 760H600V900H0Z", "#2e2c2a");
+  let gears = "";
+  for (let i = 0; i < 7; i++) {
+    const gx = 60 + i * 72 + r() * 20;
+    const gy = 690 - r() * 20;
+    const gr = 16 + r() * 18;
+    let d = "";
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      const R = k % 2 ? gr : gr * 1.22;
+      d += `${k ? "L" : "M"}${n1(gx + Math.cos(a) * R)} ${n1(gy + Math.sin(a) * R * 0.45)}`;
+    }
+    gears += cel(d + "Z", "#6a6460", "#2a2826", 1.6) + `<ellipse cx="${n1(gx)}" cy="${n1(gy)}" rx="${n1(gr * 0.3)}" ry="${n1(gr * 0.14)}" fill="#2a2826"/>`;
+  }
+  b += gears;
+  // ── 엘리오스 뒷모습 ──
+  const sk: Skin = { b: "#dcd8d4", s: "#aca6a4", l: "#4a4446", blush: "#c8a0a0" };
+  const H = HAIR_WHITE;
+  const X = 800, Y = 300, S = 1.4;
+  // 창빛 후광
+  b += `<ellipse cx="800" cy="360" rx="300" ry="300" fill="${c.glow("#f6f2ec", 0.55, 0.2)}"/>`;
+  const back = `M-40 150C-90 158 -140 176 -160 214C-176 250 -178 320 -176 420L-190 900H190L176 420C178 320 176 250 160 214C140 176 90 158 40 150Z`;
+  b += place(X, Y, S, 0, false, cel("M-24 80L-28 160H28L24 80Z", sk.s, sk.l, 2.4) + cel(back, COAT.b, COAT.l, 3) + fl("M0 160V900", "none") + ln("M0 170C2 400 -2 600 0 900M-110 200C-120 300 -124 420 -130 560M110 200C120 300 124 420 130 560", COAT.l, 2) + fl("M-40 150C-90 158 -140 176 -160 214C-170 236 -174 270 -176 300C-120 260 -60 250 0 252C60 250 120 260 176 300C174 270 170 236 160 214C140 176 90 158 40 150Z", COAT.s, 0.8) + cel("M-34 108C-20 150 20 150 34 108L42 150C20 170 -20 170 -42 150Z", COAT.b, COAT.l, 2.4) + ln("M-160 214C-176 250 -178 320 -176 420M160 214C176 250 178 320 176 420", "#d8d4ce", 4, 0.7));
+  // 오른팔: 깨진 모래시계를 옆으로 들고 있다
+  b += cel("M1010 560C1040 600 1060 660 1050 720L1000 736C1004 690 994 640 976 600Z", COAT.b, COAT.l, 2.8);
+  b += place(1036, 600, 0.62, 12, false, `<circle r="140" fill="${c.glow("#ffd27a", 0.5, 0.2)}"/>` + hourglass(c, true, "#fff6d8", 0.95));
+  b += place(1040, 720, 1.0, -100, false, hand(GLOVE.b, GLOVE.s, GLOVE.l));
+  b += place(X, Y, S, 0, false, backElfEars(sk) + backHorns() + backHair(H, { tail: 90, spiky: true }));
+  // 흰 머리 테두리 빛(왕관)
+  b += place(X, Y, S, 0, false, ln("M-68 -20C-76 -82 -40 -116 0 -116C40 -116 76 -82 68 -20", "#ffffff", 3, 0.8));
+  // 떨어지는 재
+  const ash: Pt[] = [];
+  for (let i = 0; i < 160; i++) ash.push([r() * 1600, r() * 900]);
+  b += dots(ash, 4, "#c9c4bc", 0.55);
+  for (let i = 0; i < 18; i++) b += `<path d="M${Math.round(r() * 1600)} ${Math.round(r() * 820)}l7 -3l-2 8z" fill="#d8d4ce" ${A(p, "dn", r() * 6, 6 + r() * 4)}/>`;
+  b += `<circle cx="1036" cy="600" r="46" fill="${c.glow("#ffe6a0", 0.6, 0.2)}" ${A(p, "pu", 0, 4)}/>`;
+  // 비네트
+  b += `<rect width="1600" height="900" fill="${c.rg([[0.4, "#000", 0], [1, "#000", 0.6]])}"/>`;
+  return svg(c, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_r_back — 지하 수로, 잿빛 결정의 빛. 대검을 든 라젤의 넓은 등, 그 뒤의 서하.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_r_back cgRBack
+function cgRBack(): string {
+  const c = new Ctx("cg-r-back");
+  const p = c.p;
+  const r = rng(3003);
+  let b = `<rect width="1600" height="900" fill="#1e1e22"/>`;
+  // 수로 아치(원근)
+  for (let i = 0; i < 5; i++) {
+    const k = 1 - i * 0.18;
+    const w = 900 * k, h = 700 * k;
+    const cy = 520 - i * 20;
+    b += ln(`M${n1(800 - w)} 900V${n1(cy)}Q${n1(800 - w)} ${n1(cy - h)} 800 ${n1(cy - h)}Q${n1(800 + w)} ${n1(cy - h)} ${n1(800 + w)} ${n1(cy)}V900`, i % 2 ? "#3a3a40" : "#2e2e34", 60 * k);
+  }
+  b += fl("M620 900V420Q620 250 800 250Q980 250 980 420V900Z", c.lgu(0, 250, 0, 700, [[0, "#6a6c70"], [1, "#2a2a2e"]]));
+  // 벽돌 선
+  let br = "";
+  for (let y = 60; y < 700; y += 38) br += `M0 ${y}H520M1080 ${y}H1600`;
+  b += ln(br, "#34343a", 2, 0.6);
+  // 잿빛 결정들 — 빛의 원천
+  const crys = (x: number, y: number, s: number, flip = 1): string => {
+    let d = "";
+    for (let k = 0; k < 4; k++) {
+      const a = -Math.PI / 2 + (k - 1.5) * 0.35 * flip;
+      const L = s * (0.6 + ((k * 37) % 10) / 20);
+      const w = s * 0.14;
+      const tx = x + Math.cos(a) * L, ty = y + Math.sin(a) * L;
+      d += `M${n1(x - w)} ${y}L${n1(tx - w * 0.6)} ${n1(ty + w)}L${n1(tx)} ${n1(ty)}L${n1(tx + w * 0.6)} ${n1(ty + w)}L${n1(x + w)} ${y}Z`;
+    }
+    return `<circle cx="${x}" cy="${n1(y - s * 0.4)}" r="${n1(s * 1.6)}" fill="${c.glow("#d8dce0", 0.5, 0.18)}"/>` + cel(d, "#b8bcc2", "#5a5e66", 2) + ln(d.replace(/Z/g, ""), "#f4f6f8", 1, 0.6);
+  };
+  b += crys(700, 560, 120) + crys(930, 540, 100, -1) + crys(300, 760, 160) + crys(1330, 740, 150, -1) + crys(820, 470, 60);
+  // 먼 곳의 무면들(흰 가면)
+  for (const [x, y, s] of [[740, 430, 0.5], [870, 420, 0.45], [800, 440, 0.55]] as [number, number, number][]) {
+    b += place(x, y, s, 0, false, cel("M-40 20C-60 60 -70 140 -76 240H76C70 140 60 60 40 20Z", "#141418", "#050508", 2) + cel("M-24 -24C-24 -50 24 -50 24 -24C26 6 12 20 0 22C-12 20 -26 6 -24 -24Z", "#f2f0ec", "#6a6866", 2));
+  }
+  // 물길 반사
+  b += fl("M560 900L700 640H900L1040 900Z", "#3a3c42", 0.8) + ln("M660 760H940M620 820H980M700 700H900", "#c8ccd2", 2, 0.35);
+  // ── 라젤 뒷모습 ──
+  const X = 820, Y = 250, S = 1.45;
+  const sk: Skin = { b: "#e8d4c4", s: "#b89a88", l: "#5a3e30", blush: "#d09080" };
+  const fur = "#8a8a8e", furS = "#5a5a60", furL = "#2a2a2e";
+  // 대검: 오른손에 들고 비스듬히 아래로
+  b += cel("M1010 520L1340 880L1300 900L990 548Z", "#c8ccd4", "#3a3e48", 3) + ln("M1004 530L1320 884", "#ffffff", 2, 0.8) + cel("M960 500L1040 470L1050 500L980 540Z", "#6a5030", "#2a1a0a", 2.4) + cel("M960 470L940 440L962 430L990 490Z", "#4a3420", "#1a0e04", 2);
+  // 몸통(가죽 갑옷) + 늑대 모피 망토
+  const torso = "M-44 140C-110 150 -180 170 -210 214C-236 256 -240 330 -236 440L-250 900H250L236 440C240 330 236 256 210 214C180 170 110 150 44 140Z";
+  let body = cel("M-26 70L-32 150H32L26 70Z", sk.s, sk.l, 2.4) + cel(torso, "#6a4a30", "#2a1a0e", 3);
+  // 모피 망토(등을 덮고 어깨에 털)
+  let furEdge = "M-220 230";
+  for (let i = 0; i <= 20; i++) {
+    const x = -220 + i * 22;
+    furEdge += `L${x + 11} ${i % 2 ? 214 : 250}L${x + 22} 230`;
+  }
+  body += cel("M-200 230C-210 400 -220 600 -240 900H240C220 600 210 400 200 230Z", fur, furL, 3) + fl("M0 260C-10 500 -20 700 -30 900H120C100 700 90 500 60 260Z", furS, 0.6);
+  body += cel("M-60 120C-130 130 -200 160 -226 210L-220 250C-150 230 -80 222 0 224C80 222 150 230 220 250L226 210C200 160 130 130 60 120Z", "#a8a8ac", furL, 3) + cel(furEdge + "Z", "#a8a8ac", furL, 2);
+  body += ln("M-120 280C-130 420 -140 560 -160 720M40 300C44 460 50 620 56 800M160 300C170 460 180 600 196 760", furS, 3, 0.8);
+  // 대검 손잡이(등 너머 칼집)
+  body += cel("M-150 60L-120 40L-60 180L-90 196Z", "#3a2a1a", "#1a0e04", 2.4);
+  b += place(X, Y, S, 0, false, body);
+  // 오른팔(대검을 쥔)
+  b += cel("M1060 420C1070 460 1060 500 1030 530L980 520C1000 490 1006 460 1000 430Z", "#6a4a30", "#2a1a0e", 2.8) + cel("M960 480C1000 470 1030 490 1030 520C1010 540 980 540 962 520Z", "#c89a7a", "#5a3e30", 2.4);
+  b += place(X, Y, S, 0, false, cel("M-66 -6C-76 -14 -82 0 -78 14C-76 24 -70 28 -64 26Z", sk.b, sk.l, 2) + cel("M66 -6C76 -14 82 0 78 14C76 24 70 28 64 26Z", sk.b, sk.l, 2) + backHair(HAIR_RAZEL, { tail: 70, len: 60 }));
+  // 윤곽 림 라이트(결정 빛)
+  b += place(X, Y, S, 0, false, ln("M-226 210C-236 256 -240 330 -236 440M226 210C236 256 240 330 236 440", "#e8ecf0", 5, 0.6));
+  // ── 서하(가까이, 왼쪽 아래): 그의 등을 올려다본다 ──
+  const skS: Skin = { b: "#ecdcd0", s: "#bda096", l: "#6a4a42", blush: "#d09494", rim: "#e8ecf0" };
+  const sH = hairSeoha();
+  b += place(640, 610, 1.05, 0, true, sH.back + neck("f", skS) + seohaTorsoFantasy("#e8ecf0"));
+  b += place(640, 610, 1.05, -8, true, face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "open", brow: "sad", mouth: "part", blush: 0.3, rim: [-5, -2], shade: -1, noNeck: true, bags: true }) + sH.front);
+  // 떠다니는 결정 먼지(일부 반짝임)
+  const dust: Pt[] = [];
+  for (let i = 0; i < 120; i++) dust.push([400 + r() * 800, 200 + r() * 600]);
+  b += dots(dust, 2.4, "#e8ecf0", 0.5);
+  for (let i = 0; i < 14; i++) b += sparkAt(c, 500 + r() * 700, 300 + r() * 460, 5 + r() * 6, "#f4f6f8", A(p, "tw", r() * 4, 3 + r() * 3));
+  b += `<rect width="1600" height="900" fill="${c.rg([[0.45, "#000", 0], [1, "#000", 0.65]])}"/>`;
+  return svg(c, b);
+}
 export const CGS_B: Record<string, string> = {
   cg_sheet: cgSheet(),
   cg_zoom: cgZoom(),
   cg_e_good: cgEGood(),
+  cg_e_bad: cgEBad(),
+  cg_r_back: cgRBack(),
 };
