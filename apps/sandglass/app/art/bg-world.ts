@@ -930,10 +930,10 @@ function sAshfall(): string {
   P.add(rect(P.lin([[0, "#c9c4bc", 0], [0.55, "#c9c4bc", 0.25], [0.75, "#b8b2aa", 0.35], [1, "#5d5a58", 0.4]])));
   // static ash specks
   const sp: Pt[] = [];
-  for (let k = 0; k < 100; k++) sp.push([r.r(0, 1600), r.r(0, 900)]);
+  for (let k = 0; k < 70; k++) sp.push([r.r(0, 1600), r.r(0, 900)]);
   P.add(dots(sp, 2.2, "#d8d3cb", 0.55));
   // falling ash (animated)
-  for (let k = 0; k < 34; k++) {
+  for (let k = 0; k < 24; k++) {
     const x = r.r(-50, 1650);
     const y = r.r(-120, 400);
     const s = r.r(2, 5);

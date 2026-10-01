@@ -157,7 +157,7 @@ const FACE_GAUNT =
 const FACE_M =
   "M-52 -40C-56 -8 -58 18 -54 38C-48 60 -34 82 -18 92L6 92C26 84 46 64 56 42C62 26 66 4 64 -30C62 -80 32 -102 0 -102C-32 -102 -52 -78 -52 -40Z";
 const EAR = "M57 -4C68 -12 78 -2 74 14C72 28 64 36 55 34";
-const NECK = "M-14 78L-18 150L38 150L34 50Z";
+const NECK = "M-14 78L-17 118C-6 128 24 128 37 118L34 50Z";
 
 let clipN = 0;
 
@@ -214,7 +214,7 @@ function head(o: HeadOpt): string {
   if (o.back) s += cel(o.back, o.backFill ?? "#222", o.hairLine ?? "#000", 2.4);
   if (!o.noNeck) {
     s += cel(NECK, sk.base, sk.line, 2.4);
-    s += `<path d="M-18 96C0 112 24 108 38 84L38 130L-18 130Z" fill="${sk.shade}"/>`;
+    s += `<path d="M-17 96C0 112 24 108 37 84L37 118C24 128 -6 128 -17 118Z" fill="${sk.shade}"/>`;
   }
   s += cel(EAR, sk.base, sk.line, 2.2);
   s += ln("M61 6C66 2 70 8 67 18", sk.shade, 2.4);
@@ -1159,9 +1159,10 @@ function eliosCoat(p: string, cx: number, y0: number, w: number, h: number, ligh
   const L = cx - w / 2, R = cx + w / 2;
   let o = cel(`M${L} ${y0 + h}C${L} ${y0 + 140} ${L + 20} ${y0 + 50} ${L + 90} ${y0 + 14}C${cx - 60} ${y0 - 6} ${cx + 60} ${y0 - 6} ${R - 90} ${y0 + 14}C${R - 20} ${y0 + 50} ${R} ${y0 + 140} ${R} ${y0 + h}Z`, `url(#${p}-coat)`, COAT_LINE, 3);
   o += `<path d="M${cx + 30} ${y0}C${cx + 60} ${y0 + 120} ${cx + 50} ${y0 + 260} ${cx + 60} ${y0 + h}L${R} ${y0 + h}C${R} ${y0 + 140} ${R - 20} ${y0 + 50} ${R - 90} ${y0 + 14}Z" fill="#0c1124" opacity=".55"/>`;
-  // collar + white shirt edge
-  o += cel(`M${cx - 70} ${y0 + 6}C${cx - 60} ${y0 - 34} ${cx - 50} ${y0 - 50} ${cx - 30} ${y0 - 56}L${cx + 40} ${y0 - 56}C${cx + 56} ${y0 - 46} ${cx + 66} ${y0 - 30} ${cx + 74} ${y0 + 6}C${cx + 30} ${y0 + 22} ${cx - 30} ${y0 + 22} ${cx - 70} ${y0 + 6}Z`, "#1c2448", COAT_LINE, 2.6);
-  o += ln(`M${cx - 36} ${y0 - 54}L${cx + 44} ${y0 - 54}`, "#eeeef4", 4);
+  return o + coatFront(cx, y0, h, L, light);
+}
+function coatFront(cx: number, y0: number, h: number, L: number, light: string): string {
+  let o = "";
   // buttons (two rows)
   let bt = "";
   for (let i = 0; i < 4; i++) {
@@ -1172,6 +1173,13 @@ function eliosCoat(p: string, cx: number, y0: number, w: number, h: number, ligh
   // pocket-watch chain
   o += ln(`M${cx + 38} ${y0 + 92}C${cx + 70} ${y0 + 130} ${cx + 110} ${y0 + 130} ${cx + 130} ${y0 + 104}`, "#e8c060", 3);
   o += ln(`M${L + 60} ${y0 + 40}C${L + 30} ${y0 + 120} ${L + 24} ${y0 + 220} ${L + 30} ${y0 + h}`, light, 2.4, 0.6);
+  return o;
+}
+function eliosCollar(cx: number, y0: number): string {
+  let o = "";
+  // collar + white shirt edge
+  o += cel(`M${cx - 70} ${y0 + 6}C${cx - 60} ${y0 - 34} ${cx - 50} ${y0 - 50} ${cx - 30} ${y0 - 56}L${cx + 40} ${y0 - 56}C${cx + 56} ${y0 - 46} ${cx + 66} ${y0 - 30} ${cx + 74} ${y0 + 6}C${cx + 30} ${y0 + 22} ${cx - 30} ${y0 + 22} ${cx - 70} ${y0 + 6}Z`, "#1c2448", COAT_LINE, 2.6);
+  o += ln(`M${cx - 36} ${y0 - 54}L${cx + 44} ${y0 - 54}`, "#eeeef4", 4);
   return o;
 }
 const COAT_GRAD = (p: string) => lg(`${p}-coat`, 0, 0, 1, 1, [[0, "#2c3866"], [0.6, "#182040"], [1, "#0c1024"]]);
@@ -1233,10 +1241,11 @@ function cgClocks(): string {
   b += dots(dust, 2.2, "#fff6d8", 0.8);
 
   // ── Elios at the bench ──
-  const HX = 960, HY = 330, HS = 1.5, HR = 6;
+  const HX = 960, HY = 336, HS = 1.5, HR = 12;
   b += eliosCoat(p, 990, 520, 520, 420);
-  const headE = eliosHead(p, { open: 0.5, look: [-0.5, 0.9], brow: 0.2, mouth: "soft", blush: 0.35, shadeSide: 1, rim: "#fff1c4" }, 0);
+  const headE = eliosHead(p, { open: 0.42, look: [-0.4, 1], brow: 0.2, mouth: "soft", blush: 0.35, shadeSide: 1, rim: "#fff1c4" }, 0);
   b += place(HX, HY, HS, HR, false, headE);
+  b += eliosCollar(990, 520);
   // workbench
   b += `<path d="M0 700L1600 680V900H0Z" fill="url(#${p}-bench)"/>` + ln("M0 700L1600 680", "#e8c08a", 3, 0.8);
   // tools & gears on bench
@@ -1307,7 +1316,7 @@ function cgEWaltz(): string {
   // music box glow on the bench (lower left)
   b += `<circle cx="300" cy="760" r="420" fill="url(#${p}-box)" opacity=".7"/>`;
   b += `<path d="M180 900V780L300 740L420 780V900Z" fill="#6a3e24" stroke="#2a1608" stroke-width="3"/><path d="M180 780L300 740L420 780L300 820Z" fill="#a8703e" stroke="#2a1608" stroke-width="3"/><path d="M180 780L300 820V900" fill="none" stroke="#2a1608" stroke-width="3"/>`;
-  b += `<path d="M190 776L300 690L410 776L300 740Z" fill="#c88a50" stroke="#2a1608" stroke-width="3"/>`;
+  b += `<path d="M180 780L300 740L300 640L180 680Z" fill="#8a5434" stroke="#2a1608" stroke-width="3"/><path d="M190 772L290 738L290 652L190 686Z" fill="#c8a070" opacity=".6"/>`;
   b += `<g ${A(p, "pu", 0, 3)}><circle cx="300" cy="740" r="90" fill="url(#${p}-box)"/></g>`;
   // floating light notes (shapes, not text)
   let nt = "";
@@ -1322,12 +1331,12 @@ function cgEWaltz(): string {
   b += eliosCoat(p, 990, 520, 470, 400, "#8aa0e0");
   const E = { x: 960, y: 300, s: 1.45, r: -6 };
   b += place(E.x, E.y, E.s, E.r, false, eliosHead(p, { open: 0.7, look: [-0.6, 0.6], brow: 0.3, mouth: "soft", blush: 0.7, shadeSide: 1, rim: "#c8d8ff" }, 3));
+  b += eliosCollar(990, 520);
   // Seoha (left), facing right, looking up at him and laughing
   const sk = SK_SEOHA;
-  b += cel("M470 900C470 760 500 640 560 580C600 548 650 536 690 536C740 536 790 550 820 580C860 640 880 760 880 900Z", `url(#${p}-dress)`, "#8a7a5e", 3);
-  b += `<path d="M760 560C810 600 840 700 850 900L780 900C790 760 780 640 740 570Z" fill="#c8b898" opacity=".8"/>`;
-  b += cel("M610 548C640 580 680 590 720 584C750 580 770 566 780 552C760 540 720 534 690 534C660 534 630 538 610 548Z", "#f4ead2", "#8a7a5e", 2.4);
-  b += ln("M640 600C660 640 700 650 740 640", "#b8a888", 2, 0.8);
+  b += cel("M500 900C520 840 560 790 600 750C610 700 590 640 600 600C620 566 660 548 690 546C730 546 770 560 790 600C800 640 780 700 770 750C810 790 850 840 870 900Z", `url(#${p}-dress)`, "#8a7a5e", 3);
+  b += `<path d="M770 750C810 790 850 840 870 900L800 900C800 840 780 790 740 760ZM790 600C800 640 780 700 770 750L740 750C750 700 760 640 750 590Z" fill="#c8b898" opacity=".8"/>`;
+  b += ln("M600 750C640 760 730 760 770 750", "#3a5a40", 8) + ln("M640 900C650 850 660 800 670 760M720 900C724 850 722 800 716 760", "#b8a888", 2, 0.7);
   const S = { x: 690, y: 360, s: 1.3, r: 8 };
   b += place(S.x, S.y, S.s, S.r, true, head({
     p, id: "s", skin: sk, lash: "#1a1418", near: IR_BROWN, far: IR_BROWN, browColor: "#231c24",
@@ -1336,16 +1345,14 @@ function cgEWaltz(): string {
     front: SEOHA_FRONT, frontFill: `url(#${p}-sh)`, hairShade: "#e2ab9a",
     side: SEOHA_SIDE, hi: "#5e6088", strands: "#4a4864",
   }));
-  // his right hand on her back (glove), her left hand on his shoulder
+  b += cel("M604 560C630 600 676 610 716 604C750 598 774 580 786 562C770 540 730 530 694 530C656 530 624 540 604 560Z", "#f4ead2", "#8a7a5e", 2.4);
+  // raised clasped hands between them, an arch over their faces
   const GL: Skin = { base: "#26242c", shade: "#141218", line: "#050408", blush: "" };
-  b += hand(838, 680, 1.1, -100, false, PALM_GRIP, FING_GRIP, GL, 12);
-  b += cel("M820 560C860 520 900 500 930 500L940 540C910 550 880 570 850 600Z", "#f4ead2", "#8a7a5e", 2.4);
-  b += hand(930, 520, 0.95, 80, false, PALM_GRIP, FING_GRIP, sk, 11);
-  // raised clasped hands: his left glove holding her right hand, up between them
-  b += cel("M590 600C560 540 540 470 540 420L590 410C596 460 610 520 640 570Z", "#f4ead2", "#8a7a5e", 2.4);
-  b += cel("M1020 560C960 500 860 430 760 400L740 446C840 470 930 530 990 600Z", `url(#${p}-coat)`, COAT_LINE, 3);
-  b += hand(566, 418, 1.0, 10, false, PALM_GRIP, FING_GRIP, sk, 11);
-  b += hand(744, 422, 1.1, -96, false, PALM_GRIP, FING_GRIP, GL, 12);
+  b += cel("M760 600C770 520 780 400 790 300L824 304C820 410 806 520 800 610Z", "#f4ead2", "#8a7a5e", 2.4);
+  b += cel("M850 560C840 470 830 380 830 300L866 296C872 380 880 470 900 556Z", `url(#${p}-coat)`, COAT_LINE, 3);
+  b += hand(808, 300, 1.0, 6, false, PALM_GRIP, FING_GRIP, sk, 11);
+  b += hand(850, 300, 1.08, -14, true, PALM_GRIP, FING_GRIP, GL, 12);
+  b += `<circle cx="830" cy="236" r="70" fill="url(#${p}-box)" opacity=".35"/>`;
   // sparkles of moonlight dust
   for (let i = 0; i < 18; i++) {
     const x = 400 + r() * 900, y = 100 + r() * 600;
