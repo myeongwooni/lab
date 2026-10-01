@@ -710,38 +710,6 @@ function mitt(fill: string, shade: string, line: string, thumbUp = true): string
   );
 }
 // ────────────────────────────────────────────────────────────────────────────
-// 테스트 시트(내보내지 않음 — 미리보기 전용)
-// ────────────────────────────────────────────────────────────────────────────
-//@id cg_sheet cgSheet
-function cgSheet(): string {
-  const c = new Ctx("cg-sheet");
-  let b = `<rect width="1600" height="900" fill="#cfd8e8"/>`;
-  const sk = SKIN_WARM;
-  const f = (o: Partial<FaceO>): FaceO => ({ sex: "f", skin: sk, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", ...o });
-  b += place(170, 250, 1.1, 0, false, head(c, f({ bags: true }), hairSeoha()));
-  b += place(440, 250, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.red, far: IRIS.gold, lash: "#0a0a14", brow: "soft", mouth: "soft" }), hairElios({ streaks: 4 }), elfEar(sk)));
-  b += place(710, 250, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.amber, far: IRIS.amber, lash: "#2a1608", mouth: "laugh", eyes: "happy", browC: "#5a3418", extra: razelMarks() }), hairRazel(), ear(sk)));
-  b += place(980, 250, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.gold, far: IRIS.steel, lash: "#2a3450", mouth: "smile", nearEyeExtra: dialIris() }), hairSian()));
-  b += place(1250, 250, 1.1, 0, false, head(c, f({ sex: "m", thin: true, near: IRIS.ashRed, far: IRIS.ash, lash: "#2a2628", eyes: "soft", brow: "sad" }), hairAged(), elfEar(sk)));
-  b += place(170, 660, 1.1, 0, true, head(c, f({ eyes: "closed", mouth: "soft", tears: 2 }), hairSeoha()));
-  b += place(440, 660, 1.1, 0, true, head(c, f({ sex: "c", near: IRIS.sky, far: IRIS.sky, lash: "#4a3a20", mouth: "open" }), hairLiana()));
-  b += place(710, 660, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.steel, far: IRIS.steel, lash: "#2a3450", tears: 2, brow: "sad", mouth: "grit", noNearEye: true }), hairSian(), "", eyepatch()));
-  b += place(980, 660, 1.1, 0, false, head(c, f({ mouth: "laugh", eyes: "happy" }), hairSeoha()));
-  b += place(1250, 660, 1.1, 0, false, head(c, f({ sex: "m", near: IRIS.red, far: IRIS.gold, lash: "#0a0a14", eyes: "down", brow: "sad" }), hairElios({ streaks: 0, full: true }), elfEar(sk)));
-  return svg(c, b);
-}
-
-//@id cg_zoom cgZoom
-function cgZoom(): string {
-  const c = new Ctx("cg-zoom");
-  const sk = SKIN_WARM;
-  let b = `<rect width="1600" height="900" fill="#cfd8e8"/>`;
-  b += place(420, 470, 3, 0, false, head(c, { sex: "f", skin: sk, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", bags: true }, hairSeoha()));
-  b += place(1180, 470, 3, 0, true, head(c, { sex: "m", skin: sk, near: IRIS.red, far: IRIS.gold, lash: "#0a0a14", brow: "soft", mouth: "soft" }, hairElios({ streaks: 4 }), elfEar(sk)));
-  return svg(c, b);
-}
-
-// ────────────────────────────────────────────────────────────────────────────
 // 공용 옷·몸 도우미 (머리 로컬 좌표와 같은 축척)
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -1480,7 +1448,7 @@ function cgSBlade(): string {
   b += cel("M856 770L700 900H660L834 752Z", "#eef2fb", "#56628c", 2.4) + ln("M846 762L676 900", "#ffffff", 2, 0.9);
   b += cel("M820 744L880 800L870 810L810 754Z", "#c8d0e0", "#56628c", 2);
   // 칼날의 번쩍임
-  b += `<circle cx="770" cy="836" r="130" fill="${c.glow("#ffffff", 0.85, 0.28)}"/>`;
+  b += `<circle cx="770" cy="836" r="200" fill="${c.glow("#cfe2ff", 0.9, 0.35)}"/><circle cx="770" cy="836" r="50" fill="${c.glow("#ffffff", 1, 0.8)}"/>`;
   b += sparkAt(c, 770, 836, 60, "#ffffff", A(p, "tw", 0, 2.4)) + ln("M600 836H940M770 720V900", "#ffffff", 2, 0.6);
   // 떨어지는 금빛 모래시계의 빛
   b += `<g ${A(p, "dn", 2.5, 6)}><circle cx="960" cy="190" r="110" fill="${c.glow("#ffd27a", 0.9, 0.35)}"/>` + place(960, 190, 0.34, 24, false, hourglass(c, false)) + `</g>`;
@@ -1496,9 +1464,424 @@ function cgSBlade(): string {
   b += `<rect width="1600" height="900" fill="${c.rg([[0.4, "#000", 0], [1, "#000", 0.7]])}"/>`;
   return svg(c, b);
 }
+
+/** 열린 오르골(로컬 중심 0,0, 폭 ≈ 160) */
+function musicBox(c: Ctx, glow = true): string {
+  let s = "";
+  if (glow) s += `<circle cx="0" cy="-20" r="150" fill="${c.glow("#fff0c0", 0.7, 0.25)}"/>`;
+  // 열린 뚜껑(거울)
+  s += cel("M-80 -30L-70 -120H70L80 -30Z", "#f4ecf8", "#6a5a8a", 2.4) + cel("M-62 -40L-56 -108H56L62 -40Z", c.lg(0, 0, 1, 1, [[0, "#e4efff"], [1, "#9ec2f0"]]), "#8a7aa8", 1.6) + ln("M-40 -100L-10 -50M10 -104L30 -70", "#ffffff", 2, 0.8);
+  // 상자
+  s += cel("M-86 -30H86L80 40H-80Z", "#f4ecf8", "#6a5a8a", 2.6) + fl("M40 -30H86L80 40H36Z", "#d4c8e4");
+  s += cel("M-86 -30H86V-18H-86Z", "#e8c060", "#7a5414", 1.8) + cel("M-80 30H80V40H-80Z", "#e8c060", "#7a5414", 1.6);
+  s += cel("M-14 4h28v14h-28z", "#e8c060", "#7a5414", 1.4);
+  // 안쪽의 금빛 원통과 작은 별
+  s += cel("M-50 -40h100v12h-100z", "#ffd27a", "#8a5a10", 1.6) + `<path d="${spark(0, -54, 12)}" fill="#fff6d0"/>`;
+  return s;
+}
+
+/** 음표 모양(글자 아님, 도형) */
+function note(x: number, y: number, s: number, color: string, extra = ""): string {
+  return `<g transform="translate(${n1(x)} ${n1(y)}) scale(${n1(s)})"${extra}><ellipse cx="0" cy="0" rx="6" ry="4.4" transform="rotate(-20)" fill="${color}"/><path d="M5 -1V-24l9 4v4l-7 -3V-1Z" fill="${color}"/></g>`;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_s_good — 금빛 새벽의 청탑 테라스. 안대를 벗고 진심으로 웃는 시안, 서하, 열린 오르골.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_s_good cgSGood
+function cgSGood(): string {
+  const c = new Ctx("cg-s-good");
+  const p = c.p;
+  const r = rng(8008);
+  const SX = 800, SY = 560;
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#3a5aa8"], [0.25, "#7a9ad8"], [0.45, "#e8b8a8"], [0.58, "#ffd090"], [0.7, "#fff0c8"]])}"/>`;
+  b += `<circle cx="${SX}" cy="${SY}" r="900" fill="${c.glow("#fff2c8", 0.9, 0.38)}"/>`;
+  b += rays(SX, SY, 20, 1500, -Math.PI, 0, 0.018, "#fffbe8", 0.15, r);
+  b += cloudBank(r, -40, 1640, 470, 80, "#e8b0a0", "#fff4d0", 0.6, 120);
+  b += `<circle cx="${SX}" cy="${SY}" r="150" fill="${c.glow("#ffffff", 1, 0.8)}"/><circle cx="${SX}" cy="${SY}" r="56" fill="#fffdf2"/>`;
+  // 멀리 솔레인 지붕(금빛 안개)
+  let city = "M0 900V650";
+  for (let x = 0; x <= 1600; x += 22 + Math.floor(r() * 26)) city += `L${x} ${Math.round(640 - r() * 50)}L${x + 11} ${Math.round(630 - r() * 60)}`;
+  b += fl(city + "L1600 650V900Z", "#e8a080", 0.5);
+  // 청탑 테라스: 푸른 기둥과 흰 난간
+  b += cel("M0 0H150V900H0Z", "#3e64b0", "#142448", 3) + fl("M110 0H150V900H110Z", "#9ec2f0", 0.5) + cel("M1450 0H1600V900H1450Z", "#3e64b0", "#142448", 3) + fl("M1450 0H1490V900H1450Z", "#9ec2f0", 0.5);
+  b += cel("M150 0H1450V40Q800 110 150 40Z", "#e4efff", "#4a6fb5", 3);
+  let bal = "";
+  for (let x = 160; x < 1450; x += 52) bal += `M${x} 760h26v80h-26z`;
+  b += cel("M0 740H1600V764H0Z", "#f4f6fb", "#4a6fb5", 2.4) + cel(bal, "#e4efff", "#4a6fb5", 2) + cel("M0 836H1600V900H0Z", "#c8d6f0", "#4a6fb5", 2.4);
+  // ── 인물 ──
+  const rimC = "#fff3c8";
+  const skS: Skin = { b: "#fde6d0", s: "#eaab90", l: "#a0574a", blush: "#f5847e", rim: rimC };
+  const skN: Skin = { b: "#fbeee6", s: "#dcb4b0", l: "#7a5068", blush: "#f090a0", rim: rimC };
+  const sH = hairSeoha();
+  const H = hairSian();
+  // 서하(왼쪽, 오른쪽을 본다)
+  b += place(670, 380, 1.08, 0, true, sH.back + neck("f", skS) + seohaTorsoFantasy(rimC));
+  b += place(670, 380, 1.08, 4, true, face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "soft", brow: "soft", mouth: "smile", blush: 0.6, rim: [-5, -2], noNeck: true, look: [-2, -2] }) + sH.front);
+  // 시안(오른쪽, 왼쪽을 본다 — 금빛 눈이 관객 쪽)
+  b += place(920, 290, 1.22, 0, false, H.back + neck("m", skN) + sianTorso(rimC));
+  b += place(920, 290, 1.22, -8, false, face(c, sianFace(skN, { eyes: "soft", brow: "soft", mouth: "smile", blush: 0.55, rim: [5, -2], noNeck: true, tears: 1 }, false)) + H.front);
+  // 서하가 든 열린 오르골
+  b += limb(600, 560, 720, 640, 50, 40, DRESS.b, DRESS.l, DRESS.s, 10);
+  b += place(790, 640, 0.9, 0, false, musicBox(c));
+  b += place(720, 650, 0.9, 190, false, mitt(skS.b, skS.s, skS.l, false)) + place(862, 650, 0.9, -10, true, mitt(skS.b, skS.s, skS.l, false));
+  // 떠오르는 음표와 금빛 입자
+  for (let i = 0; i < 7; i++) b += note(700 + i * 34 + r() * 20, 560 - i * 40 - r() * 20, 1.4 + r() * 0.8, i % 2 ? "#fff6d0" : "#ffe6a0", ` opacity=".85"`);
+  for (let i = 0; i < 8; i++) b += `<g ${A(p, "up", r() * 7, 6 + r() * 3)}>${note(720 + r() * 160, 520 - r() * 200, 1.2, "#fffbe8")}</g>`;
+  b += sandStream(c, r, () => [600 + r() * 420, 200 + r() * 460], 160, 12, "up");
+  b += `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#6a8ad0", 0.12], [0.6, "#ffd9a0", 0.1], [1, "#ffc070", 0.2]])}" style="mix-blend-mode:screen"/>`;
+  return svg(c, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_s_bad — 햇살 드는 아이 방. 열네 살 시안과 살아 있는 열 살 리아나, 오르골. 창밖은 잿빛 하늘.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_s_bad cgSBad
+function cgSBad(): string {
+  const c = new Ctx("cg-s-bad");
+  const p = c.p;
+  const r = rng(9009);
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#fff6e4"], [1, "#f6dcb0"]])}"/>`;
+  // 벽지 무늬(작은 별)
+  let wp = "";
+  for (let y = 40; y < 640; y += 90) for (let x = (y / 90) % 2 ? 40 : 85; x < 1600; x += 90) wp += `M${x} ${y - 6}l2 4l4 2l-4 2l-2 4l-2 -4l-4 -2l4 -2z`;
+  b += fl(wp, "#e4c89c", 0.6);
+  // 창(가운데): 창밖은 잿빛 하늘과 회색 해, 재
+  b += cel("M560 80H1040V500H560Z", "#8a8784", "#7a5a38", 14);
+  b += fl("M567 87H1033V493H567Z", c.lgu(0, 80, 0, 500, [[0, "#6a6764"], [1, "#a8a39c"]]));
+  b += `<circle cx="900" cy="200" r="44" fill="#c9c4bc"/><circle cx="900" cy="200" r="120" fill="${c.glow("#d8d4cc", 0.4, 0.12)}"/>`;
+  b += fl("M567 420C660 380 760 410 860 390C940 376 1000 400 1033 390V493H567Z", "#5d5a58");
+  const ashW: Pt[] = [];
+  for (let i = 0; i < 60; i++) ashW.push([575 + r() * 450, 95 + r() * 390]);
+  b += dots(ashW, 4, "#d4d0ca", 0.7);
+  for (let i = 0; i < 10; i++) b += `<path d="M${Math.round(580 + r() * 440)} ${Math.round(100 + r() * 300)}l6 -2l-2 7z" fill="#e4e0da" ${A(p, "dn", r() * 6, 6 + r() * 3)}/>`;
+  b += ln("M800 80V500M560 290H1040", "#7a5a38", 10);
+  // 커튼(햇살 색)
+  b += cel("M470 60C520 200 520 400 480 560H580C560 400 560 200 590 60Z", "#f4f0f8", "#a898b8", 2.4) + cel("M1130 60C1080 200 1080 400 1120 560H1020C1040 400 1040 200 1010 60Z", "#f4f0f8", "#a898b8", 2.4);
+  // 방 안의 따뜻한 햇살(창과 무관하게 — 기묘한 대비)
+  b += fl("M0 0L520 0L900 900H0Z", "#fff6d8", 0.35);
+  b += `<circle cx="300" cy="200" r="600" fill="${c.glow("#fff4d0", 0.6, 0.25)}"/>`;
+  // 선반의 인형과 작은 신발
+  b += cel("M80 300H420V316H80Z", "#c89a6a", "#6a4a2a", 2) + cel("M1180 300H1520V316H1180Z", "#c89a6a", "#6a4a2a", 2);
+  b += cel("M140 300C130 260 150 230 170 230C190 230 210 260 200 300Z", "#f0b8c8", "#8a4a5a", 2) + `<circle cx="170" cy="222" r="20" fill="#fde8d6" stroke="#a0594a" stroke-width="2"/>` + cel("M150 214C150 196 190 196 190 214C186 206 154 206 150 214Z", "#e8c060", "#7a5414", 1.6);
+  b += cel("M1240 300c0 -20 30 -20 40 -8c6 8 0 8 -6 8zM1300 300c0 -20 30 -20 40 -8c6 8 0 8 -6 8z", "#8ab0e8", "#2a4a88", 1.8);
+  b += cel("M1400 300v-50h70v50z", "#f4ecf8", "#6a5a8a", 2);
+  // 침대
+  b += cel("M300 640H1300V900H300Z", "#f8f4ee", "#b8a890", 3) + fl("M300 700H1300V900H300Z", "#e8dcc8") + cel("M260 560H340V900H260Z", "#c89a6a", "#6a4a2a", 3) + cel("M1260 560H1340V900H1260Z", "#c89a6a", "#6a4a2a", 3);
+  b += cel("M360 600C420 570 560 570 600 610C560 640 420 640 360 600Z", "#ffffff", "#c8b8a0", 2);
+  // ── 아이들 ──
+  const skL: Skin = { b: "#fff0e2", s: "#f0c4ac", l: "#a8645a", blush: "#ff9a96", rim: "#fffbe8" };
+  const skY: Skin = { b: "#fbeee6", s: "#e0bcb4", l: "#8a5a6a", blush: "#f09aa8", rim: "#fffbe8" };
+  // 리아나(왼쪽, 오른쪽을 본다): 흰 잠옷, 오르골을 무릎에
+  const LH = hairLiana();
+  const nightD = "M-20 118C-40 128 -58 134 -70 150C-80 168 -84 210 -86 270L-92 900H112L106 270C104 210 100 168 90 152C78 136 56 128 30 116Z";
+  b += place(712, 440, 0.88, 0, true, LH.back + neck("c", skL) + cel(nightD, "#ffffff", "#9a8aa8", 2.6) + fl("M56 150C80 170 96 210 100 270L108 900H56Z", "#e4dcef") + cel("M-30 120C-10 150 30 150 44 116L50 130C30 166 -16 166 -36 132Z", "#f4f0fa", "#9a8aa8", 1.8) + cel("M-10 150l14 10l14 -10l-4 16l-10 -4l-10 4z", "#6aa0e8", "#2a4a88", 1.6));
+  b += place(712, 440, 0.88, 6, true, face(c, { sex: "c", skin: skL, near: IRIS.sky, far: IRIS.sky, lash: "#4a3a20", eyes: "happy", mouth: "laugh", blush: 0.7, noNeck: true, rim: [-4, -2] }) + LH.front);
+  // 소년 시안(오른쪽, 왼쪽을 본다): 흰 셔츠 + 푸른 조끼, 웃는데 눈물 한 줄
+  const YH = hairSian({ child: true });
+  const vest: Cloth = { b: "#4a6fb5", s: "#2e4a88", l: "#142448" };
+  b += place(920, 340, 1.05, 0, false, YH.back + neck("c", skY) + `<g transform="translate(6 0) scale(.86 1)">` + cel(femTorsoD(900), "#f8f8fc", "#7a84a8", 2.6) + cel("M-90 170C-96 260 -100 400 -104 900H-10C-14 600 -16 400 -20 160Z", vest.b, vest.l, 2.4) + cel("M110 170C118 260 124 400 130 900H40C40 600 36 400 30 160Z", vest.b, vest.l, 2.4) + `</g>` + cel("M-26 118C-6 150 24 150 40 114L48 128C26 166 -14 166 -34 132Z", "#ffffff", "#7a84a8", 1.8));
+  b += place(920, 340, 1.05, -6, false, face(c, { sex: "c", skin: skY, near: IRIS.gold, far: IRIS.steel, lash: "#2a3450", browC: "#8a96b8", eyes: "soft", brow: "sad", mouth: "smile", tears: 2, blush: 0.5, noNeck: true, rim: [5, -2], nearEyeExtra: dialIris() }) + YH.front);
+  // 오르골(리아나의 무릎 위) + 음표
+  b += place(800, 690, 1.0, 0, false, musicBox(c));
+  b += place(724, 700, 0.85, 190, false, mitt(skL.b, skL.s, skL.l, false)) + place(876, 700, 0.85, -10, true, mitt(skL.b, skL.s, skL.l, false));
+  for (let i = 0; i < 6; i++) b += `<g ${A(p, "up", r() * 7, 6 + r() * 3)}>${note(740 + r() * 140, 600 - r() * 140, 1.3, "#d8a848")}</g>`;
+  // 햇살 속 먼지
+  const dust: Pt[] = [];
+  for (let i = 0; i < 70; i++) dust.push([r() * 700, r() * 800]);
+  b += dots(dust, 3, "#fffbe8", 0.8);
+  b += `<rect width="1600" height="900" fill="${c.rg([[0.6, "#000", 0], [1, "#5a3a10", 0.22]])}"/>`;
+  return svg(c, b);
+}
+
+/** 재의 왕 상반신(로컬: 왼쪽을 봄): 검회색 넝마 망토, 가장자리가 재로 부서짐 */
+function ashTorso(r: () => number, bot = 900): string {
+  let edge = "";
+  for (let y = 200; y < bot; y += 40) edge += `L${n1(196 + r() * 30)} ${y}L${n1(180 + r() * 10)} ${y + 20}`;
+  let s = cel(`M40 108C90 126 150 140 180 180${edge}L200 ${bot}H-230L-208 330C-206 260 -198 206 -172 174C-140 140 -80 128 -30 110Z`, "#3a3836", "#121010", 2.8);
+  s += fl(`M80 140C130 160 170 200 180 260L190 ${bot}H90C100 ${bot - 300} 100 400 80 140Z`, "#262422");
+  s += ln("M-120 200C-130 400 -140 600 -150 900M-40 180C-44 400 -50 600 -54 900M60 190C66 400 70 600 76 900", "#121010", 2, 0.6);
+  // 금 간 자국(재처럼 갈라짐)
+  s += ln("M-30 112L-20 140L-34 160M50 110L44 134L58 150", "#8a8784", 2, 0.8);
+  return s;
+}
+
+/** 재의 왕 맨얼굴의 갈라진 금(뺨·목) */
+function ashCracks(): string {
+  return ln("M30 50L40 62L34 74L46 86M-44 40L-38 54L-46 64M10 112L18 130L10 146M-6 120L-14 136", "#5a5654", 1.8, 0.85) + ln("M30 50L40 62L34 74", "#d8d4ce", 0.8, 0.6);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_two_kings — 틈새의 방. 잿빛 왕좌 앞에서 마주 선 젊은 엘리오스와 가면을 벗은 재의 왕, 그 사이의 서하. 위로 오르는 모래.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_two_kings cgTwoKings
+function cgTwoKings(): string {
+  const c = new Ctx("cg-two-kings");
+  const p = c.p;
+  const r = rng(1111);
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#1b1a22"], [0.6, "#2d2a35"], [1, "#141218"]])}"/>`;
+  // 큰 아치 창 — 끝없는 잿빛 새벽
+  b += cel("M480 640V260Q800 -20 1120 260V640Z", c.lgu(0, 60, 0, 640, [[0, "#6a6764"], [0.6, "#a8a39c"], [1, "#8a8784"]]), "#0e0d12", 16);
+  b += `<circle cx="800" cy="330" r="60" fill="#c9c4bc"/><circle cx="800" cy="330" r="220" fill="${c.glow("#d8d4cc", 0.45, 0.15)}"/>`;
+  b += fl("M480 560C600 520 700 548 800 530C900 512 1000 540 1120 520V640H480Z", "#5d5a58");
+  b += ln("M800 60V640", "#0e0d12", 10);
+  // 재의 왕좌(창 앞, 실루엣)
+  b += cel("M690 660V440C690 400 720 380 740 370L760 330L780 360L800 300L820 360L840 330L860 370C880 380 910 400 910 440V660Z", "#2e2c34", "#08080c", 4) + fl("M710 660V520H890V660Z", "#1e1c24");
+  b += ln("M740 380L750 430M860 380L850 430M800 320V380", "#5a5860", 3, 0.7);
+  // 바닥: 부서진 시계 문자판들
+  b += fl("M0 640H1600V900H0Z", "#24222a");
+  let dialsF = "";
+  for (let i = 0; i < 9; i++) {
+    const x = r() * 1600, y = 680 + r() * 200, rr = 20 + r() * 40;
+    dialsF += `<ellipse cx="${Math.round(x)}" cy="${Math.round(y)}" rx="${Math.round(rr)}" ry="${Math.round(rr * 0.35)}" fill="#5a5856" stroke="#c8a050" stroke-width="2" opacity=".7"/>`;
+  }
+  b += dialsF;
+  // 공중에 멈춘 톱니
+  for (let i = 0; i < 8; i++) {
+    const gx = 100 + r() * 1400, gy = 80 + r() * 400, gr = 14 + r() * 30;
+    if (gx > 520 && gx < 1080) continue;
+    let d = "";
+    for (let k = 0; k < 16; k++) {
+      const a = (k / 16) * Math.PI * 2;
+      const R = k % 2 ? gr : gr * 1.25;
+      d += `${k ? "L" : "M"}${n1(gx + Math.cos(a) * R)} ${n1(gy + Math.sin(a) * R)}`;
+    }
+    b += cel(d + "Z", "#5a5040", "#1a160e", 2) + `<circle cx="${n1(gx)}" cy="${n1(gy)}" r="${n1(gr * 0.35)}" fill="#1b1a22"/>`;
+  }
+  // ── 인물 ──
+  const skY: Skin = { b: "#f0e4dc", s: "#bca8a8", l: "#5a3e44", blush: "#e0909a", rim: "#ffe6a0" };
+  const skA: Skin = { b: "#d8d2cc", s: "#9e9894", l: "#3e3a3a", blush: "#b89898", rim: "#ffe6a0" };
+  const skS: Skin = { b: "#f2e0d4", s: "#c8a494", l: "#7a4a42", blush: "#e8908c", rim: "#ffe6a0" };
+  // 젊은 엘리오스(왼쪽, 오른쪽을 본다 — 가까운 눈 = 그의 오른눈 = 금)
+  const eH = hairElios({ streaks: 4 });
+  b += place(650, 270, 1.2, 0, true, eH.back + neck("m", skY) + eliosTorso("#ffe6a0"));
+  b += place(650, 270, 1.2, 3, true, elfEar(skY) + face(c, { sex: "m", skin: skY, near: IRIS.gold, far: IRIS.red, lash: "#0a0a14", eyes: "open", brow: "knit", mouth: "n", blush: 0.2, rim: [-5, -2], noNeck: true }) + eH.front);
+  // 재의 왕(오른쪽, 왼쪽을 본다 — 가까운 눈에 붉은빛이 조금)
+  const aH = hairAged();
+  b += place(950, 260, 1.22, 0, false, aH.back + neck("m", skA) + ashTorso(rng(12)));
+  b += place(950, 260, 1.22, -3, false, elfEar(skA) + face(c, { sex: "m", thin: true, skin: skA, near: IRIS.ashRed, far: IRIS.ash, lash: "#2a2628", eyes: "soft", brow: "sad", mouth: "n", blush: 0, rim: [5, -2], noNeck: true, extra: ashCracks() }) + aH.front);
+  // 서하(가운데, 조금 뒤, 관객을 향해 두 사람을 번갈아)
+  const sH = hairSeoha();
+  b += place(800, 420, 0.95, 0, false, sH.back + neck("f", skS) + seohaTorsoFantasy("#ffe6a0"));
+  b += place(800, 420, 0.95, 0, false, face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "open", brow: "sad", mouth: "part", blush: 0.3, noNeck: true, bags: true, look: [3, 0] }) + sH.front);
+  // 재의 왕의 몸에서 부서져 오르는 재 조각
+  for (let i = 0; i < 12; i++) b += `<path d="M${Math.round(1100 + r() * 120)} ${Math.round(400 + r() * 400)}l9 -3l-3 10z" fill="#8a8784" ${A(p, "up", r() * 7, 6 + r() * 3)}/>`;
+  // 위로 떨어지는 금빛 모래(전체)
+  b += sandStream(c, r, () => [r() * 1600, r() * 900], 260, 16, "up");
+  b += `<rect width="1600" height="900" fill="${c.rg([[0.45, "#000", 0], [1, "#000", 0.55]])}"/>`;
+  return svg(c, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_shatter — 밤, 시계의 집 옥상. 망치로 내리친 금빛 모래시계가 파편과 모래로 터지고,
+// 엘리오스가 서하의 손을 잡는다.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_shatter cgShatter
+function cgShatter(): string {
+  const c = new Ctx("cg-shatter");
+  const p = c.p;
+  const r = rng(1212);
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#0a0e24"], [0.6, "#1a2448"], [1, "#2a2a40"]])}"/>`;
+  const st: Pt[] = [];
+  for (let i = 0; i < 220; i++) st.push([r() * 1600, Math.pow(r(), 1.5) * 560]);
+  b += dots(st, 2, "#e4e8ff", 0.7);
+  b += `<circle cx="1320" cy="140" r="48" fill="#f4f0e0"/><circle cx="1320" cy="140" r="200" fill="${c.glow("#e4e8ff", 0.35, 0.1)}"/>`;
+  // 왕성의 지붕과 여명탑(멀리)
+  b += fl("M0 640L200 600L300 620L420 560L520 600V420L560 380L600 420V600L700 580L900 620L1100 570L1300 610L1600 580V900H0Z", "#141a34");
+  b += fl("M540 420H580V200L560 150L540 200Z", "#1e2648") + `<circle cx="560" cy="240" r="14" fill="#c8a050" opacity=".7"/>`;
+  // 옥상 바닥(담쟁이 난간)
+  b += cel("M0 700L1600 680V900H0Z", "#3a3448", "#14101c", 3) + fl("M0 700L1600 680V700L0 720Z", "#ffe6a0", 0.4);
+  const ivy: Pt[] = [];
+  for (let i = 0; i < 160; i++) ivy.push([r() * 1600, 690 + r() * 30]);
+  b += dots(ivy, 7, "#2a4a34", 0.9);
+  const CX = 800, CY = 500;
+  b += `<circle cx="${CX}" cy="${CY}" r="560" fill="${c.glow("#ffd27a", 0.75, 0.3)}"/>`;
+  b += rays(CX, CY, 30, 900, 0, Math.PI * 2, 0.025, "#ffe6a0", 0.14, r);
+  // ── 인물 ──
+  const rimC = "#ffe6a0";
+  const skE: Skin = { b: "#f6e0d0", s: "#c89c8c", l: "#6a3c3a", blush: "#ea8a84", rim: rimC };
+  const skS: Skin = { b: "#fde6d0", s: "#d8a08a", l: "#8a4a40", blush: "#f5847e", rim: rimC };
+  // 서하(오른쪽, 왼쪽을 봄) — 망치를 내리친 직후
+  const sH = hairSeoha();
+  b += place(1010, 330, 1.12, 0, false, sH.back + neck("f", skS) + seohaTorsoFantasy(rimC));
+  b += place(1010, 330, 1.12, -6, false, face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "open", brow: "knit", mouth: "part", tears: 2, blush: 0.4, rim: [-5, -2], shade: 1, noNeck: true, look: [-4, 3] }) + sH.front);
+  // 엘리오스(왼쪽, 오른쪽을 봄) — 그녀의 손을 잡는다
+  const eH = hairElios({ streaks: 5 });
+  b += place(600, 300, 1.2, 0, true, eH.back + neck("m", skE) + eliosTorso(rimC));
+  b += place(600, 300, 1.2, 6, true, elfEar(skE) + face(c, { sex: "m", skin: skE, near: IRIS.gold, far: IRIS.red, lash: "#0a0a14", eyes: "wide", brow: "sad", mouth: "part", blush: 0.25, rim: [-5, -2], noNeck: true, look: [-3, 3] }) + eH.front);
+  // ── 폭발하는 모래시계(중심 800, 470) ──
+  b += `<circle cx="${CX}" cy="${CY}" r="260" fill="${c.glow("#fff6d0", 1, 0.6)}" ${A(p, "pu", 0, 2.6)}/>`;
+  b += place(CX, CY, 0.9, -14, false, hourglass(c, true, "#fff6d8", 0.9));
+  b += `<circle cx="${CX + 20}" cy="${CY - 70}" r="70" fill="${c.glow("#ffffff", 1, 0.9)}"/>`;
+  // 파편(유리·금테)
+  let shards = "";
+  for (let i = 0; i < 26; i++) {
+    const a = r() * Math.PI * 2;
+    const d = 90 + r() * 360;
+    const x = CX + Math.cos(a) * d, y = CY + Math.sin(a) * d * 0.8;
+    if (y < 430 && (Math.abs(x - 610) < 110 || Math.abs(x - 1010) < 110)) continue;
+    const s = 12 + r() * 30;
+    const rot = r() * 6.28;
+    const pt = (k: number, m: number): string => `${n1(x + Math.cos(rot + k) * s * m)} ${n1(y + Math.sin(rot + k) * s * m)}`;
+    shards += `M${pt(0, 1)}L${pt(2.2, 0.6)}L${pt(3.6, 0.9)}L${pt(5, 0.4)}Z`;
+  }
+  b += cel(shards, "#fff6e0", "#c8a050", 1.6, ' fill-opacity=".85"');
+  b += sandStream(c, r, () => {
+    const a = r() * Math.PI * 2;
+    const d = 40 + Math.pow(r(), 0.7) * 520;
+    return [CX + Math.cos(a) * d, CY + Math.sin(a) * d * 0.75];
+  }, 420, 24, "tw");
+  // 망치: 손잡이 끝이 모래시계 위를 내리친다
+  b += limb(1060, 600, 950, 580, 54, 42, DRESS.b, DRESS.l, DRESS.s, -10);
+  b += `<g transform="translate(950 580) rotate(-150)">${cel("M0 -9H150V9H0Z", "#8a6a45", "#3a2e2a", 2.2)}${cel("M140 -36H196V36H140Z", "#7a7a84", "#2a2a30", 2.6)}${fl("M140 -36H196V-22H140Z", "#c8ccd8")}</g>`;
+  b += place(954, 582, 1.05, 30, false, mitt(skS.b, skS.s, skS.l));
+  b += limb(700, 720, 930, 640, 72, 54, COAT.b, COAT.l, COAT.s, -14);
+  b += place(966, 622, 1.05, 160, false, mitt(GLOVE.b, GLOVE.s, GLOVE.l, false));
+  b += `<rect width="1600" height="900" fill="${c.rg([[0.5, "#000", 0], [1, "#000", 0.5]])}"/>`;
+  return svg(c, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_true — 1년 뒤, 시계탑에서 내려다본 솔레인의 금빛 새벽. 나란히 선 엘리오스와 서하,
+// 바람에 날리는 흰 가닥, 아래쪽의 작은 진료소 간판과 손 흔드는 사람들의 실루엣.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_true cgTrue
+function cgTrue(): string {
+  const c = new Ctx("cg-true");
+  const p = c.p;
+  const r = rng(1313);
+  const SX = 820, SY = 430;
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#4a6ab8"], [0.22, "#8aaee0"], [0.4, "#ffd2a0"], [0.5, "#ffc070"], [0.6, "#fff0c8"]])}"/>`;
+  b += `<circle cx="${SX}" cy="${SY}" r="1000" fill="${c.glow("#fff2c8", 0.95, 0.42)}"/>`;
+  b += rays(SX, SY, 22, 1500, -Math.PI, 0.2, 0.02, "#fffbe8", 0.16, r);
+  b += cloudBank(r, -40, 1640, 300, 70, "#f0b8a0", "#fff4d0", 0.6, 130);
+  b += `<circle cx="${SX}" cy="${SY}" r="160" fill="${c.glow("#ffffff", 1, 0.8)}"/><circle cx="${SX}" cy="${SY}" r="58" fill="#fffdf2"/>`;
+  // 솔레인: 층층이 쌓인 흰 벽과 주황 기와(3단, 먼 곳은 안개)
+  const tiers: [number, number, number, string, string][] = [
+    [470, 40, 0.45, "#f2c8a8", "#e8a888"],
+    [560, 56, 0.7, "#f6e4cc", "#e08a60"],
+    [680, 80, 0.95, "#f3ede2", "#e0764a"],
+  ];
+  for (const [y0, h, op, wall, roof] of tiers) {
+    let w = "";
+    let sh = "";
+    let rf = "";
+    let wn = "";
+    for (let x = -20; x < 1620; ) {
+      const bw = h * (0.9 + r() * 0.9);
+      const bh = h * (0.5 + r() * 0.5);
+      const yy = y0 + r() * h * 0.5;
+      w += `M${Math.round(x)} ${Math.round(yy)}h${Math.round(bw)}V900H${Math.round(x)}Z`;
+      sh += `M${Math.round(x + bw * 0.62)} ${Math.round(yy)}h${Math.round(bw * 0.38)}V900H${Math.round(x + bw * 0.62)}Z`;
+      rf += `M${Math.round(x - 6)} ${Math.round(yy + 2)}L${Math.round(x + bw * 0.25)} ${Math.round(yy - bh)}H${Math.round(x + bw * 0.75)}L${Math.round(x + bw + 6)} ${Math.round(yy + 2)}Z`;
+      if (op > 0.6) for (let k = 0; k < 2; k++) wn += `M${Math.round(x + bw * (0.2 + k * 0.35))} ${Math.round(yy + h * 0.3)}h${Math.round(h * 0.14)}v${Math.round(h * 0.2)}h${-Math.round(h * 0.14)}z`;
+      x += bw * (0.8 + r() * 0.15);
+    }
+    b += `<g opacity="${op}">${cel(w, wall, "#b8ab98", 1.4)}${fl(sh, "#d8cfc0", 0.8)}${fl(wn, "#7a5a40", 0.7)}${cel(rf, roof, "#8a3a1e", 1.6)}</g>`;
+  }
+  // 운하(빛나는 띠)
+  b += fl("M0 760C300 740 600 770 900 750C1200 730 1400 760 1600 745V775C1400 790 1200 760 900 780C600 800 300 770 0 790Z", "#ffe6b0", 0.8);
+  // 작은 진료소 간판(추상 도형: 흰 판 + 붉은 십자 대신 금빛 모래시계 모양)과 손 흔드는 사람들
+  b += cel("M1150 700h70v40h-70z", "#fffaf0", "#8a6a45", 2) + fl("M1170 708h30l-12 12l12 12h-30l12 -12z", "#e0764a") + ln("M1185 740V770", "#8a6a45", 3);
+  const ppl: [number, number, string][] = [[1080, 778, "#e0764a"], [1110, 782, "#3a3e48"], [1250, 780, "#7a5434"], [1280, 776, "#4a6fb5"], [1310, 784, "#f4f6fb"], [1350, 780, "#2f5a46"]];
+  for (const [x, y, col] of ppl) b += fl(`M${x - 7} ${y}c0 -10 3 -16 7 -16s7 6 7 16zM${x} ${y - 24}a6 6 0 1 0 0.1 0z`, col) + ln(`M${x + 5} ${y - 12}l10 -12`, col, 3);
+  for (let i = 0; i < 3; i++) b += `<g ${A(p, "sw", i * 1.3, 1.6)}>${ln(`M${[1085, 1285, 1355][i]} ${[766, 764, 768][i]}l6 -14`, "#fffbe8", 3)}</g>`;
+  // 시계탑 테라스(전경): 금빛 문자판 가장자리와 난간
+  let bal = "";
+  for (let x = 10; x < 1600; x += 56) bal += `M${x} 832h28v60h-28z`;
+  b += cel("M0 816H1600V836H0Z", "#f3ede2", "#8a7050", 2.4) + cel(bal, "#e8d8bc", "#8a7050", 2) + fl("M0 816H1600V822H0Z", "#fff0cc");
+  // ── 인물: 나란히, 서로를 보며 웃는다 ──
+  const rimC = "#fff3c8";
+  const skE: Skin = { b: "#fbe2d0", s: "#e2a894", l: "#9a5446", blush: "#f08a82", rim: rimC };
+  const skS: Skin = { b: "#fde6d0", s: "#eaab90", l: "#a0574a", blush: "#f5847e", rim: rimC };
+  // 엘리오스(왼쪽, 오른쪽을 봄) — 바람에 흰 가닥이 날린다
+  const eH = hairElios({ streaks: 6 });
+  b += place(690, 300, 1.15, 0, true, eH.back + neck("m", skE) + eliosTorso(rimC));
+  b += place(690, 300, 1.15, 4, true, elfEar(skE) + face(c, { sex: "m", skin: skE, near: IRIS.gold, far: IRIS.red, lash: "#0a0a14", eyes: "soft", brow: "soft", mouth: "smile", blush: 0.45, rim: [-5, -2], noNeck: true, look: [-2, 0] }) + eH.front);
+  // 바람에 날리는 흰·검은 가닥(움직임)
+  const windW = "M50 -50C80 -60 110 -56 140 -70M54 -40C84 -44 112 -40 136 -50M56 -30C80 -30 100 -24 124 -30";
+  const windB = "M58 -18C86 -18 110 -10 134 -16M60 -6C84 -4 104 4 126 0";
+  b += place(690, 300, 1.15, 4, true, `<g ${A(p, "sw", 0, 4)}>${ln(windW, HAIR_WHITE.l, 6)}${ln(windW, HAIR_WHITE.b, 3.4)}${ln(windB, HAIR_ELIOS.l, 6)}${ln(windB, HAIR_ELIOS.b, 3)}</g>`);
+  // 서하(오른쪽, 왼쪽을 봄)
+  const sH = hairSeoha();
+  b += place(930, 370, 1.05, 0, false, sH.back + neck("f", skS) + seohaTorsoFantasy(rimC));
+  b += place(930, 370, 1.05, -4, false, face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "soft", brow: "soft", mouth: "smile", blush: 0.6, rim: [5, -2], noNeck: true, look: [-2, -2] }) + sH.front);
+  // 금빛 입자(바람)
+  b += sandStream(c, r, () => [400 + r() * 900, 150 + r() * 500], 160, 14, "up");
+  b += `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#6a8ad0", 0.12], [0.5, "#ffd9a0", 0.08], [1, "#ffc070", 0.2]])}" style="mix-blend-mode:screen"/>`;
+  return svg(c, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_return — 서울, 병원 옥상, 새벽 4시 44분. 따뜻한 캔커피와 휴대폰을 든 서하가
+// 하늘을 본다. 희미하게 반짝이는 금빛 한 알.
+// ────────────────────────────────────────────────────────────────────────────
+//@id cg_return cgReturn
+function cgReturn(): string {
+  const c = new Ctx("cg-return");
+  const p = c.p;
+  const r = rng(1414);
+  let b = `<rect width="1600" height="900" fill="${c.lgu(0, 0, 0, 900, [[0, "#1d2d4f"], [0.45, "#4f6fa3"], [0.7, "#a8a0b8"], [0.82, "#f0b89a"], [1, "#f6d0b0"]])}"/>`;
+  const st: Pt[] = [];
+  for (let i = 0; i < 60; i++) st.push([r() * 1600, Math.pow(r(), 1.6) * 320]);
+  b += dots(st, 1.8, "#e4ecff", 0.6);
+  b += `<ellipse cx="800" cy="760" rx="1000" ry="260" fill="${c.glow("#ffd8b8", 0.6, 0.25)}"/>`;
+  // 금빛 한 알(하늘)
+  b += `<circle cx="640" cy="170" r="60" fill="${c.glow("#ffe6a0", 0.8, 0.3)}" ${A(p, "pu", 0, 3)}/>` + sparkAt(c, 640, 170, 16, "#fff6d0", A(p, "tw", 1, 3.4)) + `<circle cx="640" cy="170" r="3" fill="#fffbe8"/>`;
+  // 서울 스카이라인(아파트, 한강 다리, 산 위의 탑)
+  b += fl("M0 640C200 600 380 560 520 590C600 600 700 560 800 580L1600 600V900H0Z", "#3a4a72", 0.6);
+  b += fl("M1180 560L1186 470L1176 470L1196 430L1216 470L1206 470L1212 560Z", "#2e3c62");
+  let sky = "M0 900V700";
+  let win = "";
+  for (let x = 0; x < 1600; ) {
+    const w = 40 + r() * 70;
+    const h = 60 + r() * 140;
+    sky += `V${Math.round(700 - h)}H${Math.round(x + w)}`;
+    for (let k = 0; k < 6; k++) if (r() < 0.35) win += `M${Math.round(x + 8 + r() * (w - 16))} ${Math.round(700 - h + 12 + r() * (h - 20))}h4`;
+    x += w;
+  }
+  b += fl(sky + "V900Z", "#1e2a48") + ln(win, "#ffd8a0", 3, 0.8);
+  b += fl("M0 740H1600V760H0Z", "#e8b898", 0.5) + ln("M0 744C200 730 400 730 600 744M900 744C1100 730 1300 730 1500 744", "#2e3c62", 3);
+  // 옥상 난간과 바닥
+  b += fl("M0 760H1600V900H0Z", "#2a3048") + ln("M0 760H1600", "#6a7aa0", 6);
+  let rail = "";
+  for (let x = 20; x < 1600; x += 80) rail += `M${x} 700V760`;
+  b += ln("M0 700H1600" + rail, "#4a5678", 5);
+  // 자판기(왼쪽, 불빛)
+  b += cel("M120 420H300V780H120Z", "#c8d0e0", "#2a3048", 3) + fl("M140 440H280V600H140Z", "#fff4d8", 0.95) + `<rect x="120" y="420" width="180" height="360" fill="${c.glow("#fff0d0", 0.4, 0.1)}"/>`;
+  let cans = "";
+  for (let i = 0; i < 4; i++) for (let k = 0; k < 2; k++) cans += `M${152 + i * 32} ${460 + k * 70}h18v40h-18z`;
+  b += fl(cans, "#c84a4a", 0.8);
+  // ── 서하: 남색 스크럽 + 회색 후드 집업, ID 줄. 하늘(왼쪽 위)을 올려다본다 ──
+  const skS: Skin = { b: "#f6dccc", s: "#c8a0a0", l: "#7a4a4a", blush: "#ec8a8a", rim: "#ffd8b8" };
+  const sH = hairSeoha();
+  const X = 860, Y = 360, S = 1.15;
+  const hood: Cloth = { b: "#8a8e98", s: "#666a76", l: "#2a2e38" };
+  let body = cel(femTorsoD(900), hood.b, hood.l, 2.6) + fl("M96 146C120 160 136 190 142 240L150 900H90C100 700 108 360 96 146Z", hood.s);
+  // 스크럽(앞섶 V넥)
+  body += cel("M-46 150C-56 260 -60 400 -62 900H76C72 400 66 260 56 146C40 190 20 210 4 220C-14 206 -32 186 -46 150Z", "#2a3a6a", "#101830", 2.2) + fl("M30 170C44 260 50 400 54 900H76C72 400 66 260 56 146Z", "#1e2a50");
+  body += cel("M-30 134C-20 180 -6 206 4 222C18 206 34 180 44 130C30 150 16 160 4 162C-10 160 -22 150 -30 134Z", skS.b, skS.l, 2);
+  // 후드(목 뒤) + 지퍼 + 끈
+  body += cel("M-40 120C-70 110 -90 130 -96 160C-80 150 -60 146 -44 150Z", hood.b, hood.l, 2) + cel("M50 110C84 104 104 124 110 156C92 146 72 142 58 146Z", hood.b, hood.l, 2);
+  body += ln("M-56 160C-62 260 -64 400 -66 900M74 156C80 260 82 400 84 900", "#c8ccd4", 2, 0.8) + ln("M-30 160V260M40 160V250", "#e8eaf0", 2);
+  // 목걸이 ID카드 줄
+  body += ln("M-30 130C-24 190 -6 240 4 270M44 126C36 190 18 240 8 270", "#4a8a6a", 3) + cel("M-16 270h44v56h-44z", "#ffffff", "#5a6a7a", 1.8) + fl("M-10 280h14v16h-14z", "#9ab0c8") + ln("M10 284h12M10 292h10M-10 306h32M-10 314h26", "#8a96a8", 1.6);
+  b += place(X, Y, S, 0, false, sH.back + neck("f", skS) + body);
+  b += place(X, Y, S, 14, false, face(c, { sex: "f", skin: skS, near: IRIS.brown, far: IRIS.brown, lash: "#1a0e0e", eyes: "soft", brow: "soft", mouth: "soft", blush: 0.4, rim: [5, -3], noNeck: true, bags: true, look: [-3, -5], tears: 1 }) + sH.front);
+  // 캔커피(가슴께, 두 손 중 오른손으로 감싸 쥠, 김)와 휴대폰(왼손, 화면 빛)
+  b += limb(990, 590, 944, 700, 60, 48, hood.b, hood.l, hood.s, -14);
+  b += cel("M846 650h48v80h-48z", "#c8a070", "#4a3420", 2) + fl("M846 666h48v20h-48z", "#3a2a1a") + fl("M850 652h8v76h-8z", "#fff0d8", 0.6) + cel("M846 646h48v8h-48z", "#d8d8dc", "#4a4a50", 1.4);
+  b += place(944, 698, 1.0, 0, false, mitt(skS.b, skS.s, skS.l));
+  for (let i = 0; i < 3; i++) b += `<path d="M${856 + i * 12} 636c-8 -14 8 -22 0 -36" fill="none" stroke="#ffffff" stroke-width="3" opacity=".5" ${A(p, "up", i * 1.2, 4)}/>`;
+  b += limb(770, 580, 740, 740, 56, 46, hood.b, hood.l, hood.s, 12);
+  b += place(744, 742, 0.95, 160, false, mitt(skS.b, skS.s, skS.l));
+  b += `<g transform="translate(772 726) rotate(-16)">${cel("M-20 -36h40v72h-40z", "#1a1e28", "#05060a", 2)}${fl("M-16 -30h32v58h-32z", "#5a7ab0")}${fl("M-12 -26h10v6h-10z", "#e8c060")}</g>`;
+  b += `<circle cx="772" cy="726" r="70" fill="${c.glow("#a8c8ff", 0.35, 0.1)}"/>`;
+  b += `<rect x="120" y="420" width="180" height="360" fill="${c.glow("#fff0d0", 0.5, 0.15)}"/>`;
+  b += `<rect width="1600" height="900" fill="${c.rg([[0.5, "#000", 0], [1, "#0a1020", 0.45]])}"/>`;
+  return svg(c, b);
+}
 export const CGS_B: Record<string, string> = {
-  cg_sheet: cgSheet(),
-  cg_zoom: cgZoom(),
   cg_e_good: cgEGood(),
   cg_e_bad: cgEBad(),
   cg_r_back: cgRBack(),
@@ -1506,4 +1889,10 @@ export const CGS_B: Record<string, string> = {
   cg_r_bad: cgRBad(),
   cg_s_eye: cgSEye(),
   cg_s_blade: cgSBlade(),
+  cg_s_good: cgSGood(),
+  cg_s_bad: cgSBad(),
+  cg_two_kings: cgTwoKings(),
+  cg_shatter: cgShatter(),
+  cg_true: cgTrue(),
+  cg_return: cgReturn(),
 };
