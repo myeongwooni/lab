@@ -38,6 +38,10 @@ function glow(id: string, color: string, core = 0.9, mid = 0.3): string {
     [1, color, 0],
   ]);
 }
+/** edge vignette as a full-frame rect (no filter) */
+function vig(p: string, color: string, op: number, inner = 0.55): string {
+  return `<radialGradient id="${p}-vg" cx="0.5" cy="0.5" r="0.72">${stops([[0, color, 0], [inner, color, 0], [1, color, op]])}</radialGradient><rect width="1600" height="900" fill="url(#${p}-vg)"/>`;
+}
 function blur(id: string, sd: number): string {
   return `<filter id="${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${sd}"/></filter>`;
 }
@@ -1150,7 +1154,7 @@ function cgDemon(): string {
     const x = r() < 0.5 ? 500 + r() * 300 : 1100 + r() * 300, y = 250 + r() * 600;
     b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.6 + r() * 2.4)}" fill="#ff6a5a" ${A(p, "up", r() * 6, 4 + r() * 3)}/>`;
   }
-  b += `<rect width="1600" height="900" fill="none" stroke="#000" stroke-width="80" opacity=".35" filter="url(#${p}-b)"/>`;
+  b += vig(p, "#000", 0.6499999999999999);
   return svg(p, defs, b);
 }
 
@@ -1243,7 +1247,7 @@ function cgClocks(): string {
   // ── Elios at the bench ──
   const HX = 960, HY = 336, HS = 1.5, HR = 12;
   b += eliosCoat(p, 990, 520, 520, 420);
-  const headE = eliosHead(p, { open: 0.42, look: [-0.4, 1], brow: 0.2, mouth: "soft", blush: 0.35, shadeSide: 1, rim: "#fff1c4" }, 0);
+  const headE = eliosHead(p, { open: 0.42, look: [-0.4, 1], brow: 0.2, mouth: "soft", blush: 0.35, shadeSide: 1, rim: "#fff1c4" }, 3);
   b += place(HX, HY, HS, HR, false, headE);
   b += eliosCollar(990, 520);
   // workbench
@@ -1364,6 +1368,403 @@ function cgEWaltz(): string {
   return svg(p, defs, b);
 }
 
+/** paper lantern (local, ~ 40 tall) for <use> */
+function lanternDef(id: string, glowId: string): string {
+  return `<g id="${id}"><circle r="46" fill="url(#${glowId})"/><path d="M-14 -18H14Q20 0 14 18H-14Q-20 0 -14 -18Z" fill="#ffcf7a" stroke="#c0602a" stroke-width="2"/><path d="M-6 -18Q-9 0 -6 18M6 -18Q9 0 6 18" stroke="#f0a050" stroke-width="1.4" fill="none"/><path d="M-10 -22H10V-18H-10ZM-10 18H10V22H-10Z" fill="#8a3a1e"/><ellipse cx="0" cy="2" rx="7" ry="10" fill="#fff6d8" opacity=".9"/></g>`;
+}
+/** rooftops + windows silhouette band */
+function roofs(r: () => number, x0: number, x1: number, base: number, hMin: number, hMax: number, fill: string, win: string, winOp: number): string {
+  let d = `M${x0} ${base + 200}`, w = "";
+  let x = x0;
+  while (x < x1) {
+    const bw = 50 + r() * 90, h = hMin + r() * (hMax - hMin);
+    const top = base - h;
+    d += `L${n1(x)} ${n1(top)}L${n1(x + bw / 2)} ${n1(top - 26 - r() * 20)}L${n1(x + bw)} ${n1(top)}`;
+    for (let k = 0; k < 3; k++) if (r() < 0.6) w += `M${n1(x + 10 + r() * (bw - 26))} ${n1(top + 14 + r() * (h - 30))}h8v12h-8Z`;
+    x += bw;
+  }
+  d += `L${x1} ${base + 200}Z`;
+  return `<path d="${d}" fill="${fill}"/><path d="${w}" fill="${win}" opacity="${winOp}"/>`;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_lanterns — ch05: the dawn festival, Seoha from behind
+// ────────────────────────────────────────────────────────────────────────────
+function cgLanterns(): string {
+  const p = "cg-lanterns";
+  const r = rng(505);
+  const defs =
+    lg(`${p}-sky`, 0, 0, 0, 1, [[0, "#0a0e2a"], [0.5, "#1e2458"], [0.8, "#4a3a6a"], [1, "#8a5a5a"]]) +
+    glow(`${p}-lg`, "#ffb04a", 0.75, 0.25) +
+    glow(`${p}-warm`, "#ffb45a", 0.9, 0.3) +
+    glow(`${p}-tower`, "#ffd27a", 0.95, 0.4) +
+    lg(`${p}-water`, 0, 0, 0, 1, [[0, "#2a2448"], [1, "#0c0c1e"]]) +
+    lg(`${p}-cloak`, 0, 0, 1, 1, [[0, "#3e6a4c"], [0.5, "#24442e"], [1, "#12241a"]]) +
+    lg(`${p}-hair`, 0, 0, 0, 1, [[0, "#3a3850"], [1, "#16141e"]]) +
+    lanternDef(`${p}-L`, `${p}-lg`) +
+    blur(`${p}-b`, 6);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-sky)"/>`;
+  // stars
+  const st: Pt[] = [];
+  for (let i = 0; i < 90; i++) st.push([r() * 1600, Math.pow(r(), 1.6) * 420]);
+  b += dots(st, 2, "#e8ecff", 0.6);
+  // Dawn Tower far away, gold clock face glowing
+  b += `<circle cx="800" cy="300" r="260" fill="url(#${p}-tower)" opacity=".45"/>`;
+  b += `<path d="M770 560V250L760 240L800 150L840 240L830 250V560Z" fill="#2e2a4a" stroke="#14122a" stroke-width="3"/>`;
+  b += `<circle cx="800" cy="290" r="24" fill="#ffe6a0" stroke="#a87a30" stroke-width="3"/>` + ln("M800 290V274M800 290L812 296", "#5a3e14", 2.4);
+  // houses on both banks, warm windows
+  b += roofs(r, -20, 700, 560, 60, 160, "#1c1a36", "#ffcf7a", 0.85);
+  b += roofs(r, 900, 1620, 560, 60, 160, "#1c1a36", "#ffcf7a", 0.85);
+  b += `<circle cx="300" cy="520" r="300" fill="url(#${p}-warm)" opacity=".35"/><circle cx="1300" cy="520" r="300" fill="url(#${p}-warm)" opacity=".35"/>`;
+  b += roofs(r, -20, 520, 640, 100, 260, "#121026", "#ffb45a", 0.9);
+  b += roofs(r, 1080, 1620, 640, 100, 260, "#121026", "#ffb45a", 0.9);
+  // canal
+  b += `<path d="M520 640L1080 640L1600 900H0Z" fill="url(#${p}-water)"/>`;
+  // reflections of the tower glow
+  b += ln("M800 660V900M760 700V880M840 690V870", "#ffd27a", 6, 0.25);
+  // lanterns on the water
+  let lw = "", rf = "";
+  for (let i = 0; i < 30; i++) {
+    const t = r();
+    const y = 650 + t * t * 250;
+    const half = 280 + t * 520;
+    const x = 800 + (r() - 0.5) * 2 * half * 0.9;
+    const s = 0.4 + t * 1.3;
+    lw += useAt(`${p}-L`, x, y, s, 0, 0.8);
+    rf += `M${n1(x)} ${n1(y + 14 * s)}v${n1(30 * s)}`;
+  }
+  b += ln(rf, "#ffb04a", 5, 0.35) + lw;
+  // lanterns rising into the sky
+  let ls = "";
+  for (let i = 0; i < 46; i++) {
+    const y = 40 + r() * 560;
+    const x = r() * 1600;
+    const s = 0.25 + (y / 600) * 0.6 + r() * 0.3;
+    ls += useAt(`${p}-L`, x, y, s);
+  }
+  b += ls;
+  for (let i = 0; i < 12; i++) {
+    const x = 300 + r() * 1000, y = 80 + r() * 420;
+    b += `<g ${A(p, "bob", r() * 6, 5 + r() * 3)}>${useAt(`${p}-L`, x, y, 0.5 + r() * 0.4)}</g>`;
+  }
+  // stone bridge parapet in the foreground
+  b += `<path d="M0 760Q800 700 1600 760V900H0Z" fill="#2a2640" stroke="#0e0c1a" stroke-width="3"/>`;
+  b += ln("M0 770Q800 712 1600 770", "#8a7ab0", 3, 0.6);
+  let bk = "";
+  for (let x = 60; x < 1600; x += 120) bk += `M${x} ${n1(745 + Math.pow((x - 800) / 800, 2) * 40)}v140`;
+  b += ln(bk, "#16142a", 3, 0.8);
+
+  // ── Seoha from behind, green cloak, releasing a lantern ──
+  const cx = 800;
+  b += cel(`M${cx - 190} 900C${cx - 200} 800 ${cx - 180} 680 ${cx - 120} 600C${cx - 80} 556 ${cx - 40} 540 ${cx} 540C${cx + 40} 540 ${cx + 80} 556 ${cx + 120} 600C${cx + 180} 680 ${cx + 200} 800 ${cx + 190} 900Z`, `url(#${p}-cloak)`, "#0c1a10", 3);
+  b += `<path d="M${cx + 120} 600C${cx + 180} 680 ${cx + 200} 800 ${cx + 190} 900L${cx + 100} 900C${cx + 110} 800 ${cx + 100} 690 ${cx + 60} 610Z" fill="#ffb45a" opacity=".22"/>`;
+  b += ln(`M${cx - 60} 620C${cx - 80} 700 ${cx - 90} 800 ${cx - 90} 900M${cx + 40} 620C${cx + 50} 720 ${cx + 60} 800 ${cx + 70} 900`, "#0e2014", 2.4, 0.8);
+  // hood folded down on the shoulders
+  b += cel(`M${cx - 110} 580C${cx - 90} 620 ${cx - 40} 640 ${cx} 640C${cx + 40} 640 ${cx + 90} 620 ${cx + 110} 580C${cx + 80} 556 ${cx + 40} 546 ${cx} 546C${cx - 40} 546 ${cx - 80} 556 ${cx - 110} 580Z`, "#2e5a3c", "#0c1a10", 2.6);
+  // arms raised, hands releasing a lantern above
+  b += cel(`M${cx - 100} 600C${cx - 120} 540 ${cx - 120} 470 ${cx - 90} 420L${cx - 56} 430C${cx - 76} 480 ${cx - 70} 540 ${cx - 50} 590Z`, "#f0e4c8", "#7a6a50", 2.4);
+  b += cel(`M${cx + 100} 600C${cx + 120} 540 ${cx + 120} 470 ${cx + 90} 420L${cx + 56} 430C${cx + 76} 480 ${cx + 70} 540 ${cx + 50} 590Z`, "#f0e4c8", "#7a6a50", 2.4);
+  // back of the head: black bob, loosely tied low
+  b += cel(`M${cx - 70} 470C${cx - 80} 410 ${cx - 60} 360 ${cx} 352C${cx + 60} 360 ${cx + 80} 410 ${cx + 70} 470C${cx + 66} 500 ${cx + 50} 530 ${cx + 30} 540L${cx - 30} 540C${cx - 50} 530 ${cx - 66} 500 ${cx - 70} 470Z`, `url(#${p}-hair)`, "#08080e", 2.6);
+  b += `<path d="M${cx - 50} 380C${cx - 20} 366 ${cx + 30} 366 ${cx + 54} 384L${cx + 50} 396C${cx + 20} 380 ${cx - 20} 380 ${cx - 46} 394Z" fill="#6a6890" opacity=".8"/>`;
+  b += ln(`M${cx - 40} 420C${cx - 46} 460 ${cx - 40} 500 ${cx - 26} 530M${cx + 10} 400C${cx + 14} 450 ${cx + 10} 500 ${cx + 4} 536M${cx + 46} 420C${cx + 50} 470 ${cx + 40} 510 ${cx + 30} 536`, "#4a4864", 1.8, 0.8);
+  b += `<path d="M${cx - 14} 530h28v14h-28Z" fill="#2e5a3c" stroke="#08080e" stroke-width="2"/>`;
+  b += cel(`M${cx - 10} 544C${cx - 18} 566 ${cx - 14} 586 ${cx - 4} 600C${cx + 10} 584 ${cx + 16} 566 ${cx + 8} 544Z`, `url(#${p}-hair)`, "#08080e", 2);
+  // stray strands catching lantern light
+  b += ln(`M${cx - 66} 470C${cx - 80} 500 ${cx - 78} 520 ${cx - 90} 534M${cx + 66} 470C${cx + 82} 496 ${cx + 84} 520 ${cx + 92} 530`, "#ffcf7a", 1.6, 0.8);
+  // ear tip and hands
+  b += `<path d="M${cx + 70} 440C${cx + 80} 436 ${cx + 84} 452 ${cx + 72} 462Z" fill="${SK_SEOHA.shade}" stroke="${SK_SEOHA.line}" stroke-width="2"/>`;
+  b += hand(cx - 72, 426, 0.9, 20, false, PALM_GRIP, FING_GRIP, SK_SEOHA, 11);
+  b += hand(cx + 72, 426, 0.9, -20, true, PALM_GRIP, FING_GRIP, SK_SEOHA, 11);
+  b += `<g ${A(p, "bob", 0, 5)}><circle cx="${cx}" cy="300" r="200" fill="url(#${p}-warm)" opacity=".7"/>${useAt(`${p}-L`, cx, 320, 2.6)}</g>`;
+  // rim light from the lanterns on her silhouette
+  b += ln(`M${cx - 70} 470C${cx - 80} 410 ${cx - 60} 360 ${cx} 352C${cx + 60} 360 ${cx + 80} 410 ${cx + 70} 470`, "#ffd27a", 2.6, 0.85);
+  for (let i = 0; i < 16; i++) {
+    const x = 200 + r() * 1200, y = 100 + r() * 600;
+    b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.6 + r() * 2)}" fill="#ffe0a0" ${A(p, "up", r() * 6, 6 + r() * 4)}/>`;
+  }
+  return svg(p, defs, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_betrayal — ch05: the bell tower, Cecilia's sweet smile and silver knife
+// ────────────────────────────────────────────────────────────────────────────
+function cgBetrayal(): string {
+  const p = "cg-betrayal";
+  const r = rng(998);
+  const defs =
+    lg(`${p}-sky`, 0, 0, 0, 1, [[0, "#0a0a24"], [0.55, "#2a2452"], [1, "#6a3a5a"]]) +
+    glow(`${p}-lg`, "#ffb04a", 0.75, 0.25) +
+    glow(`${p}-warm`, "#ffb45a", 0.9, 0.3) +
+    glow(`${p}-moon`, "#e8ecff", 0.9, 0.3) +
+    lg(`${p}-hair`, 0, 0, 0, 1, [[0, "#fff0b0"], [0.5, "#f0c860"], [1, "#c0883a"]]) +
+    lg(`${p}-dress`, 0, 0, 1, 1, [[0, "#ffe6ee"], [0.6, "#f4b8c8"], [1, "#b87890"]]) +
+    lg(`${p}-stone`, 0, 0, 1, 0, [[0, "#2a2840"], [1, "#16142a"]]) +
+    lg(`${p}-blade`, 0, 0, 1, 0, [[0, "#9aa4bc"], [0.5, "#f4f8ff"], [1, "#8a94ac"]]) +
+    lanternDef(`${p}-L`, `${p}-lg`) +
+    blur(`${p}-b`, 6);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-sky)"/>`;
+  const st: Pt[] = [];
+  for (let i = 0; i < 80; i++) st.push([r() * 1600, Math.pow(r(), 1.5) * 400]);
+  b += dots(st, 2, "#e8ecff", 0.6);
+  b += `<circle cx="1180" cy="170" r="200" fill="url(#${p}-moon)" opacity=".6"/><circle cx="1180" cy="170" r="54" fill="#f4f2ff"/>`;
+  // the city below glowing with lanterns
+  b += `<rect y="560" width="1600" height="340" fill="#120e24"/>`;
+  b += roofs(r, -20, 1620, 660, 40, 120, "#1e1a38", "#ffcf7a", 0.9);
+  b += `<ellipse cx="800" cy="760" rx="900" ry="200" fill="url(#${p}-warm)" opacity=".5"/>`;
+  b += roofs(r, -20, 1620, 760, 60, 160, "#151230", "#ffb45a", 0.95);
+  const cityL: Pt[] = [];
+  for (let i = 0; i < 160; i++) cityL.push([r() * 1600, 600 + r() * 300]);
+  b += dots(cityL, 4, "#ffcf7a", 0.85);
+  let ls = "";
+  for (let i = 0; i < 30; i++) ls += useAt(`${p}-L`, r() * 1600, 80 + r() * 520, 0.3 + r() * 0.5);
+  b += ls;
+  // bell tower arches framing her
+  b += `<path d="M0 0H1600V900H1460V420C1460 220 1300 120 1200 110L400 110C300 120 140 220 140 420V900H0Z" fill="url(#${p}-stone)" stroke="#0a0a16" stroke-width="4"/>`;
+  b += ln("M140 900V420C140 220 300 120 400 110M1460 900V420C1460 220 1300 120 1200 110", "#8a7ab0", 3, 0.6);
+  // the bronze bell above
+  b += cel("M690 110C690 40 740 0 800 0C860 0 910 40 910 110C910 130 930 140 940 150H660C670 140 690 130 690 110Z", "#8a6a3a", "#2a1a0a", 3);
+  b += `<path d="M720 110C720 50 750 20 790 14C760 40 750 80 754 140H700Z" fill="#c8a060" opacity=".6"/>`;
+  b += `<path d="M120 900V700H1480V900Z" fill="#1c1a30" stroke="#0a0a16" stroke-width="4"/>` + ln("M120 704H1480", "#6a5a90", 3, 0.6);
+
+  // ── Cecilia ──
+  const HX = 800, HY = 330, HS = 1.5, HR = -4;
+  b += `<circle cx="800" cy="330" r="420" fill="url(#${p}-warm)" opacity=".55"/>`;
+  // hair streaming in the wind (to the right)
+  b += cel(lock([840, 300], [980, 300], [1060, 380], [1180, 360], 120, 0.9) + lock([860, 380], [1000, 420], [1060, 520], [1200, 520], 110, 0.9) + lock([760, 380], [680, 480], [700, 560], [640, 640], 80, 0.9), `url(#${p}-hair)`, "#8a5a1a", 2.6);
+  // dress: puffed shoulders, pink & white
+  b += cel("M560 900C560 800 590 690 650 620C690 576 750 560 800 560C850 560 910 576 950 620C1010 690 1040 800 1040 900Z", `url(#${p}-dress)`, "#7a4a5a", 3);
+  b += cel("M620 640C600 600 620 566 660 560C700 556 720 580 716 610C690 630 650 644 620 640ZM980 640C1000 600 980 566 940 560C900 556 880 580 884 610C910 630 950 644 980 640Z", "#fff4f8", "#7a4a5a", 2.6);
+  b += cel("M720 600C750 640 850 640 880 600L860 700C820 720 780 720 740 700Z", "#fff6fa", "#7a4a5a", 2.2);
+  b += ln("M740 700C780 730 820 730 860 700M700 800C760 830 840 830 900 800", "#d898aa", 2.4, 0.8);
+  const headC = head({
+    p, id: "c", skin: SK_CECI, lash: "#4a2a1a", near: IR_SKY, far: IR_SKY, browColor: "#c09040",
+    open: 0.72, look: [0, 0], brow: 0.2, mouth: "smile", blush: 0.9, shadeSide: 1, rim: "#ffe0a0",
+    back: CECI_BACK, backFill: `url(#${p}-hair)`, hairLine: "#8a5a1a",
+    front: CECI_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#f0b8a8",
+    side: CECI_SIDE, hi: "#fff8d8", strands: "#d8a040",
+    extraOver:
+      // tiara + white ribbon on the half-up
+      `<path d="M-40 -84L-30 -100L-18 -88L-4 -108L10 -90L24 -102L34 -84Z" fill="#f4f0ff" stroke="#8a8aa8" stroke-width="1.6"/><circle cx="-4" cy="-98" r="3.4" fill="#9ad0ff"/>` +
+      cel("M60 -70C80 -90 100 -88 104 -70C100 -56 82 -54 66 -62ZM60 -70C70 -50 66 -30 76 -10C64 -14 56 -40 56 -60Z", "#ffffff", "#9aa0c0", 2),
+  });
+  b += place(HX, HY, HS, HR, false, headC);
+  b += cel("M760 556C780 580 820 580 840 556L846 600C820 616 780 616 754 600Z", "#fff6fa", "#7a4a5a", 2.2);
+  // white-gloved hand holding the silver knife, blade up
+  b += `<g transform="translate(-130 10)">`;
+  b += cel("M700 900C700 820 720 740 760 690L820 700C800 760 790 830 790 900Z", `url(#${p}-dress)`, "#7a4a5a", 3);
+  b += `<path d="M770 650L792 380L812 650Z" fill="url(#${p}-blade)" stroke="#5a6480" stroke-width="2"/>` + ln("M792 400L794 640", "#ffffff", 1.6, 0.9);
+  b += `<rect x="770" y="648" width="44" height="10" rx="3" fill="#c8ccd8" stroke="#5a6480" stroke-width="2"/><rect x="782" y="656" width="20" height="44" rx="5" fill="#e8eaf2" stroke="#5a6480" stroke-width="2"/>`;
+  const GW: Skin = { base: "#ffffff", shade: "#dfe2ee", line: "#8a90a8", blush: "" };
+  b += hand(790, 720, 1.05, 0, false, PALM_GRIP, FING_GRIP, GW, 12);
+  b += `<path d="${sparkle(794, 420, 22)}" fill="#ffffff" ${A(p, "tw", 0, 2.6)}/>`;
+  b += `</g>`;
+  // Seoha's white ribbon flying in the wind across the frame
+  const rib = lock([560, 700], [700, 560], [900, 640], [1080, 470], 30, 0.2) + lock([1080, 470], [1220, 330], [1340, 420], [1480, 260], 26, 0.6);
+  b += cel(rib, "#ffffff", "#8a9ac0", 2.2);
+  b += ln("M590 690C700 590 900 650 1070 486", "#c8d4f0", 3, 0.7);
+  for (let i = 0; i < 18; i++) {
+    const x = 160 + r() * 1280, y = 120 + r() * 560;
+    b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.6 + r() * 2.2)}" fill="#ffe0a0" ${A(p, "up", r() * 6, 6 + r() * 4)}/>`;
+  }
+  return svg(p, defs, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_first_death — ch01: POV from the chapel floor
+// ────────────────────────────────────────────────────────────────────────────
+function cgFirstDeath(): string {
+  const p = "cg-first-death";
+  const r = rng(101);
+  const defs =
+    lg(`${p}-bg`, 0, 0, 0, 1, [[0, "#0e1026"], [0.6, "#1c1a34"], [1, "#0a0a14"]]) +
+    glow(`${p}-moon`, "#c8d8ff", 0.9, 0.3) +
+    glow(`${p}-candle`, "#ffb45a", 0.95, 0.35) +
+    lg(`${p}-shaft`, 0, 0, 1, 1, [[0, "#c8d8ff", 0.55], [1, "#c8d8ff", 0]]) +
+    lg(`${p}-floor`, 0, 0, 0, 1, [[0, "#2a2840"], [1, "#0e0c18"]]) +
+    lg(`${p}-statue`, 0, 0, 1, 0, [[0, "#a8acc8"], [0.6, "#6a6e8e"], [1, "#3a3c58"]]) +
+    lg(`${p}-glass`, 0, 0, 0, 1, [[0, "#8aa8f0"], [0.5, "#4a5ab0"], [1, "#5a2a7a"]]) +
+    rg(`${p}-vig`, [[0, "#8f1d24", 0], [0.55, "#8f1d24", 0], [0.85, "#6a0e14", 0.6], [1, "#3a0408", 0.92]], 0.5, 0.5, 0.75) +
+    blur(`${p}-b`, 10);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  // tilted world (she lies on her side)
+  b += `<g transform="rotate(-14 800 450)">`;
+  // stained glass window + moonlight shafts
+  const wx = 560, wy = 160;
+  b += `<circle cx="${wx}" cy="${wy}" r="320" fill="url(#${p}-moon)" opacity=".55"/>`;
+  const lan = `M${wx - 110} 380V120C${wx - 110} 40 ${wx - 40} 0 ${wx} -20C${wx + 40} 0 ${wx + 110} 40 ${wx + 110} 120V380Z`;
+  b += `<clipPath id="${p}-wc"><path d="${lan}"/></clipPath>`;
+  b += `<g clip-path="url(#${p}-wc)"><rect x="${wx - 120}" y="-30" width="240" height="420" fill="url(#${p}-glass)"/>`;
+  let lat = "";
+  for (let k = -8; k <= 8; k++) lat += `M${wx - 140 + k * 40} -30l280 420M${wx + 140 + k * 40} -30l-280 420`;
+  b += ln(lat, "#06060e", 4) + `<circle cx="${wx}" cy="90" r="46" fill="#e8e0b0" opacity=".7"/><path d="M${wx - 30} 200h60v120h-60Z" fill="#c04a6a" opacity=".55"/></g>`;
+  b += `<path d="${lan}" fill="none" stroke="#06060e" stroke-width="10"/>`;
+  b += `<path d="M${wx - 110} 380L${wx + 110} 380L1300 1100L300 1100Z" fill="url(#${p}-shaft)" opacity=".5"/>`;
+  // dust in the shaft
+  const du: Pt[] = [];
+  for (let i = 0; i < 60; i++) {
+    const t = r();
+    du.push([wx - 100 + t * 600 + r() * 300, 400 + t * 500]);
+  }
+  b += dots(du, 2.2, "#e8f0ff", 0.6);
+  // broken goddess statue (right): robed, hands at her breast, half her face broken away
+  b += `<path d="M940 820H1180V870H940Z" fill="#4a4c68" stroke="#1a1a2a" stroke-width="3"/>`;
+  b += `<path d="M970 820C980 720 990 620 1004 540C990 500 996 460 1014 440C1034 424 1086 424 1106 440C1124 460 1130 500 1116 540C1130 620 1140 720 1150 820Z" fill="url(#${p}-statue)" stroke="#2a2a40" stroke-width="3"/>`;
+  b += ln("M1004 540C1010 640 1006 740 1000 816M1040 560C1046 660 1044 740 1040 816M1080 560C1086 660 1090 740 1100 816M1116 540C1120 640 1124 740 1130 816", "#3a3c58", 2.4, 0.8);
+  b += `<path d="M1014 470C1040 500 1080 500 1106 470C1096 500 1076 520 1060 520C1044 520 1024 500 1014 470Z" fill="#8a8eb0" stroke="#2a2a40" stroke-width="2"/>`;
+  b += `<path d="M1046 470C1050 456 1070 456 1074 470L1068 500H1052Z" fill="#b8bcd8" stroke="#2a2a40" stroke-width="2"/>`;
+  b += `<path d="M1046 438L1046 420L1074 420L1074 438Z" fill="#8a8eb0"/>`;
+  // the remaining half of the face (eye closed, serene), broken edge on the right
+  b += `<path d="M1030 420C1018 400 1016 370 1026 346C1036 326 1054 318 1066 320L1060 340L1072 352L1062 368L1070 384L1060 404L1066 420Z" fill="#b8bcd8" stroke="#2a2a40" stroke-width="2.4"/>`;
+  b += `<path d="M1026 346C1030 320 1050 306 1066 306L1072 326C1054 326 1036 336 1026 346Z" fill="#7a7e9e" stroke="#2a2a40" stroke-width="2"/>`;
+  b += ln("M1034 370C1040 374 1048 374 1054 370M1044 396L1052 396", "#4a4c68", 2);
+  b += ln("M1030 420C1018 400 1016 370 1026 346", "#e8eeff", 2.6, 0.8);
+  b += ln("M970 820C980 720 990 620 1004 540C990 500 996 460 1014 440", "#e8eeff", 2.6, 0.6);
+  b += `<path d="M1090 860l40 -12 34 8 -12 16ZM1140 840l22 -6 10 10 -18 6Z" fill="#8a8eb0" stroke="#2a2a40" stroke-width="2"/>`;
+  // floor in perspective (close, she's on it)
+  b += `<path d="M-200 700L1800 640V1200H-200Z" fill="url(#${p}-floor)"/>`;
+  let tl = "";
+  for (let i = -8; i <= 8; i++) tl += `M${800 + i * 60} 668L${800 + i * 300} 1200`;
+  tl += "M-200 760L1800 700M-200 860L1800 790M-200 1000L1800 920";
+  b += ln(tl, "#0a0a14", 3, 0.7);
+  // candles, blurred into soft bokeh
+  let cb = "";
+  for (const [x, y, s] of [[300, 600, 1], [380, 620, 0.8], [1260, 580, 1.1], [1340, 610, 0.9], [760, 640, 0.7], [180, 720, 1.6], [1440, 700, 1.4]] as [number, number, number][])
+    cb += `<rect x="${x - 8 * s}" y="${y}" width="${16 * s}" height="${60 * s}" fill="#e8dcc8"/><ellipse cx="${x}" cy="${y - 10 * s}" rx="${6 * s}" ry="${12 * s}" fill="#ffd27a"/>`;
+  b += `<g filter="url(#${p}-b)" opacity=".9">${cb}</g>`;
+  for (const [x, y, s] of [[300, 590, 1], [1260, 570, 1.1], [180, 700, 1.6], [1440, 684, 1.4], [760, 630, 0.7]] as [number, number, number][])
+    b += `<circle cx="${x}" cy="${y}" r="${n1(90 * s)}" fill="url(#${p}-candle)" ${A(p, "fl", x * 0.003, 2 + s)}/>`;
+  b += `</g>`;
+  // Toby's small hand in the foreground: limp, palm up, oversized yellowed sleeve; a plaster on the wrist
+  b += cel("M0 900L0 700C120 690 260 720 400 760L420 820C300 840 140 880 60 900Z", "#d8c890", "#5a4a24", 3);
+  b += `<path d="M0 760C120 750 260 770 400 800L410 830C300 840 140 870 40 900H0Z" fill="#b0a06a" opacity=".8"/>`;
+  const SK_T: Skin = { base: "#f6d8c0", shade: "#d8a88a", line: "#8a5a40", blush: "" };
+  const FING_LIMP: [Pt, Pt, Pt][] = [[[-20, -40], [-30, -56], [-24, -64]], [[-6, -44], [-10, -62], [-2, -70]], [[8, -44], [10, -60], [18, -66]], [[22, -36], [30, -48], [34, -54]], [[-28, -10], [-44, -16], [-50, -30]]];
+  b += hand(450, 800, 1.5, 104, false, PALM_UP, FING_LIMP, SK_T, 13);
+  b += `<path d="M396 770l24 -8 10 30 -24 8Z" fill="#f0d8b0" stroke="#a88a60" stroke-width="2"/>` + ln("M404 776l12 -4M408 788l12 -4", "#c8a880", 1.4);
+  // a few dark drops (restrained)
+  b += `<path d="M560 860c10 -4 22 0 24 8s-10 12 -22 10 -12 -14 -2 -18ZM610 880c6 -2 14 0 14 6s-8 8 -14 6 -6 -10 0 -12Z" fill="#5a0e14" opacity=".85"/>`;
+  // red vignette + edge blur
+  b += `<rect width="1600" height="900" fill="url(#${p}-vig)"/>`;
+  b += vig(p, "#1a0206", 0.8999999999999999);
+  return svg(p, defs, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_tea — ch03: the overturned cup, red tea on white linen
+// ────────────────────────────────────────────────────────────────────────────
+function cgTea(): string {
+  const p = "cg-tea";
+  const r = rng(303);
+  const defs =
+    lg(`${p}-bg`, 0, 0, 0, 1, [[0, "#2a1a14"], [1, "#120a08"]]) +
+    glow(`${p}-candle`, "#ffb45a", 0.95, 0.35) +
+    lg(`${p}-cloth`, 0, 0, 0, 1, [[0, "#e8ddd0"], [0.5, "#f8f4ee"], [1, "#d8cfc4"]]) +
+    lg(`${p}-tea`, 0, 0, 1, 1, [[0, "#c2402a"], [0.5, "#8f1d24"], [1, "#5a0e12"]]) +
+    lg(`${p}-cup`, 0, 0, 0, 1, [[0, "#ffffff"], [0.6, "#eef0f6"], [1, "#b8bccc"]]) +
+    clockDef(`${p}-c`, "#e8dcc0", "#a87a40", "#3a2e2a", "#3a2416") +
+    blur(`${p}-b`, 9);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  // blurred background: clocks + candles + the warm dining room
+  let bg = "";
+  for (let i = 0; i < 18; i++) bg += useAt(`${p}-c`, r() * 1600, 40 + r() * 340, 0.6 + r() * 0.8);
+  for (const x of [240, 520, 1080, 1360]) bg += `<rect x="${x - 10}" y="300" width="20" height="120" fill="#efe4d0"/><ellipse cx="${x}" cy="284" rx="10" ry="20" fill="#ffd27a"/>`;
+  b += `<g filter="url(#${p}-b)" opacity=".8">${bg}</g>`;
+  for (const x of [240, 520, 1080, 1360]) b += `<circle cx="${x}" cy="280" r="130" fill="url(#${p}-candle)" ${A(p, "fl", x * 0.002, 2.2)}/>`;
+  b += `<rect width="1600" height="900" fill="#1a0c08" opacity=".25"/>`;
+  // table cloth (seen low, filling the lower 2/3)
+  b += `<path d="M-100 440L1700 420V900H-100Z" fill="url(#${p}-cloth)"/>`;
+  b += ln("M-100 442L1700 422", "#fff", 3, 0.8);
+  b += ln("M200 440C220 600 200 760 180 900M1400 424C1380 600 1400 760 1420 900", "#cfc4b6", 3, 0.5);
+  // the tea: spreading red stain
+  b += `<path d="M640 600C700 560 820 560 900 580C1000 600 1120 580 1200 620C1260 650 1240 700 1180 720C1100 750 1000 730 920 760C840 790 720 800 640 770C560 740 520 690 560 650C580 630 610 620 640 600Z" fill="#c8a8a0" opacity=".45"/>`;
+  b += `<path d="M660 610C720 580 820 584 900 600C990 616 1100 600 1170 630C1220 652 1200 690 1150 704C1080 724 990 712 920 736C840 764 730 772 660 748C590 724 570 690 600 662C616 646 636 624 660 610Z" fill="url(#${p}-tea)"/>`;
+  b += `<path d="M720 640C780 620 860 626 920 640C860 642 790 646 740 660Z" fill="#ffb8a8" opacity=".55"/>` + `<ellipse cx="1060" cy="650" rx="60" ry="10" fill="#ffd8c8" opacity=".35"/>`;
+  b += `<path d="M1170 640C1220 650 1250 666 1240 690" stroke="#8f1d24" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+  // droplets
+  b += `<path d="M540 700c8 -6 20 -2 20 6s-12 10 -18 6-8 -8 -2 -12ZM1280 690c6 -4 14 0 14 4s-8 8 -12 4-6 -6 -2 -8ZM600 790c5 -3 12 0 12 4s-7 6 -11 4-4 -6-1-8Z" fill="#8f1d24"/>`;
+  // saucer
+  b += `<ellipse cx="560" cy="560" rx="200" ry="50" fill="#d8dce8" stroke="#6a6e84" stroke-width="3"/><ellipse cx="560" cy="556" rx="120" ry="28" fill="#eef0f6" stroke="#9aa0b4" stroke-width="2"/>` + ln("M372 556C420 590 700 590 748 556", "#d0a850", 3);
+  // the overturned cup, lying on its side, mouth toward the stain
+  b += `<g transform="translate(720 600) rotate(-12)">`;
+  b += cel("M-150 -90C-160 -30 -150 30 -120 70L60 50C80 10 80 -40 60 -80Z", `url(#${p}-cup)`, "#5a5e74", 3);
+  b += `<ellipse cx="62" cy="-15" rx="26" ry="66" fill="#2a1410" stroke="#5a5e74" stroke-width="3"/><ellipse cx="66" cy="-14" rx="18" ry="56" fill="#8f1d24"/>`;
+  b += ln("M62 -81C84 -60 88 30 62 51", "#d0a850", 4);
+  b += `<path d="M-150 -60C-200 -70 -220 -10 -180 20C-170 28 -156 26 -150 20" fill="none" stroke="#5a5e74" stroke-width="16" stroke-linecap="round"/><path d="M-150 -60C-200 -70 -220 -10 -180 20C-170 28 -156 26 -150 20" fill="none" stroke="#f4f6fa" stroke-width="10" stroke-linecap="round"/>`;
+  b += ln("M-120 -70C-130 -20 -126 20 -104 54", "#ffffff", 6, 0.9);
+  b += `<path d="M-90 -40c12 -12 30 -12 40 0c-10 12 -28 12 -40 0Z" fill="#4a6ab8" opacity=".7"/><path d="M-40 10c12 -12 30 -12 40 0c-10 12 -28 12 -40 0Z" fill="#4a6ab8" opacity=".7"/>`;
+  b += `</g>`;
+  // spoon
+  b += `<path d="M1240 780L1440 860" stroke="#9aa0b4" stroke-width="10" stroke-linecap="round"/><ellipse cx="1220" cy="772" rx="34" ry="18" transform="rotate(22 1220 772)" fill="#e8eaf2" stroke="#6a6e84" stroke-width="3"/>`;
+  // shallow-focus foreground blur
+  // tilt vignette
+  b += vig(p, "#0a0404", 0.8500000000000001);
+  void r;
+  return svg(p, defs, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_lili — ch04: Lili's small hand in Seoha's, the fox-fire fading
+// ────────────────────────────────────────────────────────────────────────────
+function cgLili(): string {
+  const p = "cg-lili";
+  const r = rng(555);
+  const defs =
+    lg(`${p}-bg`, 0, 0, 0, 1, [[0, "#141a30"], [0.6, "#1e2440"], [1, "#0a0c16"]]) +
+    glow(`${p}-moon`, "#bcd0ff", 0.85, 0.3) +
+    glow(`${p}-fox`, "#9ad8ff", 0.95, 0.4) +
+    glow(`${p}-gold`, "#ffd27a", 0.9, 0.3) +
+    lg(`${p}-floor`, 0, 0, 0, 1, [[0, "#2a2a44"], [1, "#12121e"]]) +
+    lg(`${p}-tail`, 0, 0, 1, 0, [[0, "#d8742e"], [0.7, "#f0a050"], [0.82, "#fbe8d8"], [1, "#ffffff"]]) +
+    lg(`${p}-cloak`, 0, 0, 1, 1, [[0, "#2e5a3c"], [1, "#12241a"]]) +
+    blur(`${p}-b`, 8);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  // moonlight on the floorboards
+  b += `<circle cx="1200" cy="100" r="600" fill="url(#${p}-moon)" opacity=".4"/>`;
+  b += `<path d="M0 180L1600 120V900H0Z" fill="url(#${p}-floor)"/>`;
+  let fb = "";
+  for (let i = 0; i < 12; i++) fb += `M${i * 160 - 200} 900L${i * 140} 160`;
+  b += ln(fb, "#0c0c18", 3, 0.7);
+  b += `<path d="M900 140L1300 120L1000 900L300 900Z" fill="#c8d8ff" opacity=".08"/>`;
+  // the fox tail, limp across the floor
+  b += cel("M-60 760C200 700 420 640 640 660C820 676 980 700 1090 750C1000 800 860 840 700 850C460 866 200 880 -60 880Z", `url(#${p}-tail)`, "#7a3a14", 3);
+  let tuft = "";
+  for (let i = 0; i < 14; i++) {
+    const x = 40 + i * 70, y = 780 + Math.sin(i * 0.9) * 30;
+    tuft += `M${x} ${n1(y - 30)}q20 10 34 0M${x + 10} ${n1(y + 24)}q20 -8 34 2`;
+  }
+  b += ln(tuft, "#ffd0a0", 2.2, 0.55);
+  // Lili's sleeve: black dress with white cuff
+  b += `<g transform="translate(-130 70)">`;
+  b += cel("M1800 260C1460 330 1300 380 1160 430L1200 520C1340 470 1480 430 1800 380Z", "#1c1a24", "#06060a", 3);
+  b += cel("M1150 420C1140 450 1150 490 1180 520L1220 506C1200 480 1196 452 1200 426Z", "#f6f4fa", "#8a8aa0", 2.4);
+  b += `</g>`;
+  // Seoha's arm from the bottom: green cloak over cream sleeve
+  b += cel("M560 900C620 800 700 700 800 620L900 690C820 760 760 830 720 900Z", `url(#${p}-cloak)`, "#0c1a10", 3);
+  b += cel("M790 630C800 610 830 600 856 606L900 690L880 700C860 670 830 650 800 650Z", "#f0e4c8", "#7a6a50", 2.4);
+  // Seoha's left palm, open, mark glowing faintly
+  const FING_HOLD: [Pt, Pt, Pt][] = [[[-18, -44], [-26, -70], [-12, -86]], [[-4, -48], [-6, -78], [8, -92]], [[10, -46], [14, -74], [26, -86]], [[22, -38], [30, -60], [40, -68]], [[-26, -12], [-46, -26], [-46, -46]]];
+  b += hand(880, 640, 1.9, 50, false, PALM_UP, FING_HOLD, SK_SEOHA, 13);
+  b += `<circle cx="920" cy="600" r="70" fill="url(#${p}-gold)" opacity=".55" ${A(p, "pu", 0, 4)}/>`;
+  b += ln("M908 588L930 584L912 612L934 608Z", "#e0a030", 2.4) + ln("M908 588L930 584L912 612L934 608Z", "#fff1c4", 1);
+  // Lili's small hand resting in it, fingers loose
+  const SK_L: Skin = { base: "#fbe6d8", shade: "#e8b8a8", line: "#9a5a4c", blush: "" };
+  const FING_L: [Pt, Pt, Pt][] = [[[-18, -40], [-24, -54], [-18, -62]], [[-6, -44], [-8, -58], [-2, -66]], [[8, -42], [10, -56], [16, -62]], [[20, -34], [26, -46], [30, -52]], [[-24, -10], [-36, -18], [-40, -30]]];
+  b += hand(1036, 548, 1.5, 238, false, PALM_GRIP, FING_L, SK_L, 12);
+  // a tear falling onto their hands
+  b += `<path d="M1000 380C1006 396 1012 404 1012 412A12 12 0 1 1 988 412C988 404 994 396 1000 380Z" fill="#e6f4ff" stroke="#9cc4e6" stroke-width="1.6" ${A(p, "dn", 0, 3.4)}/>`;
+  // fox-fire wisps, fading
+  const ff: [number, number, number, number][] = [[620, 380, 1, 0.9], [760, 260, 0.7, 0.6], [1300, 260, 0.8, 0.5], [420, 520, 0.6, 0.35], [1420, 560, 0.5, 0.25]];
+  ff.forEach(([x, y, s, op], i) => {
+    b += `<g opacity="${op}"><circle cx="${x}" cy="${y}" r="${n1(110 * s)}" fill="url(#${p}-fox)"/><g ${A(p, "fl", i * 0.6, 2 + i * 0.4)}><path d="M${x} ${n1(y - 50 * s)}C${n1(x + 26 * s)} ${n1(y - 20 * s)} ${n1(x + 30 * s)} ${n1(y + 14 * s)} ${x} ${n1(y + 24 * s)}C${n1(x - 30 * s)} ${n1(y + 14 * s)} ${n1(x - 24 * s)} ${n1(y - 16 * s)} ${x} ${n1(y - 50 * s)}Z" fill="#dff4ff"/><path d="M${x} ${n1(y - 26 * s)}C${n1(x + 12 * s)} ${n1(y - 8 * s)} ${n1(x + 12 * s)} ${n1(y + 10 * s)} ${x} ${n1(y + 16 * s)}C${n1(x - 12 * s)} ${n1(y + 10 * s)} ${n1(x - 12 * s)} ${n1(y - 8 * s)} ${x} ${n1(y - 26 * s)}Z" fill="#ffffff"/></g></g>`;
+  });
+  const mo: Pt[] = [];
+  for (let i = 0; i < 40; i++) mo.push([300 + r() * 1100, 160 + r() * 500]);
+  b += dots(mo, 2.2, "#cfeaff", 0.5);
+  b += vig(p, "#04040a", 0.8999999999999999);
+  return svg(p, defs, b);
+}
+
 export const CGS_A: Record<string, string> = {
   cg_fall: cgFall(),
   cg_ashking: cgAshking(),
@@ -1371,6 +1772,11 @@ export const CGS_A: Record<string, string> = {
   cg_demon: cgDemon(),
   cg_clocks: cgClocks(),
   cg_e_waltz: cgEWaltz(),
+  cg_lanterns: cgLanterns(),
+  cg_betrayal: cgBetrayal(),
+  cg_first_death: cgFirstDeath(),
+  cg_tea: cgTea(),
+  cg_lili: cgLili(),
   cg_unmask: cgUnmask(),
 };
 

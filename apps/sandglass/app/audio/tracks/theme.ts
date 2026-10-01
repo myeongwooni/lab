@@ -265,7 +265,7 @@ export function climax(): Track {
     bpm: 144,
     len: 160,
     ev: s.ev,
-    gain: 0.6,
+    gain: 0.52,
     ch: {
       ost: { inst: "strs", pan: -0.1, rev: 0.25, fx: "body" },
       ostlo: { inst: "strs", pan: 0.1, rev: 0.2, gain: 0.9, bright: 0.7 },
@@ -344,7 +344,7 @@ export function ending(): Track {
     bpm: 76,
     len: 160,
     ev: s.ev,
-    gain: 0.85,
+    gain: 0.8,
     ch: {
       vln: { inst: "str", pan: -0.3, rev: 0.4, fx: "body", prio: 2, gain: 1.1 },
       fl: { inst: "flute", pan: 0.2, rev: 0.45, prio: 2, gain: 0.8 },

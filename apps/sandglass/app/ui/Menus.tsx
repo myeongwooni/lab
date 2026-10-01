@@ -85,7 +85,7 @@ export function SaveLoad({
           return (
             <div key={String(s)} className={`slot${d ? "" : " empty"}${confirm === s ? " confirm" : ""}`}>
               <button className="slot-main" onClick={() => pick(s)} disabled={mode === "load" && !d}>
-                <span className="slot-no">{s === "auto" ? "자동" : s === "quick" ? "빠른" : String(s).padStart(2, "0")}</span>
+                <span className={`slot-no${typeof s === "number" ? "" : " word"}`}>{s === "auto" ? "자동" : s === "quick" ? "빠른" : String(s).padStart(2, "0")}</span>
                 {d && ch ? (
                   <span className="slot-info">
                     <span className="slot-ch">

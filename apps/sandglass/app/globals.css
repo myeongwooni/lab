@@ -276,10 +276,11 @@ ruby rt { font-size: 0.5em; color: var(--ink-soft); letter-spacing: 0.08em; }
 /* 선택지 */
 .choices {
   position: absolute; inset: 0; z-index: 16; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-  padding: 0 var(--gutter) 18vh;
-  background: radial-gradient(ellipse at 50% 45%, rgba(4, 6, 18, 0.55), rgba(4, 6, 18, 0.2) 70%);
+  padding: 0 var(--gutter) 18vh; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 45%, rgba(20, 18, 26, 0.55), rgba(20, 18, 26, 0.2) 70%);
 }
 .choice {
+  pointer-events: auto;
   position: relative; width: min(600px, 100%); padding: 17px 30px 17px 52px; text-align: left;
   font-size: calc(clamp(15px, 0.5vw + 12px, 19px) * var(--font-scale)); line-height: 1.6; color: var(--ink);
   background: linear-gradient(90deg, rgba(36, 32, 42, 0.94), rgba(24, 22, 30, 0.88));
@@ -447,6 +448,7 @@ ruby rt { font-size: 0.5em; color: var(--ink-soft); letter-spacing: 0.08em; }
 .slot-main { display: flex; gap: 14px; width: 100%; text-align: left; padding: 14px 16px; min-height: 86px; }
 .slot-no { font-family: var(--latin); font-size: 26px; color: var(--gold); min-width: 40px; line-height: 1; padding-top: 2px; }
 .slot.empty .slot-no { color: var(--ink-dim); }
+.slot-no.word { font-family: var(--display); font-weight: 700; font-size: 15px; letter-spacing: 0.1em; padding-top: 4px; }
 .slot-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 .slot-ch { font-family: var(--display); font-weight: 700; font-size: 13.5px; letter-spacing: 0.06em; color: var(--silver); }
 .slot-ch em { font-style: normal; color: var(--gold); }
@@ -572,7 +574,7 @@ ruby rt { font-size: 0.5em; color: var(--ink-soft); letter-spacing: 0.08em; }
   .logo-sub { font-size: 13px; letter-spacing: 0.12em; }
   .logo h1 span:last-child { padding-left: 0; }
   .logo-rule { width: 70vw; }
-  .logo-glass { left: 50%; top: 42%; transform: translate(-50%, -50%); height: 52vh; opacity: 0.28; }
+  .logo-glass { display: none; }
   .logo h1 span:first-child::before { margin-left: 0; }
   .title-menu { justify-self: center; display: flex; flex-direction: column; gap: 0; margin-top: 0; }
   .title-menu button { text-align: center; padding: 10px 4px; font-size: 15px; letter-spacing: 0.2em; }

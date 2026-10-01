@@ -92,7 +92,13 @@ export function DeathSequence({ id, first, fast, nudge, onDone }: { id: string; 
     return () => audio.duck(false);
   }, []);
 
+  const born = useRef(0);
+  useEffect(() => {
+    born.current = performance.now();
+  }, []);
   const click = () => {
+    // 연타로 사망 연출을 통째로 건너뛰지 않게, 처음 잠깐은 클릭을 받지 않습니다.
+    if (!fast && phase !== "card" && performance.now() - born.current < 1600) return;
     if (phase !== "card") {
       stop();
       setPhase("card");
@@ -249,7 +255,12 @@ export function RewindSequence({ loop, fast, nudge, onDone }: { loop: number; fa
     ],
     [loop],
   );
+  const born = useRef(0);
+  useEffect(() => {
+    born.current = performance.now();
+  }, []);
   const click = () => {
+    if (!fast && phase !== "card" && performance.now() - born.current < 1200) return;
     stop();
     if (phase === "card") doneRef.current();
     else {

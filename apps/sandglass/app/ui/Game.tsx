@@ -588,7 +588,7 @@ export default function Game() {
     <main className="app" onWheel={onWheel}>
       <Stage key={session} stage={gs.stage} speaker={speaker} pulse={pulse} unmasked={!!gs.vars.unmasked}>
         <div
-          className={`play${hideUi ? " ui-hidden" : ""}`}
+          className={`play${hideUi || beat?.kind === "death" || beat?.kind === "rewind" ? " ui-hidden" : ""}`}
           onClick={proceed}
           onContextMenu={(e) => {
             e.preventDefault();
