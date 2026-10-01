@@ -37,6 +37,18 @@ import { Stage, type Pulse } from "./Stage";
 
 const STORY = buildStory(SOURCES, parseScript);
 
+// 개발 서버 전용 임시 원고(window.__sandglassTest). 모듈이 다시 읽혀도(HMR) 이어지도록 window에 둡니다.
+type TestWindow = { __sandglassTest?: (src: string, vars?: Record<string, number | boolean>) => void; __sandglassTestSrc?: string };
+function mountTestChapter(src: string) {
+  const parsed = parseScript(src);
+  STORY.chapters.__test = parsed;
+  for (const [name, i] of Object.entries(parsed.labels)) STORY.labels[name] = { ch: "__test", i };
+}
+if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") {
+  const src = (window as unknown as TestWindow).__sandglassTestSrc;
+  if (src) mountTestChapter(src);
+}
+
 const MS_PER_CHAR = [0, 58, 40, 27, 14, 0];
 const AUTO_BASE = [0, 700, 1100, 1600, 2200, 3000];
 
@@ -215,11 +227,10 @@ export default function Game() {
   //   window.__sandglassTest(`* t\n@bg plaza\n...`, { loop: 3 })
   useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
-    const w = window as unknown as { __sandglassTest?: (src: string, vars?: Record<string, number | boolean>) => void };
+    const w = window as unknown as TestWindow;
     w.__sandglassTest = (src, vars) => {
-      const parsed = parseScript(src);
-      STORY.chapters.__test = parsed;
-      for (const [name, i] of Object.entries(parsed.labels)) STORY.labels[name] = { ch: "__test", i };
+      w.__sandglassTestSrc = src;
+      mountTestChapter(src);
       startAt(newGame("__test", { ...DEFAULT_VARS, ...vars }));
     };
     return () => {

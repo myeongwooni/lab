@@ -1007,7 +1007,7 @@ function cgSand(): string {
   }
   const headR = head({
     p, id: "r", skin: SK_RAZEL, lash: "#2a160a", male: true, near: IR_AMBER, far: IR_AMBER, browColor: "#6a4a2a",
-    open: 0.9, look: [0.1, 0], brow: 1.1, mouth: "o", blush: 0, shadeSide: 1, rim: "#ffd9a0",
+    open: 0.78, look: [0.1, 0], brow: 1.2, mouth: "o", blush: 0, shadeSide: 1, rim: "#ffd9a0",
     back: RAZEL_BACK, backFill: `url(#${p}-hair)`, hairLine: "#3a2414",
     front: RAZEL_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#dcae8c",
     side: RAZEL_STRANDS, strands: "#d0aa78",
@@ -1154,11 +1154,216 @@ function cgDemon(): string {
   return svg(p, defs, b);
 }
 
+/** Elios's navy coat, buttoned to the neck: torso seen 3/4 (shoulders at y0, centre cx) */
+function eliosCoat(p: string, cx: number, y0: number, w: number, h: number, light = "#5a6aa8"): string {
+  const L = cx - w / 2, R = cx + w / 2;
+  let o = cel(`M${L} ${y0 + h}C${L} ${y0 + 140} ${L + 20} ${y0 + 50} ${L + 90} ${y0 + 14}C${cx - 60} ${y0 - 6} ${cx + 60} ${y0 - 6} ${R - 90} ${y0 + 14}C${R - 20} ${y0 + 50} ${R} ${y0 + 140} ${R} ${y0 + h}Z`, `url(#${p}-coat)`, COAT_LINE, 3);
+  o += `<path d="M${cx + 30} ${y0}C${cx + 60} ${y0 + 120} ${cx + 50} ${y0 + 260} ${cx + 60} ${y0 + h}L${R} ${y0 + h}C${R} ${y0 + 140} ${R - 20} ${y0 + 50} ${R - 90} ${y0 + 14}Z" fill="#0c1124" opacity=".55"/>`;
+  // collar + white shirt edge
+  o += cel(`M${cx - 70} ${y0 + 6}C${cx - 60} ${y0 - 34} ${cx - 50} ${y0 - 50} ${cx - 30} ${y0 - 56}L${cx + 40} ${y0 - 56}C${cx + 56} ${y0 - 46} ${cx + 66} ${y0 - 30} ${cx + 74} ${y0 + 6}C${cx + 30} ${y0 + 22} ${cx - 30} ${y0 + 22} ${cx - 70} ${y0 + 6}Z`, "#1c2448", COAT_LINE, 2.6);
+  o += ln(`M${cx - 36} ${y0 - 54}L${cx + 44} ${y0 - 54}`, "#eeeef4", 4);
+  // buttons (two rows)
+  let bt = "";
+  for (let i = 0; i < 4; i++) {
+    const y = y0 + 40 + i * 52;
+    bt += `<circle cx="${cx - 34}" cy="${y}" r="7" fill="#e0b860" stroke="#5a3e14" stroke-width="2"/><circle cx="${cx + 38}" cy="${y}" r="7" fill="#e0b860" stroke="#5a3e14" stroke-width="2"/>`;
+  }
+  o += bt + ln(`M${cx + 4} ${y0 + 14}V${y0 + h}`, "#070a16", 2.4, 0.8);
+  // pocket-watch chain
+  o += ln(`M${cx + 38} ${y0 + 92}C${cx + 70} ${y0 + 130} ${cx + 110} ${y0 + 130} ${cx + 130} ${y0 + 104}`, "#e8c060", 3);
+  o += ln(`M${L + 60} ${y0 + 40}C${L + 30} ${y0 + 120} ${L + 24} ${y0 + 220} ${L + 30} ${y0 + h}`, light, 2.4, 0.6);
+  return o;
+}
+const COAT_GRAD = (p: string) => lg(`${p}-coat`, 0, 0, 1, 1, [[0, "#2c3866"], [0.6, "#182040"], [1, "#0c1024"]]);
+
+/** black cat 초침, sitting (local; base centre 0,0, ~150 tall) */
+function catSit(p: string): string {
+  let o = cel("M-50 0C-60 -40 -50 -80 -30 -100C-36 -120 -32 -140 -20 -150L-8 -128C0 -130 10 -130 18 -128L30 -150C40 -138 42 -118 36 -100C56 -80 62 -40 52 0Z", "#1c1a22", "#050408", 2.6);
+  o += cel("M48 -6C80 -10 100 -30 96 -60C94 -74 84 -78 80 -70C84 -50 74 -30 44 -24Z", "#1c1a22", "#050408", 2.4);
+  o += `<path d="M-10 -60C-4 -40 4 -40 10 -60C6 -50 -6 -50 -10 -60Z" fill="#eeeaf0"/>`;
+  o += `<ellipse cx="-12" cy="-104" rx="6" ry="7" fill="#f0c040"/><ellipse cx="14" cy="-104" rx="6" ry="7" fill="#f0c040"/><ellipse cx="-12" cy="-104" rx="1.8" ry="5.5" fill="#100c08"/><ellipse cx="14" cy="-104" rx="1.8" ry="5.5" fill="#100c08"/>`;
+  o += `<circle cx="-14" cy="-107" r="1.6" fill="#fff"/><circle cx="12" cy="-107" r="1.6" fill="#fff"/>`;
+  o += ln("M-30 -92l-24 -4M-30 -88l-22 4M34 -92l24 -4M34 -88l22 4", "#8a8698", 1.2, 0.7);
+  o += `<path d="M-22 -146L-14 -130L-24 -128Z" fill="#c88a8a"/>`;
+  o += ln("M-40 -60C-44 -40 -44 -20 -40 -4M30 -90C44 -70 48 -40 44 -10", "#4a4858", 2, 0.7);
+  return o;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_clocks — ch03: Elios winding a clock among hundreds, morning light
+// ────────────────────────────────────────────────────────────────────────────
+function cgClocks(): string {
+  const p = "cg-clocks";
+  const r = rng(208);
+  const defs =
+    lg(`${p}-wall`, 0, 0, 1, 0, [[0, "#6a4e34"], [0.5, "#4a3626"], [1, "#2e221a"]]) +
+    glow(`${p}-sun`, "#fff1c4", 0.95, 0.4) +
+    lg(`${p}-beam`, 0, 0, 1, 1, [[0, "#fff1c4", 0.7], [1, "#ffd27a", 0]]) +
+    lg(`${p}-bench`, 0, 0, 0, 1, [[0, "#9a6e44"], [1, "#4a3020"]]) +
+    COAT_GRAD(p) + EH_GRAD(p) +
+    clockDef(`${p}-c1`, "#f2e6c8", "#a87a40", "#3a2e2a", "#3a2416") +
+    clockDef(`${p}-c2`, "#e8dcc0", "#6a4a30", "#2a2020", "#2a1a10") +
+    clockDef(`${p}-c3`, "#fbf2dc", "#e0b860", "#4a3a2a", "#5a3e14") +
+    blur(`${p}-b`, 6);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-wall)"/>`;
+  // wall of clocks
+  let cl = "", hd = "";
+  for (let i = 0; i < 120; i++) {
+    const x = r() * 1640 - 20, y = r() * 640 - 20;
+    const s = 0.3 + r() * 0.7;
+    cl += useAt(`${p}-c${1 + Math.floor(r() * 3)}`, x, y, s, r() * 30 - 15);
+    hd += clockHands(x, y, s, r() * 12, r() * 60);
+  }
+  // pendulum clock cases
+  let cs = "";
+  for (const x of [180, 1380]) cs += `<path d="M${x - 50} 660V180L${x} 130L${x + 50} 180V660Z" fill="#3a2416" stroke="#1a100a" stroke-width="3"/>`;
+  b += cs + cl + ln(hd, "#2a1e16", 3);
+  b += `<rect width="1600" height="900" fill="#2a1a10" opacity=".25"/>`;
+  // window on the left with morning light
+  b += `<path d="M40 60H330V520H40Z" fill="#fff6dc" stroke="#2a1a10" stroke-width="10"/>` + ln("M185 60V520M40 290H330", "#2a1a10", 8);
+  b += `<circle cx="190" cy="290" r="520" fill="url(#${p}-sun)" opacity=".8"/>`;
+  b += `<path d="M330 60L1300 560L1100 900L330 520Z" fill="url(#${p}-beam)" opacity=".55"/>`;
+  b += `<path d="M330 290L1500 620L1450 760L330 520Z" fill="url(#${p}-beam)" opacity=".35"/>`;
+  // dust in the beam
+  const dust: Pt[] = [];
+  for (let i = 0; i < 70; i++) {
+    const t = r();
+    dust.push([330 + t * 900, 120 + t * 500 + (r() - 0.5) * 300 * t]);
+  }
+  b += dots(dust, 2.2, "#fff6d8", 0.8);
+
+  // ── Elios at the bench ──
+  const HX = 960, HY = 330, HS = 1.5, HR = 6;
+  b += eliosCoat(p, 990, 520, 520, 420);
+  const headE = eliosHead(p, { open: 0.5, look: [-0.5, 0.9], brow: 0.2, mouth: "soft", blush: 0.35, shadeSide: 1, rim: "#fff1c4" }, 0);
+  b += place(HX, HY, HS, HR, false, headE);
+  // workbench
+  b += `<path d="M0 700L1600 680V900H0Z" fill="url(#${p}-bench)"/>` + ln("M0 700L1600 680", "#e8c08a", 3, 0.8);
+  // tools & gears on bench
+  let gr = "";
+  for (const [x, y, R] of [[560, 740, 26], [610, 760, 14], [1230, 730, 22], [1300, 760, 30], [1180, 780, 12]] as [number, number, number][]) {
+    for (let i = 0; i < 20; i++) {
+      const a = (i / 20) * Math.PI * 2;
+      gr += `${i ? "L" : "M"}${n1(x + Math.cos(a) * (i % 2 ? R : R * 0.8))} ${n1(y + Math.sin(a) * (i % 2 ? R : R * 0.8) * 0.5)}`;
+    }
+    gr += "Z";
+  }
+  b += `<path d="${gr}" fill="#d8a850" stroke="#5a3e14" stroke-width="2"/>`;
+  b += ln("M1380 800L1500 740M680 800L760 790", "#8a8a96", 6) + ln("M1380 800L1500 740", "#d0d0dc", 2);
+  // the clock in his hands, being wound
+  b += `<circle cx="860" cy="660" r="140" fill="url(#${p}-sun)" opacity=".5"/>`;
+  b += useAt(`${p}-c3`, 860, 650, 1.05, -10) + ln(clockHands(860, 650, 1.05, 8, 10), "#2a1e16", 3.4);
+  b += ln("M900 610L944 580", "#c89a40", 6) + `<path d="M940 570l14 -8 6 12 -14 8Z" fill="#e8c060" stroke="#5a3e14" stroke-width="2"/>`;
+  const GL: Skin = { base: "#26242c", shade: "#141218", line: "#050408", blush: "" };
+  b += cel("M760 900C770 800 780 720 800 680L860 700C850 760 840 830 840 900Z", `url(#${p}-coat)`, COAT_LINE, 3);
+  b += hand(800, 690, 1.2, 70, false, PALM_GRIP, FING_GRIP, GL, 12);
+  b += cel("M1100 900C1080 800 1020 700 970 640L1010 610C1060 660 1130 760 1160 900Z", `url(#${p}-coat)`, COAT_LINE, 3);
+  b += hand(966, 618, 1.15, -130, false, PALM_GRIP, FING_GRIP, GL, 12);
+  // the cat 초침 on the bench, watching him
+  b += place(470, 720, 1.05, 0, false, catSit(p));
+  // gentle sparkle where light hits brass
+  let spk = "";
+  for (const [x, y, s2] of [[812, 600, 10], [930, 570, 8], [560, 728, 7], [1300, 742, 9]] as [number, number, number][]) spk += sparkle(x, y, s2);
+  b += `<path d="${spk}" fill="#fffbe8"/>`;
+  for (let i = 0; i < 16; i++) {
+    const t = r();
+    b += `<circle cx="${n1(360 + t * 800)}" cy="${n1(160 + t * 460 + (r() - 0.5) * 200)}" r="${n1(1.6 + r() * 2)}" fill="#fff8e0" ${A(p, "tw", r() * 4, 3 + r() * 3)}/>`;
+  }
+  // a pendulum swinging
+  b += `<g ${A(p, "sw", 0, 2)} style="transform-origin:1380px 300px;transform-box:view-box"><path d="M1380 300V560" stroke="#c89a40" stroke-width="4"/><circle cx="1380" cy="580" r="24" fill="#e0b860" stroke="#5a3e14" stroke-width="3"/></g>`;
+  return svg(p, defs, b);
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// cg_e_waltz — e06: a clumsy waltz in the clock workshop at night
+// ────────────────────────────────────────────────────────────────────────────
+function cgEWaltz(): string {
+  const p = "cg-e-waltz";
+  const r = rng(606);
+  const defs =
+    lg(`${p}-bg`, 0, 0, 0, 1, [[0, "#141a34"], [0.6, "#202848"], [1, "#100c18"]]) +
+    glow(`${p}-moon`, "#bcd0ff", 0.85, 0.3) +
+    glow(`${p}-box`, "#ffd27a", 0.95, 0.35) +
+    lg(`${p}-beam`, 0, 0, 1, 1, [[0, "#c8d8ff", 0.5], [1, "#c8d8ff", 0]]) +
+    COAT_GRAD(p) + EH_GRAD(p) +
+    lg(`${p}-sh`, 0, 0, 0, 1, [[0, "#2c2a36"], [1, "#16141c"]]) +
+    lg(`${p}-dress`, 0, 0, 1, 1, [[0, "#fbf3e0"], [0.6, "#e8d8b8"], [1, "#b8a88e"]]) +
+    clockDef(`${p}-c1`, "#c8d0e8", "#6a6a8a", "#2a2a3a", "#1a1a28") +
+    clockDef(`${p}-c2`, "#d8d0c0", "#8a6a45", "#2a2020", "#2a1a10") +
+    blur(`${p}-b`, 8);
+  let b = `<rect width="1600" height="900" fill="url(#${p}-bg)"/>`;
+  let cl = "", hd = "";
+  for (let i = 0; i < 80; i++) {
+    const x = r() * 1640 - 20, y = r() * 700 - 20;
+    const s = 0.3 + r() * 0.6;
+    cl += useAt(`${p}-c${1 + Math.floor(r() * 2)}`, x, y, s, r() * 30 - 15);
+    hd += clockHands(x, y, s, r() * 12, r() * 60);
+  }
+  b += `<g opacity=".55">${cl}${ln(hd, "#1a1a28", 3)}</g>`;
+  // tall window, moonlight
+  b += `<path d="M1240 60H1500V600H1240Z" fill="#9ab0e0" stroke="#0c1020" stroke-width="10"/>` + ln("M1370 60V600M1240 330H1500", "#0c1020", 8);
+  b += `<circle cx="1370" cy="300" r="460" fill="url(#${p}-moon)" opacity=".6"/>`;
+  b += `<path d="M1240 60L1500 60L900 900L300 900Z" fill="url(#${p}-beam)" opacity=".3"/>`;
+  // music box glow on the bench (lower left)
+  b += `<circle cx="300" cy="760" r="420" fill="url(#${p}-box)" opacity=".7"/>`;
+  b += `<path d="M180 900V780L300 740L420 780V900Z" fill="#6a3e24" stroke="#2a1608" stroke-width="3"/><path d="M180 780L300 740L420 780L300 820Z" fill="#a8703e" stroke="#2a1608" stroke-width="3"/><path d="M180 780L300 820V900" fill="none" stroke="#2a1608" stroke-width="3"/>`;
+  b += `<path d="M190 776L300 690L410 776L300 740Z" fill="#c88a50" stroke="#2a1608" stroke-width="3"/>`;
+  b += `<g ${A(p, "pu", 0, 3)}><circle cx="300" cy="740" r="90" fill="url(#${p}-box)"/></g>`;
+  // floating light notes (shapes, not text)
+  let nt = "";
+  for (let i = 0; i < 6; i++) {
+    const x = 260 + i * 70 + r() * 30, y = 640 - i * 50 - r() * 30;
+    nt += `<g ${A(p, "bob", r() * 6, 4 + r() * 2)}><ellipse cx="${n1(x)}" cy="${n1(y)}" rx="9" ry="7" fill="#ffe7a8" transform="rotate(-20 ${n1(x)} ${n1(y)})"/><path d="M${n1(x + 7)} ${n1(y - 2)}v-34l14 6" stroke="#ffe7a8" stroke-width="3" fill="none"/></g>`;
+  }
+  b += nt;
+
+  // ── the couple ──
+  // Elios (right), facing left toward her
+  b += eliosCoat(p, 990, 520, 470, 400, "#8aa0e0");
+  const E = { x: 960, y: 300, s: 1.45, r: -6 };
+  b += place(E.x, E.y, E.s, E.r, false, eliosHead(p, { open: 0.7, look: [-0.6, 0.6], brow: 0.3, mouth: "soft", blush: 0.7, shadeSide: 1, rim: "#c8d8ff" }, 3));
+  // Seoha (left), facing right, looking up at him and laughing
+  const sk = SK_SEOHA;
+  b += cel("M470 900C470 760 500 640 560 580C600 548 650 536 690 536C740 536 790 550 820 580C860 640 880 760 880 900Z", `url(#${p}-dress)`, "#8a7a5e", 3);
+  b += `<path d="M760 560C810 600 840 700 850 900L780 900C790 760 780 640 740 570Z" fill="#c8b898" opacity=".8"/>`;
+  b += cel("M610 548C640 580 680 590 720 584C750 580 770 566 780 552C760 540 720 534 690 534C660 534 630 538 610 548Z", "#f4ead2", "#8a7a5e", 2.4);
+  b += ln("M640 600C660 640 700 650 740 640", "#b8a888", 2, 0.8);
+  const S = { x: 690, y: 360, s: 1.3, r: 8 };
+  b += place(S.x, S.y, S.s, S.r, true, head({
+    p, id: "s", skin: sk, lash: "#1a1418", near: IR_BROWN, far: IR_BROWN, browColor: "#231c24",
+    open: 0, closed: "happy", brow: 0.3, mouth: "grin", blush: 1, shadeSide: 1, rim: "#ffe0a0",
+    back: SEOHA_BACK, backFill: `url(#${p}-sh)`, hairLine: "#0e0c14",
+    front: SEOHA_FRONT, frontFill: `url(#${p}-sh)`, hairShade: "#e2ab9a",
+    side: SEOHA_SIDE, hi: "#5e6088", strands: "#4a4864",
+  }));
+  // his right hand on her back (glove), her left hand on his shoulder
+  const GL: Skin = { base: "#26242c", shade: "#141218", line: "#050408", blush: "" };
+  b += hand(838, 680, 1.1, -100, false, PALM_GRIP, FING_GRIP, GL, 12);
+  b += cel("M820 560C860 520 900 500 930 500L940 540C910 550 880 570 850 600Z", "#f4ead2", "#8a7a5e", 2.4);
+  b += hand(930, 520, 0.95, 80, false, PALM_GRIP, FING_GRIP, sk, 11);
+  // raised clasped hands: his left glove holding her right hand, up between them
+  b += cel("M590 600C560 540 540 470 540 420L590 410C596 460 610 520 640 570Z", "#f4ead2", "#8a7a5e", 2.4);
+  b += cel("M1020 560C960 500 860 430 760 400L740 446C840 470 930 530 990 600Z", `url(#${p}-coat)`, COAT_LINE, 3);
+  b += hand(566, 418, 1.0, 10, false, PALM_GRIP, FING_GRIP, sk, 11);
+  b += hand(744, 422, 1.1, -96, false, PALM_GRIP, FING_GRIP, GL, 12);
+  // sparkles of moonlight dust
+  for (let i = 0; i < 18; i++) {
+    const x = 400 + r() * 900, y = 100 + r() * 600;
+    b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.4 + r() * 2)}" fill="#e8f0ff" ${A(p, "tw", r() * 4, 2.5 + r() * 3)}/>`;
+  }
+  let spk = "";
+  for (let i = 0; i < 6; i++) spk += sparkle(420 + r() * 760, 120 + r() * 360, 5 + r() * 7);
+  b += `<path d="${spk}" fill="#fff8e0" opacity=".9"/>`;
+  return svg(p, defs, b);
+}
+
 export const CGS_A: Record<string, string> = {
   cg_fall: cgFall(),
   cg_ashking: cgAshking(),
   cg_sand: cgSand(),
   cg_demon: cgDemon(),
+  cg_clocks: cgClocks(),
+  cg_e_waltz: cgEWaltz(),
   cg_unmask: cgUnmask(),
 };
 

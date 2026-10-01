@@ -533,7 +533,7 @@ function soleinSkyline(P: Pic, r: Rng, cfg: { horizon: number; far: CityTone; mi
 function cloud(r: Rng, cx: number, cy: number, w: number, h: number, body: string, lit: string, shade: string, op = 1): string {
   let b = "";
   let hl = "";
-  const n = Math.max(3, Math.round(w / (h * 0.75)));
+  const n = Math.max(3, Math.round(w / Math.max(h * 0.75, 42)));
   for (let k = 0; k < n; k++) {
     const t = (k + 0.5) / n;
     const x = cx - w / 2 + t * w + r.r(-h * 0.1, h * 0.1);
@@ -930,7 +930,7 @@ function sAshfall(): string {
   P.add(rect(P.lin([[0, "#c9c4bc", 0], [0.55, "#c9c4bc", 0.25], [0.75, "#b8b2aa", 0.35], [1, "#5d5a58", 0.4]])));
   // static ash specks
   const sp: Pt[] = [];
-  for (let k = 0; k < 160; k++) sp.push([r.r(0, 1600), r.r(0, 900)]);
+  for (let k = 0; k < 100; k++) sp.push([r.r(0, 1600), r.r(0, 900)]);
   P.add(dots(sp, 2.2, "#d8d3cb", 0.55));
   // falling ash (animated)
   for (let k = 0; k < 34; k++) {
