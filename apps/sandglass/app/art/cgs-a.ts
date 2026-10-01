@@ -728,7 +728,7 @@ function cgAshking(): string {
   // throne of ash + broken clocks behind him
   b += `<path d="M540 900C530 700 540 500 560 360C570 280 580 220 600 160C620 210 640 190 660 130C690 180 710 150 740 110C760 150 780 120 800 80C820 120 840 150 860 110C890 150 910 180 940 130C960 190 980 210 1000 160C1020 220 1030 280 1040 360C1060 500 1070 700 1060 900Z" fill="#232129" stroke="#6a6672" stroke-width="3"/>`;
   // the great broken clock behind his head, a pale halo
-  b += `<circle cx="800" cy="300" r="300" fill="url(#${p}-sun)" opacity=".75"/>`;
+  b += `<circle cx="800" cy="300" r="250" fill="url(#${p}-sun)" opacity=".55"/>`;
   b += `<circle cx="800" cy="300" r="190" fill="#d9d3c8" stroke="#8a6a45" stroke-width="10"/><circle cx="800" cy="300" r="172" fill="none" stroke="#a89880" stroke-width="3"/>`;
   let tk = "";
   for (let i = 0; i < 60; i++) {
@@ -771,7 +771,16 @@ function cgAshking(): string {
     const y = 520 + Math.abs(i - 6.5) * -6 + r() * 30;
     rag += `M${n1(x)} ${n1(y)}l${n1(12 + r() * 10)} ${n1(40 + r() * 50)}l${n1(10 + r() * 8)} ${n1(-30 - r() * 30)}`;
   }
-  b += ln(rag, "#5a5662", 2.4, 0.8);
+  void rag;
+  // ash flaking off the shoulders, drifting up
+  let af = "";
+  for (let i = 0; i < 22; i++) {
+    const left = i % 2 === 0;
+    const x = left ? 500 + r() * 120 : 980 + r() * 120, y = 420 + r() * 160;
+    const s2 = 4 + r() * 7;
+    af += `M${n1(x)} ${n1(y)}l${n1(s2)} ${n1(-s2 * 0.5)}l${n1(-s2 * 0.3)} ${n1(s2)}Z`;
+  }
+  b += `<path d="${af}" fill="#6a6672" opacity=".9"/>`;
   b += `<path d="M560 540C600 490 660 460 720 452L700 520C650 540 600 580 560 640Z" fill="#5a5662" opacity=".7"/>`;
   b += ln("M490 800C490 700 510 610 560 540C600 490 660 460 720 452M1110 800C1110 700 1090 610 1040 540C1000 490 940 460 880 452", "#e8e2d8", 3, 0.8);
   // long white hair falling forward over the shoulders
@@ -1244,12 +1253,14 @@ function cgClocks(): string {
   }
   b += dots(dust, 2.2, "#fff6d8", 0.8);
 
+  b += `<g transform="translate(-100 0)">`;
   // ── Elios at the bench ──
   const HX = 960, HY = 336, HS = 1.5, HR = 12;
   b += eliosCoat(p, 990, 520, 520, 420);
   const headE = eliosHead(p, { open: 0.42, look: [-0.4, 1], brow: 0.2, mouth: "soft", blush: 0.35, shadeSide: 1, rim: "#fff1c4" }, 3);
   b += place(HX, HY, HS, HR, false, headE);
   b += eliosCollar(990, 520);
+  b += `</g>`;
   // workbench
   b += `<path d="M0 700L1600 680V900H0Z" fill="url(#${p}-bench)"/>` + ln("M0 700L1600 680", "#e8c08a", 3, 0.8);
   // tools & gears on bench
@@ -1263,6 +1274,7 @@ function cgClocks(): string {
   }
   b += `<path d="${gr}" fill="#d8a850" stroke="#5a3e14" stroke-width="2"/>`;
   b += ln("M1380 800L1500 740M680 800L760 790", "#8a8a96", 6) + ln("M1380 800L1500 740", "#d0d0dc", 2);
+  b += `<g transform="translate(-100 0)">`;
   // the clock in his hands, being wound
   b += `<circle cx="860" cy="660" r="140" fill="url(#${p}-sun)" opacity=".5"/>`;
   b += useAt(`${p}-c3`, 860, 650, 1.05, -10) + ln(clockHands(860, 650, 1.05, 8, 10), "#2a1e16", 3.4);
@@ -1272,6 +1284,7 @@ function cgClocks(): string {
   b += hand(800, 690, 1.2, 70, false, PALM_GRIP, FING_GRIP, GL, 12);
   b += cel("M1100 900C1080 800 1020 700 970 640L1010 610C1060 660 1130 760 1160 900Z", `url(#${p}-coat)`, COAT_LINE, 3);
   b += hand(966, 618, 1.15, -130, false, PALM_GRIP, FING_GRIP, GL, 12);
+  b += `</g>`;
   // the cat 초침 on the bench, watching him
   b += place(470, 720, 1.05, 0, false, catSit(p));
   // gentle sparkle where light hits brass
@@ -1607,6 +1620,7 @@ function cgFirstDeath(): string {
     du.push([wx - 100 + t * 600 + r() * 300, 400 + t * 500]);
   }
   b += dots(du, 2.2, "#e8f0ff", 0.6);
+  b += `<g transform="translate(-170 30)">`;
   // broken goddess statue (right): robed, hands at her breast, half her face broken away
   b += `<path d="M940 820H1180V870H940Z" fill="#4a4c68" stroke="#1a1a2a" stroke-width="3"/>`;
   b += `<path d="M970 820C980 720 990 620 1004 540C990 500 996 460 1014 440C1034 424 1086 424 1106 440C1124 460 1130 500 1116 540C1130 620 1140 720 1150 820Z" fill="url(#${p}-statue)" stroke="#2a2a40" stroke-width="3"/>`;
@@ -1621,6 +1635,7 @@ function cgFirstDeath(): string {
   b += ln("M1030 420C1018 400 1016 370 1026 346", "#e8eeff", 2.6, 0.8);
   b += ln("M970 820C980 720 990 620 1004 540C990 500 996 460 1014 440", "#e8eeff", 2.6, 0.6);
   b += `<path d="M1090 860l40 -12 34 8 -12 16ZM1140 840l22 -6 10 10 -18 6Z" fill="#8a8eb0" stroke="#2a2a40" stroke-width="2"/>`;
+  b += `</g>`;
   // floor in perspective (close, she's on it)
   b += `<path d="M-200 700L1800 640V1200H-200Z" fill="url(#${p}-floor)"/>`;
   let tl = "";
@@ -1635,15 +1650,17 @@ function cgFirstDeath(): string {
   for (const [x, y, s] of [[300, 590, 1], [1260, 570, 1.1], [180, 700, 1.6], [1440, 684, 1.4], [760, 630, 0.7]] as [number, number, number][])
     b += `<circle cx="${x}" cy="${y}" r="${n1(90 * s)}" fill="url(#${p}-candle)" ${A(p, "fl", x * 0.003, 2 + s)}/>`;
   b += `</g>`;
+  b += `<g transform="translate(190 0)">`;
   // Toby's small hand in the foreground: limp, palm up, oversized yellowed sleeve; a plaster on the wrist
-  b += cel("M0 900L0 700C120 690 260 720 400 760L420 820C300 840 140 880 60 900Z", "#d8c890", "#5a4a24", 3);
-  b += `<path d="M0 760C120 750 260 770 400 800L410 830C300 840 140 870 40 900H0Z" fill="#b0a06a" opacity=".8"/>`;
+  b += cel("M-300 900L-300 690C120 690 260 720 400 760L420 820C300 840 140 880 60 900Z", "#d8c890", "#5a4a24", 3);
+  b += `<path d="M-300 760C120 750 260 770 400 800L410 830C300 840 140 870 40 900H-300Z" fill="#b0a06a" opacity=".8"/>`;
   const SK_T: Skin = { base: "#f6d8c0", shade: "#d8a88a", line: "#8a5a40", blush: "" };
   const FING_LIMP: [Pt, Pt, Pt][] = [[[-20, -40], [-30, -56], [-24, -64]], [[-6, -44], [-10, -62], [-2, -70]], [[8, -44], [10, -60], [18, -66]], [[22, -36], [30, -48], [34, -54]], [[-28, -10], [-44, -16], [-50, -30]]];
   b += hand(450, 800, 1.5, 104, false, PALM_UP, FING_LIMP, SK_T, 13);
   b += `<path d="M396 770l24 -8 10 30 -24 8Z" fill="#f0d8b0" stroke="#a88a60" stroke-width="2"/>` + ln("M404 776l12 -4M408 788l12 -4", "#c8a880", 1.4);
   // a few dark drops (restrained)
   b += `<path d="M560 860c10 -4 22 0 24 8s-10 12 -22 10 -12 -14 -2 -18ZM610 880c6 -2 14 0 14 6s-8 8 -14 6 -6 -10 0 -12Z" fill="#5a0e14" opacity=".85"/>`;
+  b += `</g>`;
   // red vignette + edge blur
   b += `<rect width="1600" height="900" fill="url(#${p}-vig)"/>`;
   b += vig(p, "#1a0206", 0.8999999999999999);
@@ -1683,6 +1700,7 @@ function cgTea(): string {
   b += `<path d="M1170 640C1220 650 1250 666 1240 690" stroke="#8f1d24" stroke-width="6" fill="none" stroke-linecap="round"/>`;
   // droplets
   b += `<path d="M540 700c8 -6 20 -2 20 6s-12 10 -18 6-8 -8 -2 -12ZM1280 690c6 -4 14 0 14 4s-8 8 -12 4-6 -6 -2 -8ZM600 790c5 -3 12 0 12 4s-7 6 -11 4-4 -6-1-8Z" fill="#8f1d24"/>`;
+  b += `<g transform="translate(110 0)">`;
   // saucer
   b += `<ellipse cx="560" cy="560" rx="200" ry="50" fill="#d8dce8" stroke="#6a6e84" stroke-width="3"/><ellipse cx="560" cy="556" rx="120" ry="28" fill="#eef0f6" stroke="#9aa0b4" stroke-width="2"/>` + ln("M372 556C420 590 700 590 748 556", "#d0a850", 3);
   // the overturned cup, lying on its side, mouth toward the stain
@@ -1693,6 +1711,7 @@ function cgTea(): string {
   b += `<path d="M-150 -60C-200 -70 -220 -10 -180 20C-170 28 -156 26 -150 20" fill="none" stroke="#5a5e74" stroke-width="16" stroke-linecap="round"/><path d="M-150 -60C-200 -70 -220 -10 -180 20C-170 28 -156 26 -150 20" fill="none" stroke="#f4f6fa" stroke-width="10" stroke-linecap="round"/>`;
   b += ln("M-120 -70C-130 -20 -126 20 -104 54", "#ffffff", 6, 0.9);
   b += `<path d="M-90 -40c12 -12 30 -12 40 0c-10 12 -28 12 -40 0Z" fill="#4a6ab8" opacity=".7"/><path d="M-40 10c12 -12 30 -12 40 0c-10 12 -28 12 -40 0Z" fill="#4a6ab8" opacity=".7"/>`;
+  b += `</g>`;
   b += `</g>`;
   // spoon
   b += `<path d="M1240 780L1440 860" stroke="#9aa0b4" stroke-width="10" stroke-linecap="round"/><ellipse cx="1220" cy="772" rx="34" ry="18" transform="rotate(22 1220 772)" fill="#e8eaf2" stroke="#6a6e84" stroke-width="3"/>`;
@@ -1734,9 +1753,10 @@ function cgLili(): string {
     tuft += `M${x} ${n1(y - 30)}q20 10 34 0M${x + 10} ${n1(y + 24)}q20 -8 34 2`;
   }
   b += ln(tuft, "#ffd0a0", 2.2, 0.55);
+  b += `<g transform="translate(-170 20)">`;
   // Lili's sleeve: black dress with white cuff
   b += `<g transform="translate(-130 70)">`;
-  b += cel("M1800 260C1460 330 1300 380 1160 430L1200 520C1340 470 1480 430 1800 380Z", "#1c1a24", "#06060a", 3);
+  b += cel("M2000 220C1460 330 1300 380 1160 430L1200 520C1340 470 1480 430 2000 360Z", "#1c1a24", "#06060a", 3);
   b += cel("M1150 420C1140 450 1150 490 1180 520L1220 506C1200 480 1196 452 1200 426Z", "#f6f4fa", "#8a8aa0", 2.4);
   b += `</g>`;
   // Seoha's arm from the bottom: green cloak over cream sleeve
@@ -1753,6 +1773,7 @@ function cgLili(): string {
   b += hand(1036, 548, 1.5, 238, false, PALM_GRIP, FING_L, SK_L, 12);
   // a tear falling onto their hands
   b += `<path d="M1000 380C1006 396 1012 404 1012 412A12 12 0 1 1 988 412C988 404 994 396 1000 380Z" fill="#e6f4ff" stroke="#9cc4e6" stroke-width="1.6" ${A(p, "dn", 0, 3.4)}/>`;
+  b += `</g>`;
   // fox-fire wisps, fading
   const ff: [number, number, number, number][] = [[620, 380, 1, 0.9], [760, 260, 0.7, 0.6], [1300, 260, 0.8, 0.5], [420, 520, 0.6, 0.35], [1420, 560, 0.5, 0.25]];
   ff.forEach(([x, y, s, op], i) => {
@@ -1780,19 +1801,3 @@ export const CGS_A: Record<string, string> = {
   cg_unmask: cgUnmask(),
 };
 
-export function __faceTest(): string {
-  const p = "ft";
-  const heads: string[] = [];
-  const cfg: [Partial<HeadOpt>, Skin, Iris, Iris, string, string, string][] = [
-    [{ mouth: "soft", side: SEOHA_SIDE, hi: "#5a5874", strands: "#46445c" }, SK_SEOHA, IR_BROWN, IR_BROWN, SEOHA_BACK, SEOHA_FRONT, "#252330"],
-    [{ mouth: "n", open: 0.8, side: ELIOS_SIDE, hi: "#4a4c6e", extraOver: ln(ELIOS_WHITE, "#f4f2f6", 3) }, SK_ELIOS, IR_RED, IR_GOLD, ELIOS_BACK, ELIOS_FRONT, "#1d1c28"],
-    [{ mouth: "part", brow: 1, side: RAZEL_STRANDS, hi: "#d8b88a" }, SK_RAZEL, IR_AMBER, IR_AMBER, RAZEL_BACK, RAZEL_FRONT, "#a88158"],
-    [{ mouth: "smile", side: CECI_SIDE, hi: "#fff2b8" }, SK_CECI, IR_SKY, IR_SKY, CECI_BACK, CECI_FRONT, "#f0c860"],
-    [{ mouth: "sad", open: 0.6, gaunt: true, brow: 0.8, side: OLD_SIDE, hi: "#ffffff" }, SK_OLD, IR_ASHRED, IR_ASH, OLD_BACK, OLD_FRONT, "#e8e4e0"],
-  ];
-  cfg.forEach(([o, sk, a, b2, bk, fr, hc], i) => {
-    heads.push(place(170 + i * 315, 330, 1.45, 0, false, head({ p, id: "t" + i, skin: sk, lash: "#1a1216", near: a, far: b2, back: bk, backFill: hc, front: fr, frontFill: hc, hairLine: "#3a2a2a", ...o } as HeadOpt)));
-    heads.push(place(170 + i * 315, 720, 0.8, 0, true, head({ p, id: "u" + i, skin: sk, lash: "#1a1216", near: a, far: b2, back: bk, backFill: hc, front: fr, frontFill: hc, hairLine: "#3a2a2a", ...o, open: 0, closed: "happy" } as HeadOpt)));
-  });
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="1600" height="900">${heads.join("")}</svg>`;
-}
