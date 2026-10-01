@@ -1147,6 +1147,23 @@ function cgRBack(): string {
   return svg(c, b);
 }
 
+/** 위에서 드리운 구름(아래쪽이 불룩, 아래 가장자리에 빛) */
+function cloudTop(r: () => number, x0: number, x1: number, y: number, fill: string, rimC: string, op = 1, puff = 80): string {
+  let d = `M${x0} -10L${x0} ${y}`;
+  let rimD = "";
+  let x = x0;
+  while (x < x1) {
+    const w = puff * (0.6 + r() * 0.8);
+    const h = puff * (0.25 + r() * 0.35);
+    const yy = y + (r() - 0.5) * puff * 0.5;
+    d += `Q${Math.round(x + w * 0.5)} ${Math.round(yy + h * 2)} ${Math.round(x + w)} ${Math.round(yy)}`;
+    rimD += `M${Math.round(x + w * 0.15)} ${Math.round(yy + h * 0.7)}Q${Math.round(x + w * 0.5)} ${Math.round(yy + h * 1.9)} ${Math.round(x + w * 0.85)} ${Math.round(yy + h * 0.7)}`;
+    x += w * 0.8;
+  }
+  d += `L${x1} -10Z`;
+  return `<g opacity="${op}"><path d="${d}" fill="${fill}"/>${ln(rimD, rimC, 3, 0.85)}</g>`;
+}
+
 const LEATHER: Cloth = { b: "#7a5434", s: "#553820", l: "#2a1a0c" };
 
 /** 라젤 앞모습 상반신(로컬: 왼쪽을 봄): 가죽 갑옷, 회색 늑대 모피 깃, 어깨 너머 대검 손잡이 */
@@ -1162,20 +1179,10 @@ function razelTorso(rimC: string | null, bot = 900): string {
   s += ln("M-60 260C-40 340 -40 420 -50 520M60 300C70 380 70 460 64 560", L.l, 2, 0.7);
   // 셔츠 깃
   s += cel("M-30 104C-10 140 30 140 50 100L60 150C30 176 -14 176 -40 148Z", "#d8cdb8", "#6a5a44", 2);
-  // 회색 늑대 모피 깃(어깨)
-  let fur = "M-180 186";
-  const pts: Pt[] = [];
-  for (let i = 0; i <= 16; i++) {
-    const t = i / 16;
-    const x = -190 + t * 400;
-    const y = 150 - Math.sin(t * Math.PI) * 60 + (t > 0.35 && t < 0.62 ? 40 : 0);
-    pts.push([x, y]);
-  }
-  pts.forEach(([x, y], i) => {
-    fur += `Q${n1(x - 6)} ${n1(y - 20 - (i % 3) * 6)} ${n1(x + 12)} ${n1(y)}`;
-  });
-  fur += "L214 230C150 206 -120 206 -200 236Z";
-  s += cel(fur, "#9c9ca2", "#2a2a2e", 2.6) + fl("M-200 236C-120 206 150 206 214 230L210 214C140 196 -120 196 -196 220Z", "#6a6a70", 0.8);
+  // 회색 늑대 모피 깃(어깨를 덮는다)
+  const fur: Pt[] = [[60, 96], [-50, 100], [-120, 126], [-180, 160], [-212, 210], [-150, 214], [-80, 196], [0, 190], [80, 200], [160, 220], [226, 232], [214, 176], [160, 132], [100, 108]];
+  s += cel(furPath(fur, 24, -12), "#a0a0a6", "#2a2a2e", 2.6);
+  s += ln("M-150 180C-100 170 -50 168 -20 172M40 176C100 180 150 196 190 210", "#6a6a70", 2.4, 0.7);
   if (rimC) s += ln(`M46 108C92 126 150 138 180 170C206 200 218 260 222 330L232 ${bot}`, rimC, 5, 0.85);
   return s;
 }
@@ -1193,9 +1200,9 @@ function cgRGood(): string {
   b += `<circle cx="${SX}" cy="${SY}" r="900" fill="${c.glow("#fff2c8", 0.95, 0.4)}"/>`;
   b += rays(SX, SY, 18, 1500, -Math.PI, 0, 0.02, "#fffbe8", 0.18, r);
   // 걷혀 가는 잿빛 구름(가장자리로 밀려남, 금빛 테두리)
-  b += cloudBank(r, -60, 520, 40, 160, "#8a8784", "#ffe6a8", 0.85, 120);
-  b += cloudBank(r, 1180, 1680, 20, 140, "#8a8784", "#ffe6a8", 0.8, 110);
-  b += fl("M0 0H1600V60C1300 120 1100 60 900 110C700 150 400 80 0 160Z", "#6e6c6a", 0.55);
+  b += cloudTop(r, -60, 620, 150, "#7e7b78", "#ffe6a8", 0.9, 110);
+  b += cloudTop(r, 1100, 1680, 120, "#7e7b78", "#ffe6a8", 0.85, 100);
+  b += cloudTop(r, -60, 1680, 50, "#6a6866", "#ffd890", 0.5, 140);
   b += cloudBank(r, -40, 1640, 470, 70, "#f2c08a", "#fff6d8", 0.6, 110);
   b += `<circle cx="${SX}" cy="${SY}" r="150" fill="${c.glow("#ffffff", 1, 0.8)}"/><circle cx="${SX}" cy="${SY}" r="58" fill="#fffdf2"/>`;
   // 낮은 거리의 지붕들(주황 기와, 역광)
@@ -1228,9 +1235,10 @@ function cgRGood(): string {
   b += place(RX, RY, RS, 4, true, ear(skR) + face(c, { sex: "m", skin: skR, near: IRIS.amber, far: IRIS.amber, lash: "#2a1608", eyes: "happy", mouth: "laugh", browC: "#5a3418", brow: "up", blush: 0.4, rim: [-5, -2], shade: 1, noNeck: true, extra: razelMarks() }) + rH.front);
   // 붕대 감은 팔(앞으로, 무릎 위에)
   b += cel("M470 760C560 720 680 700 800 712L806 770C690 768 580 790 490 830Z", skR.b, skR.l, 2.6);
+  b += cel("M550 728C620 712 690 706 760 708L764 768C690 768 620 778 556 796Z", "#f6f2ea", "#a89c88", 2);
   let wrap = "";
-  for (let i = 0; i < 6; i++) wrap += cel(`M${560 + i * 36} ${724 - i * 3}l30 -4l8 60l-30 6z`, "#f6f2ea", "#a89c88", 1.6);
-  b += wrap + fl("M600 760l20 -3l4 18l-20 4z", "#c84a4a", 0.6);
+  for (let i = 0; i < 9; i++) wrap += `M${566 + i * 22} ${728 - i * 2}l14 ${64 - i * 1.5}`;
+  b += ln(wrap, "#c8bca8", 1.6) + fl("M640 730c10 0 14 10 8 16c-8 4 -16 0 -14 -8z", "#c84a4a", 0.5);
   b += place(806, 742, 1.15, 180, false, hand(skR.b, skR.s, skR.l));
   // 서하(오른쪽, 그를 보며 웃는다)
   const sH = hairSeoha();
