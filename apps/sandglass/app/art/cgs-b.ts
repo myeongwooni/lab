@@ -1016,10 +1016,10 @@ function cgEBad(): string {
   // 오른팔: 팔꿈치를 굽혀 깨진 모래시계를 든다
   fig += cel("M130 190C160 220 176 280 180 340C182 370 176 390 166 400L120 380C128 340 124 290 110 240Z", GC.b, GC.l, 2.8);
   b += place(X, Y, S, 0, false, fig);
-  b += cel("M1040 860C1060 800 1070 760 1066 720C1080 690 1100 640 1104 600L1070 586C1060 630 1040 680 1030 700C1010 740 1000 800 990 860Z", GC.b, GC.l, 2.8);
-  b += `<circle cx="1100" cy="520" r="150" fill="${c.glow("#ffd27a", 0.55, 0.2)}" ${A(p, "pu", 0, 4)}/>`;
-  b += place(1100, 520, 0.6, 10, false, hourglass(c, true, "#fff6d8", 0.95));
-  b += place(1100, 590, 0.95, -30, false, hand(GLOVE.b, GLOVE.s, GLOVE.l));
+  b += cel("M1060 700C1050 660 1030 630 1010 606L980 620C994 640 1010 670 1016 700Z", GC.b, GC.l, 2.8);
+  b += `<circle cx="990" cy="500" r="150" fill="${c.glow("#ffd27a", 0.55, 0.2)}" ${A(p, "pu", 0, 4)}/>`;
+  b += place(992, 500, 0.6, 8, false, hourglass(c, true, "#fff6d8", 0.95));
+  b += place(996, 574, 0.95, -20, false, hand(GLOVE.b, GLOVE.s, GLOVE.l));
   b += place(X, Y, S, 0, false, backElfEars(sk) + backHorns() + backHair(HAIR_WHITE, { messy: true, len: 64 }));
   b += place(X, Y, S, 0, false, ln("M-72 -20C-80 -84 -42 -118 0 -118C42 -118 80 -84 72 -20", "#ffffff", 3.5, 0.85));
   // 떨어지는 재
