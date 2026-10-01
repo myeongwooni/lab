@@ -55,8 +55,8 @@ export function playSfx(e: Engine, id: string, dry: AudioNode, wet: AudioNode, t
   const tone = (at: number, f: number, amp: number, dur: number, o: { f2?: number; type?: OscillatorType; pan?: number; att?: number; wet?: number; glideT?: number } = {}): void => {
     const osc = ctx.createOscillator();
     osc.type = o.type ?? "sine";
-    osc.frequency.setValueAtTime(f, at);
-    if (o.f2) osc.frequency.exponentialRampToValueAtTime(o.f2, at + (o.glideT ?? dur));
+    osc.frequency.setValueAtTime(Math.min(f, 16000), at);
+    if (o.f2) osc.frequency.exponentialRampToValueAtTime(Math.min(o.f2, 16000), at + (o.glideT ?? dur));
     const g = ctx.createGain();
     g.gain.setValueAtTime(0, at);
     g.gain.linearRampToValueAtTime(amp, at + (o.att ?? 0.003));
@@ -72,7 +72,7 @@ export function playSfx(e: Engine, id: string, dry: AudioNode, wet: AudioNode, t
     ratios.forEach((k, i) => tone(at, base * k, amp / (1 + i * 0.5), dur * (1 - i * 0.08), { pan, wet: wetAmt }));
   };
 
-  const sample = (inst: "cbell" | "glass" | "celesta" | "timp" | "bdrum" | "heart" | "harp", at: number, m: number, v: number, d = 6, pan = 0, wetAmt = 0.4): void => {
+  const sample = (inst: "cbell" | "glass" | "celesta" | "timp" | "bdrum" | "heart" | "harp" | "tick", at: number, m: number, v: number, d = 6, pan = 0, wetAmt = 0.4): void => {
     const g = ctx.createGain();
     route(g, pan, wetAmt);
     e.note(inst, g, at, d, m, v, 0, 3);
@@ -84,15 +84,6 @@ export function playSfx(e: Engine, id: string, dry: AudioNode, wet: AudioNode, t
       noise(t + 0.2, { f: 4000, f2: 1800, q: 0.7, amp: 0.16, dur: 0.16, curve: [1, 0.7, 0.2], pan: 0.2 });
       noise(t + 0.33, { f: 900, q: 1, amp: 0.08, dur: 0.05 });
       break;
-    case "pen": {
-      let a = t;
-      for (let i = 0; i < 6; i++) {
-        const d = 0.05 + r() * 0.09;
-        noise(a, { f: 3500 + r() * 2500, q: 2.5, amp: 0.035 + r() * 0.03, dur: d, curve: [0.6, 1, 0.8, 1, 0.4], wet: 0.1 });
-        a += d + 0.02 + r() * 0.05;
-      }
-      break;
-    }
     case "bell":
       sample("cbell", t, 55, 0.8, 8, 0.1, 0.6);
       break;
@@ -118,15 +109,6 @@ export function playSfx(e: Engine, id: string, dry: AudioNode, wet: AudioNode, t
       o.stop(t + 0.7);
       tone(t + 0.68, 70, 0.4, 0.3, { f2: 50 });
       noise(t + 0.68, { type: "lowpass", f: 500, amp: 0.3, dur: 0.12, buf: "brown" });
-      break;
-    }
-    case "chain": {
-      let a = t;
-      for (let i = 0; i < 9; i++) {
-        metal(a, 1800 + r() * 2200, [1, 1.47, 2.13, 2.9], 0.03 + r() * 0.02, 0.09 + r() * 0.08, r() * 0.6 - 0.3, 0.2);
-        noise(a, { type: "highpass", f: 5000, amp: 0.04, dur: 0.03 });
-        a += 0.04 + r() * 0.09;
-      }
       break;
     }
     case "sword":
@@ -162,14 +144,6 @@ export function playSfx(e: Engine, id: string, dry: AudioNode, wet: AudioNode, t
     case "whoosh":
       noise(t, { f: 400, f2: 2400, q: 1.2, amp: 0.2, dur: 0.45, curve: [0.1, 0.4, 1, 0.5, 0.1], pan: -0.6, pan2: 0.6, buf: "pink" });
       break;
-    case "starfall": {
-      const scale = [96, 93, 91, 88, 86, 84, 81, 79, 76, 74, 72];
-      scale.forEach((m, i) => sample("glass", t + i * 0.075, m, 0.35 + 0.03 * i, 2, 0.6 - i * 0.1, 0.7));
-      noise(t, { f: 7000, f2: 900, q: 3, amp: 0.05, dur: 1.2, curve: [0.4, 1, 0.8, 0.4, 0.1], pan: 0.5, pan2: -0.4, wet: 0.7 });
-      tone(t + 0.85, 70, 0.22, 1.6, { f2: 45, wet: 0.5 });
-      sample("glass", t + 0.9, 67, 0.5, 3, -0.2, 0.8);
-      break;
-    }
     case "fire":
       noise(t, { type: "lowpass", f: 200, f2: 1800, amp: 0.35, dur: 0.6, curve: [0.5, 1, 0.7, 0.4, 0.15], buf: "brown", wet: 0.3 });
       for (let i = 0; i < 8; i++) noise(t + 0.1 + r() * 0.6, { type: "highpass", f: 3000, amp: 0.1 + r() * 0.1, dur: 0.008 });
@@ -199,14 +173,97 @@ export function playSfx(e: Engine, id: string, dry: AudioNode, wet: AudioNode, t
       sample("glass", t, 88, 0.5, 2.5, 0.2, 0.6);
       sample("glass", t + 0.12, 93, 0.35, 2.5, 0.3, 0.6);
       break;
-    case "burn": {
-      noise(t, { type: "bandpass", f: 2200, q: 0.6, amp: 0.08, dur: 1.6, curve: [0.3, 1, 1, 0.8, 0.5, 0.2], buf: "pink" });
-      for (let i = 0; i < 26; i++) noise(t + r() * 1.5, { type: "highpass", f: 2500 + r() * 4000, amp: 0.05 + Math.pow(r(), 2) * 0.15, dur: 0.004 + r() * 0.01, pan: r() - 0.5 });
+    case "tick":
+      sample("tick", t, 62, 1, 0.3, 0.1, 0.25);
+      noise(t, { f: 1100, q: 4, amp: 0.25, dur: 0.02, wet: 0.2 });
+      break;
+    case "rewind": {
+      // a reverse whoosh: swells up and is sucked away, with ticks racing backwards
+      noise(t, { f: 3000, f2: 400, q: 1.4, amp: 0.26, dur: 1.4, curve: [0.05, 0.12, 0.25, 0.5, 0.85, 1, 0.2], buf: "pink", pan: 0.6, pan2: -0.6, wet: 0.5 });
+      tone(t, 900, 0.05, 1.4, { f2: 140, att: 1.1, wet: 0.5 });
+      let a = t;
+      let gap = 0.24;
+      for (let i = 0; i < 22 && a < t + 1.35; i++) {
+        const v = 0.06 + 0.12 * (i / 22);
+        noise(a, { f: 2600 - i * 40, q: 6, amp: v, dur: 0.01, pan: (i % 2 ? 0.3 : -0.3), wet: 0.3 });
+        a += gap;
+        gap *= 0.84;
+      }
+      sample("glass", t + 1.38, 86, 0.3, 1.5, 0, 0.7);
       break;
     }
-    case "wind":
-      noise(t, { f: 300, f2: 900, q: 1.5, amp: 0.3, dur: 1.6, curve: [0.1, 0.5, 1, 0.8, 0.4, 0.1], buf: "pink", pan: -0.5, pan2: 0.5, wet: 0.35 });
-      noise(t + 0.2, { f: 1200, f2: 700, q: 8, amp: 0.05, dur: 1.2, curve: [0.2, 1, 0.5, 0.1] });
+    case "sand":
+      noise(t, { f: 4500, q: 0.7, amp: 0.12, dur: 2.2, curve: [0.4, 1, 0.9, 0.95, 0.8, 0.6, 0.3, 0.1], buf: "noise", wet: 0.3 });
+      noise(t, { type: "lowpass", f: 900, amp: 0.08, dur: 2.2, curve: [0.5, 1, 0.9, 0.7, 0.4, 0.1], buf: "pink", wet: 0.2 });
+      for (let i = 0; i < 40; i++) noise(t + r() * 2, { type: "highpass", f: 5000 + r() * 4000, amp: 0.03 + r() * 0.04, dur: 0.003, pan: r() - 0.5, wet: 0.2 });
+      break;
+    case "stab":
+      noise(t, { f: 1200, f2: 4000, q: 1, amp: 0.14, dur: 0.12, curve: [0.3, 1, 0.4], pan: -0.2, pan2: 0.1 });
+      noise(t + 0.1, { type: "lowpass", f: 700, f2: 250, amp: 0.4, dur: 0.16, buf: "brown", wet: 0.1 });
+      tone(t + 0.1, 120, 0.3, 0.14, { f2: 55, wet: 0.1 });
+      noise(t + 0.13, { f: 450, q: 3, amp: 0.12, dur: 0.12, curve: [1, 0.6, 0.2], buf: "pink", wet: 0.1 });
+      break;
+    case "flatline": {
+        // hold the tone flat for ~2.5 s rather than decaying
+        const o = ctx.createOscillator();
+        o.frequency.value = 960;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.07, t + 0.01);
+        g.gain.setValueAtTime(0.07, t + 2.45);
+        g.gain.linearRampToValueAtTime(0, t + 2.5);
+        o.connect(g);
+        const p = route(g, 0.3, 0.15);
+        o.start(t);
+        o.stop(t + 2.55);
+        o.onended = () => p.disconnect();
+      break;
+    }
+    case "monitor":
+      tone(t, 960, 0.22, 0.14, { att: 0.004, pan: 0.3, wet: 0.15 });
+      break;
+    case "phone":
+      for (let k = 0; k < 2; k++) {
+        const a = t + k * 0.75;
+        const o = ctx.createOscillator();
+        o.type = "square";
+        o.frequency.value = 160;
+        const lp = ctx.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 600;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0, a);
+        g.gain.linearRampToValueAtTime(0.09, a + 0.02);
+        for (let i = 1; i < 10; i++) g.gain.setValueAtTime(0.09 * (i % 2 ? 0.75 : 1), a + i * 0.04);
+        g.gain.setValueAtTime(0.09, a + 0.4);
+        g.gain.linearRampToValueAtTime(0, a + 0.43);
+        o.connect(lp);
+        lp.connect(g);
+        const p = route(g, 0, 0.05);
+        o.start(a);
+        o.stop(a + 0.45);
+        o.onended = () => p.disconnect();
+        noise(a, { f: 2200, q: 2, amp: 0.02, dur: 0.42, curve: [1, 1, 1, 1, 1, 0.5], wet: 0.05 });
+      }
+      break;
+    case "crack": {
+      let a = t;
+      for (let i = 0; i < 9; i++) {
+        noise(a, { type: "highpass", f: 2500 + r() * 3000, amp: 0.12 + r() * 0.12, dur: 0.006 + r() * 0.01, pan: r() * 0.4 - 0.2, wet: 0.3 });
+        if (i % 3 === 0) metal(a, 2600 + r() * 2500, [1, 2.4], 0.02, 0.15, 0, 0.3);
+        a += 0.015 + r() * 0.05;
+      }
+      break;
+    }
+    case "cup":
+      noise(t, { type: "highpass", f: 2000, amp: 0.4, dur: 0.08 });
+      tone(t, 1800, 0.08, 0.25, { f2: 1700, wet: 0.3 });
+      for (let i = 0; i < 20; i++) {
+        const a = t + 0.02 + Math.pow(r(), 1.6) * 0.7;
+        metal(a, 2000 + r() * 3500, [1, 2.4, 3.1], 0.02 + r() * 0.03, 0.08 + r() * 0.18, r() * 1.2 - 0.6, 0.35);
+        noise(a, { type: "highpass", f: 4000, amp: 0.04, dur: 0.01 });
+      }
+      noise(t + 0.25, { f: 3500, q: 1, amp: 0.05, dur: 0.4, curve: [1, 0.5, 0.3, 0.1] });
       break;
     case "hit":
       tone(t, 85, 0.5, 0.25, { f2: 40, wet: 0.2 });
@@ -218,6 +275,6 @@ export function playSfx(e: Engine, id: string, dry: AudioNode, wet: AudioNode, t
 }
 
 export const SE_IDS = [
-  "page", "pen", "bell", "door", "chain", "sword", "clash", "heartbeat", "step", "thunder", "glass",
-  "whoosh", "starfall", "fire", "splash", "knock", "magic", "chime", "burn", "wind", "hit",
+  "page", "bell", "door", "step", "sword", "clash", "heartbeat", "glass", "whoosh", "fire", "splash", "knock",
+  "magic", "chime", "hit", "thunder", "tick", "rewind", "sand", "stab", "flatline", "monitor", "phone", "crack", "cup",
 ];

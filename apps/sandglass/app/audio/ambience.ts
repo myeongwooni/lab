@@ -144,7 +144,7 @@ export function makeAmbience(e: Engine, id: string, dry: AudioNode, wet: AudioNo
         k: 0,
         pan: [-0.7, 0.55, -0.2, 0.8, -0.5, 0.25, 0.05][i],
         f: [2300, 3100, 1900, 2700, 1500, 2100, 4200][i],
-        amp: [0.07, 0.035, 0.06, 0.04, 0.08, 0.05, 0.02][i],
+        amp: [0.14, 0.07, 0.12, 0.08, 0.16, 0.1, 0.04][i],
       }));
       let chime = t + 12 + r() * 10;
       const tickAt = (at: number, f: number, amp: number, pan: number): void => {
@@ -167,7 +167,7 @@ export function makeAmbience(e: Engine, id: string, dry: AudioNode, wet: AudioNo
           const pan = r() * 1.2 - 0.6;
           const n = 2 + Math.floor(r() * 3);
           for (let i = 0; i < n; i++) {
-            tone(at + i * 0.9, base * (i % 2 ? 0.75 : 1), 0.03, 2.2, pan);
+            tone(at + i * 0.9, base * (i % 2 ? 0.75 : 1), 0.05, 2.2, pan);
             tone(at + i * 0.9, base * 2.76 * (i % 2 ? 0.75 : 1), 0.008, 1.2, pan);
           }
         }
@@ -177,8 +177,8 @@ export function makeAmbience(e: Engine, id: string, dry: AudioNode, wet: AudioNo
     }
     case "hospital": {
       // ventilation hum, a distant ECG monitor, faint footsteps down the corridor
-      const hum = bed(e.pink, [filt(ctx, "lowpass", 420), filt(ctx, "peaking", 120, 2, 5)], 0.1);
-      lfo(ctx, hum.gain, 0.1, 0.015, 0.09, t, srcs);
+      const hum = bed(e.pink, [filt(ctx, "lowpass", 420), filt(ctx, "peaking", 120, 2, 5)], 0.14);
+      lfo(ctx, hum.gain, 0.14, 0.015, 0.09, t, srcs);
       bed(e.pink, [filt(ctx, "bandpass", 1800, 0.5)], 0.012);
       const mains = ctx.createOscillator();
       mains.frequency.value = 60;
@@ -194,7 +194,7 @@ export function makeAmbience(e: Engine, id: string, dry: AudioNode, wet: AudioNo
       event = (at) => {
         let gap = 0.5;
         if (at >= beep - 0.001) {
-          tone(at, 960, 0.018, 0.1, 0.55, "sine");
+          tone(at, 960, 0.03, 0.1, 0.55, "sine");
           beep = at + 0.82 + r() * 0.06;
         }
         if (at >= steps - 0.001) {

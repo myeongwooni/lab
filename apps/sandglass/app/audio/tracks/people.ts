@@ -68,7 +68,7 @@ export function elios(): Track {
     bpm: 120,
     len: 168,
     ev: s.ev,
-    gain: 1.15,
+    gain: 1.4,
     ch: {
       pnoR: { inst: "piano", pan: -0.05, rev: 0.35, prio: 2 },
       pnoL: { inst: "piano", pan: -0.15, rev: 0.32, gain: 0.8 },
@@ -208,7 +208,7 @@ export function sian(): Track {
     bpm: 66,
     len: 112,
     ev: s.ev,
-    gain: 1.3,
+    gain: 1.65,
     ch: {
       cel: { inst: "celesta", pan: 0.1, rev: 0.55, prio: 2, gain: 1.15 },
       fl: { inst: "flute", pan: 0.2, rev: 0.55, prio: 2, gain: 0.9 },

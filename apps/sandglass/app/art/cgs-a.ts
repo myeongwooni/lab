@@ -196,7 +196,8 @@ function eye(o: HeadOpt, cx: number, cy: number, w: number, h: number, dir: numb
   s += `<circle cx="${n1(icx + dir * rx * 0.4)}" cy="${n1(icy + ry * 0.36)}" r="${n1(rx * 0.14)}" fill="#fff" opacity=".95"/>`;
   if ((o.tears ?? 0) >= 1) s += `<path d="M${X(-0.3)} ${Y(0.42)}Q${X(0.1)} ${Y(0.56)} ${X(0.45)} ${Y(0.3)}" fill="none" stroke="#fff" stroke-width="2.4" opacity=".8" stroke-linecap="round"/>`;
   // lashes
-  s += `<path d="M${X(-0.54)} ${Y(0.04)}C${X(-0.34)} ${top(-0.5)} ${X(0.3)} ${top(-0.6)} ${X(0.6)} ${top(-0.32)}L${X(0.72)} ${top(-0.3)}L${X(0.6)} ${top(-0.18)}C${X(0.3)} ${top(-0.44)} ${X(-0.3)} ${top(-0.38)} ${X(-0.47)} ${Y(0.06)}Z" fill="${lashC}" stroke="${lashC}" stroke-width="1" stroke-linejoin="round"/>`;
+  if (o.male) s += ln(`M${X(-0.54)} ${Y(0.02)}C${X(-0.34)} ${top(-0.48)} ${X(0.3)} ${top(-0.58)} ${X(0.62)} ${top(-0.26)}`, lashC, 4.4) + ln(`M${X(0.5)} ${top(-0.36)}L${X(0.66)} ${top(-0.3)}`, lashC, 3);
+  else s += `<path d="M${X(-0.54)} ${Y(0.04)}C${X(-0.34)} ${top(-0.5)} ${X(0.3)} ${top(-0.6)} ${X(0.6)} ${top(-0.32)}L${X(0.72)} ${top(-0.3)}L${X(0.6)} ${top(-0.18)}C${X(0.3)} ${top(-0.44)} ${X(-0.3)} ${top(-0.38)} ${X(-0.47)} ${Y(0.06)}Z" fill="${lashC}" stroke="${lashC}" stroke-width="1" stroke-linejoin="round"/>`;
   s += ln(`M${X(0.5)} ${Y(0.18)}C${X(0.38)} ${Y(0.42)} ${X(0.14)} ${Y(0.5)} ${X(-0.06)} ${Y(0.48)}`, lashC, 1.8, 0.75);
   s += ln(`M${X(-0.28)} ${top(-0.56)}C${X(0)} ${top(-0.7)} ${X(0.34)} ${top(-0.64)} ${X(0.5)} ${top(-0.48)}`, o.skin.line, 1.3, 0.7);
   return s;
@@ -241,8 +242,8 @@ function head(o: HeadOpt): string {
     s += `<g opacity="${bl}"><ellipse cx="28" cy="44" rx="16" ry="7" fill="${sk.blush}" opacity=".55"/><ellipse cx="-36" cy="44" rx="9" ry="6" fill="${sk.blush}" opacity=".5"/>` +
       ln("M20 42l-4 6M28 42l-4 6M36 42l-4 6", sk.blush, 1.4, 0.9) + `</g>`;
   // eyes
-  s += eye(o, 22, 8, o.male ? 42 : 44, o.male ? 38 : 50, 1, iN, o.near);
-  s += eye(o, -32, 8, o.male ? 28 : 29, o.male ? 36 : 48, -1, iF, o.far);
+  s += eye(o, 22, 8, o.male ? 41 : 44, o.male ? 35 : 50, 1, iN, o.near);
+  s += eye(o, -32, 8, o.male ? 27 : 29, o.male ? 33 : 48, -1, iF, o.far);
   // brows
   const b = o.brow ?? 0;
   const bc = o.browColor ?? o.lash;
@@ -363,7 +364,7 @@ const ELIOS_SIDE = lock([-54, -36], [-64, 10], [-66, 60], [-54, 110], 20) + lock
 const ELIOS_WHITE = "M40 -54C44 -30 46 -10 52 4M48 -50C52 -28 56 -8 62 10M34 -52C36 -30 34 -10 30 12";
 /** Razel: sandy, swept back and tied, messy strands */
 const RAZEL_BACK =
-  "M-58 -60C-74 -30 -72 10 -66 40L-52 30L-58 70C-42 60 -32 40 -28 20L42 20C56 40 72 56 86 60C82 40 88 10 86 -20C84 -60 62 -96 22 -104C-18 -110 -46 -86 -58 -60Z";
+  "M-56 -60C-70 -40 -70 -10 -62 10L-50 -6L-54 26L-40 4C-44 -20 -40 -40 -30 -56L50 -60C62 -40 70 -16 72 6L82 -8L80 20L92 6C92 -30 84 -70 60 -92C30 -118 -34 -108 -56 -60ZM60 -20C90 -10 104 20 100 60C98 90 106 110 116 126C92 124 80 104 78 80C76 50 70 20 56 0Z";
 const RAZEL_FRONT =
   "M-60 -30C-58 -60 -40 -76 -10 -80C10 -82 34 -76 50 -64C60 -50 66 -30 74 -10C80 -40 82 -80 52 -104C20 -128 -34 -124 -56 -94C-66 -78 -66 -54 -60 -30Z";
 const RAZEL_STRANDS = lock([-6, -80], [-20, -60], [-26, -40], [-20, -18], 12) + lock([10, -82], [4, -60], [12, -44], [4, -26], 10) + lock([-30, -76], [-44, -56], [-50, -36], [-54, -14], 12);
@@ -918,14 +919,14 @@ function wp(x: number, y: number, s: number, rot: number, flip: boolean, lx: num
   const X = (flip ? -lx : lx) * s, Y = ly * s;
   return [x + X * Math.cos(a) - Y * Math.sin(a), y + X * Math.sin(a) + Y * Math.cos(a)];
 }
-function eliosHead(p: string, o: Partial<HeadOpt>, whites = 3): string {
+function eliosHead(p: string, o: Partial<HeadOpt>, whites = 3, hs = 1): string {
   const w = ELIOS_WHITE.split("M").filter(Boolean).slice(0, whites).map((q) => "M" + q).join("");
   return head({
     p, id: "e", skin: SK_ELIOS, lash: "#16121c", male: true, near: IR_RED, far: IR_GOLD, browColor: "#1a1822",
     back: ELIOS_BACK, backFill: `url(#${p}-eh)`, hairLine: "#0a0a12",
     front: ELIOS_FRONT, frontFill: `url(#${p}-eh)`, hairShade: "#cfaab2",
     side: ELIOS_SIDE, hi: "#55587e", strands: "#3a3a52",
-    extraBack: `<g transform="translate(-36 -86) rotate(-22)">${horn("#15141b", "#050508", "#5c5a70", 0.75)}</g><g transform="translate(40 -84) rotate(18)">${horn("#15141b", "#050508", "#5c5a70", 0.8)}</g>`,
+    extraBack: `<g transform="translate(-36 -86) rotate(-22)">${horn("#15141b", "#050508", "#5c5a70", 0.75 * hs)}</g><g transform="translate(40 -84) rotate(18)">${horn("#15141b", "#050508", "#5c5a70", 0.8 * hs)}</g>`,
     extraOver: ln(w, "#0a0a12", 4.6) + ln(w, "#ecebf2", 2.6) + (o.extraOver ?? ""),
     ...o,
   } as HeadOpt);
@@ -945,7 +946,7 @@ function cgSand(): string {
     glow(`${p}-lamp`, "#ffb45a", 0.95, 0.35) +
     glow(`${p}-gold`, "#ffd27a", 0.95, 0.3) +
     lg(`${p}-gray`, 0, 0, 1, 0, [[0, "#8a8784", 0], [0.42, "#8a8784", 0], [0.7, "#8a8784", 0.55], [1, "#9a9794", 0.85]]) +
-    lg(`${p}-hair`, 0, 0, 0, 1, [[0, "#c29a6a"], [1, "#8a6440"]]) +
+    lg(`${p}-hair`, 0, 0, 0, 1, [[0, "#a8804e"], [1, "#5e4024"]]) +
     lg(`${p}-fur`, 0, 0, 0, 1, [[0, "#b4b0aa"], [0.5, "#8a8682"], [1, "#5e5a58"]]) +
     lg(`${p}-leather`, 0, 0, 1, 1, [[0, "#8a5c3a"], [1, "#4a2e1c"]]) +
     lg(`${p}-hood`, 0, 0, 1, 1, [[0, "#b9bcc6"], [1, "#6e727f"]]) +
@@ -978,10 +979,22 @@ function cgSand(): string {
   b += ln("M1010 120L940 420", "#3a2a1e", 22) + ln("M1010 120L940 420", "#7a5a3a", 14) + `<path d="M990 110h50v20h-50Z" fill="#c8a060" stroke="#3a2616" stroke-width="3"/>`;
   b += cel("M470 900C470 760 520 640 640 590C700 566 760 560 800 560C860 560 920 568 980 594C1090 640 1140 760 1140 900Z", `url(#${p}-leather)`, line, 3);
   b += `<path d="M700 600L800 700L900 600C860 640 740 640 700 600Z" fill="#3a2414"/>` + ln("M620 700C680 740 740 760 800 760C860 760 920 740 980 700M600 800H1000", "#2a1a10", 3, 0.7);
-  let fur = "M430 760C440 680 500 600 600 560C660 540 720 540 740 560";
+  const zig = (pts: Pt[], amp: number): string => {
+    let d = `M${pts[0][0]} ${pts[0][1]}`;
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1], [x1, y1] = pts[i];
+      for (let k = 1; k <= 4; k++) {
+        const t = k / 4, tm = (k - 0.5) / 4;
+        const nx = -(y1 - y0), ny = x1 - x0, l = Math.hypot(nx, ny) || 1;
+        d += `L${n1(x0 + (x1 - x0) * tm + (nx / l) * amp)} ${n1(y0 + (y1 - y0) * tm + (ny / l) * amp)}L${n1(x0 + (x1 - x0) * t)} ${n1(y0 + (y1 - y0) * t)}`;
+      }
+    }
+    return d;
+  };
+  let fur = zig([[430, 780], [470, 660], [560, 580], [660, 548], [740, 556]], -14).replace(/^M/, "M");
   for (let i = 0; i < 8; i++) fur += `L${n1(730 - i * 38)} ${n1(620 + i * 16 + (i % 2) * 20)}`;
   fur += "L430 800Z";
-  let fur2 = "M1170 760C1160 680 1100 600 1000 560C940 540 880 540 860 560";
+  let fur2 = zig([[1170, 780], [1130, 660], [1040, 580], [940, 548], [860, 556]], 14);
   for (let i = 0; i < 8; i++) fur2 += `L${n1(870 + i * 38)} ${n1(620 + i * 16 + (i % 2) * 20)}`;
   fur2 += "L1170 800Z";
   b += cel(fur + fur2, `url(#${p}-fur)`, "#3a3634", 2.6);
@@ -994,35 +1007,44 @@ function cgSand(): string {
   }
   const headR = head({
     p, id: "r", skin: SK_RAZEL, lash: "#2a160a", male: true, near: IR_AMBER, far: IR_AMBER, browColor: "#6a4a2a",
-    open: 1, look: [0.1, 0], brow: 1.1, mouth: "o", blush: 0.2, shadeSide: 1, rim: "#ffd9a0",
-    back: RAZEL_BACK, backFill: `url(#${p}-hair)`, hairLine: "#5a3a20",
-    front: RAZEL_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#c48a66",
-    side: RAZEL_STRANDS, hi: "#e8cc9a",
-    extraUnder: dots(stub, 1.6, "#9a6a4a", 0.6) + ln("M-44 22L-24 14L-6 18L10 12", "#b06a50", 3) + ln("M-44 22L-24 14L-6 18L10 12", "#f0c0a0", 1.2),
+    open: 0.9, look: [0.1, 0], brow: 1.1, mouth: "o", blush: 0, shadeSide: 1, rim: "#ffd9a0",
+    back: RAZEL_BACK, backFill: `url(#${p}-hair)`, hairLine: "#3a2414",
+    front: RAZEL_FRONT, frontFill: `url(#${p}-hair)`, hairShade: "#dcae8c",
+    side: RAZEL_STRANDS, strands: "#d0aa78",
+    extraUnder: dots(stub, 1.6, "#9a6a4a", 0.6) + ln("M-20 34L8 16", "#a05a44", 3.4) + ln("M-20 34L8 16", "#f6d0b4", 1.4) + `<path d="M-40 56C-30 80 -10 92 4 92C24 84 40 66 50 48C40 70 20 84 0 86C-16 86 -30 76 -40 56Z" fill="#b48a70" opacity=".45"/>`,
   });
   // brows thicker for Razel: drawn by head with brow colour
-  b += place(HX, HY, HS, HR, false, headR);
+  b += place(HX, HY, HS, HR, false, `<g transform="scale(1.12 1)">${headR}</g>`);
   b += cel("M690 600C730 570 760 560 790 580C820 596 850 590 880 570C920 580 940 600 950 620C880 650 760 650 690 600Z", "#5a3a24", line, 3);
 
   // his hand raised toward her, crumbling from the fingertips into gold sand
   b += cel("M600 900C590 820 580 740 590 690L660 680C664 740 670 820 680 900Z", `url(#${p}-leather)`, line, 3);
   const FING_SAND: [Pt, Pt, Pt][] = [[[-18, -46], [-22, -58], [-24, -66]], [[-6, -50], [-7, -64], [-7, -74]], [[8, -50], [10, -62], [11, -70]], [[20, -44], [24, -54], [27, -60]], [[-24, -16], [-40, -28], [-48, -40]]];
   b += hand(622, 690, 1.6, 12, false, PALM_OPEN, FING_SAND, SK_RAZEL, 14);
+  {
+    let tp = "";
+    for (const [, c, e] of FING_SAND) {
+      const [ax, ay] = wp(622, 690, 1.6, 12, false, c[0], c[1]);
+      const [bx, by] = wp(622, 690, 1.6, 12, false, e[0], e[1]);
+      tp += `M${n1(ax)} ${n1(ay)}L${n1(bx)} ${n1(by)}`;
+    }
+    b += ln(tp, "#c88a20", 25) + ln(tp, "#ffd27a", 21) + ln(tp, "#fff6d8", 8, 0.8);
+  }
   // sand streaming away from the fingertips (up and right, toward the grey)
   const tips: Pt[] = [[570, 580], [600, 566], [625, 570], [648, 590]];
   let sand: Pt[] = [], big: Pt[] = [];
   for (const [tx, ty] of tips) {
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 90; i++) {
       const t = Math.pow(r(), 0.7);
-      sand.push([tx + t * 420 + (r() - 0.5) * 60 * t, ty - t * 260 + (r() - 0.5) * 70 * t + Math.sin(t * 5) * 20]);
+      sand.push([tx - t * 520 + (r() - 0.5) * 60 * t, ty - t * 300 + (r() - 0.5) * 70 * t + Math.sin(t * 5) * 20]);
     }
     for (let i = 0; i < 12; i++) {
       const t = r();
-      big.push([tx + t * 300 + (r() - 0.5) * 40, ty - t * 200 + (r() - 0.5) * 50]);
+      big.push([tx - t * 300 + (r() - 0.5) * 40, ty - t * 220 + (r() - 0.5) * 50]);
     }
   }
   b += `<ellipse cx="680" cy="520" rx="220" ry="140" fill="url(#${p}-gold)" opacity=".6"/>`;
-  b += ln("M600 570C700 500 800 440 1000 330", "#ffd27a", 40, 0.25, ` filter="url(#${p}-b)"`);
+  b += ln("M610 570C540 500 420 420 120 280", "#ffd27a", 80, 0.3, ` filter="url(#${p}-b)"`);
   b += dots(sand, 2.6, "#ffd27a", 0.9) + dots(big, 5, "#fff1c4", 0.95);
 
   // the world going grey from the right
@@ -1035,7 +1057,7 @@ function cgSand(): string {
   // animated sand motes
   for (let i = 0; i < 26; i++) {
     const t = r();
-    b += `<circle cx="${n1(620 + t * 420)}" cy="${n1(560 - t * 260 + (r() - 0.5) * 60)}" r="${n1(2 + r() * 2.4)}" fill="#fff1c4" ${A(p, "up", r() * 6, 3 + r() * 3)}/>`;
+    b += `<circle cx="${n1(610 - t * 460)}" cy="${n1(560 - t * 300 + (r() - 0.5) * 60)}" r="${n1(2 + r() * 2.4)}" fill="#fff1c4" ${A(p, "up", r() * 6, 3 + r() * 3)}/>`;
   }
   return svg(p, defs, b);
 }
@@ -1061,12 +1083,14 @@ function cgDemon(): string {
   const wx = 380, wy = 200;
   b += `<circle cx="${wx}" cy="${wy}" r="330" fill="url(#${p}-moon)" opacity=".55"/>`;
   b += `<circle cx="${wx}" cy="${wy}" r="140" fill="#2a2a50" stroke="#0a0a14" stroke-width="10"/>`;
-  const glass = ["#6a8ae0", "#c04a6a", "#e0c060", "#4ab0a0", "#8a60c0", "#e08a4a"];
-  for (let i = 0; i < 12; i++) {
-    const a0 = (i / 12) * Math.PI * 2, a1 = ((i + 1) / 12) * Math.PI * 2;
-    b += `<path d="M${wx} ${wy}L${n1(wx + Math.cos(a0) * 130)} ${n1(wy + Math.sin(a0) * 130)}A130 130 0 0 1 ${n1(wx + Math.cos(a1) * 130)} ${n1(wy + Math.sin(a1) * 130)}Z" fill="${glass[i % 6]}" stroke="#0a0a14" stroke-width="5" opacity=".85"/>`;
+  const glass = ["#3a5aa8", "#8a2a48", "#a88a40", "#2a7a70", "#5a3a90", "#a85a30"];
+  for (let i = 0; i < 16; i++) {
+    const a0 = (i / 16) * Math.PI * 2, a1 = ((i + 1) / 16) * Math.PI * 2;
+    for (const [r0, r1] of [[44, 90], [90, 132]] as [number, number][])
+      b += `<path d="M${n1(wx + Math.cos(a0) * r0)} ${n1(wy + Math.sin(a0) * r0)}L${n1(wx + Math.cos(a0) * r1)} ${n1(wy + Math.sin(a0) * r1)}A${r1} ${r1} 0 0 1 ${n1(wx + Math.cos(a1) * r1)} ${n1(wy + Math.sin(a1) * r1)}L${n1(wx + Math.cos(a1) * r0)} ${n1(wy + Math.sin(a1) * r0)}Z" fill="${glass[(i + (r0 > 50 ? 3 : 0)) % 6]}" stroke="#0a0a14" stroke-width="4" opacity=".75"/>`;
   }
-  b += `<circle cx="${wx}" cy="${wy}" r="40" fill="#f0e0a0" stroke="#0a0a14" stroke-width="6"/>`;
+  b += `<circle cx="${wx}" cy="${wy}" r="44" fill="#c8d0f0" stroke="#0a0a14" stroke-width="6" opacity=".9"/>`;
+  b += `<circle cx="${wx}" cy="${wy}" r="200" fill="url(#${p}-moon)" opacity=".35"/>`;
   b += `<path d="M260 280L520 180L1300 900L700 900Z" fill="url(#${p}-shaft)" opacity=".5"/>`;
   // pillars and broken goddess statue (dim, background)
   b += `<path d="M60 900V200H130V900ZM1440 900V160H1520V900Z" fill="#1a1626"/>`;
@@ -1078,7 +1102,7 @@ function cgDemon(): string {
   }
   // shadow blades unfurling from behind him
   let bl = "";
-  const bases: [number, number, number, number][] = [[-150, 300, 520, 70], [-120, 250, 560, 60], [-80, 200, 600, 58], [-190, 360, 470, 56], [-40, 150, 560, 48], [-220, 430, 430, 50], [210, 300, 420, 44], [180, 250, 440, 40]];
+  const bases: [number, number, number, number][] = [[-150, 330, 0, 130], [-118, 290, 0, 120], [-82, 250, 0, 110], [-190, 360, 0, 110], [-46, 210, 0, 90], [-222, 380, 0, 100], [200, 300, 0, 90], [165, 260, 0, 80], [-10, 200, 0, 70]];
   for (const [ang, len, , w] of bases) {
     const a = (ang * Math.PI) / 180;
     const ox = 960, oy = 520;
@@ -1088,7 +1112,7 @@ function cgDemon(): string {
     bl += `M${n1(ox + nx * w * 0.4)} ${n1(oy + ny * w * 0.4)}Q${n1(cx)} ${n1(cy)} ${n1(ex)} ${n1(ey)}Q${n1((ox + ex) / 2 + nx * w * 0.2)} ${n1((oy + ey) / 2 + ny * w * 0.2)} ${n1(ox - nx * w * 0.4)} ${n1(oy - ny * w * 0.4)}Z`;
   }
   b += `<path d="${bl}" fill="#ff3040" opacity=".35" filter="url(#${p}-b)"/>`;
-  b += `<path d="${bl}" fill="url(#${p}-blade)" stroke="#e0283a" stroke-width="2.4"/>`;
+  b += `<path d="${bl}" fill="url(#${p}-blade)" stroke="#ff4050" stroke-width="3"/>`;
   // wisps of shadow
   let ws = "";
   for (let i = 0; i < 18; i++) {
@@ -1113,7 +1137,7 @@ function cgDemon(): string {
   b += `<circle cx="300" cy="470" r="90" fill="url(#${p}-red)" opacity=".5" ${A(p, "pu", 0, 2.4)}/>`;
   // hood fold around the neck
   b += cel("M860 470C880 430 930 410 980 420C1010 430 1020 460 1010 480C980 470 930 468 890 480Z", "#1a2040", COAT_LINE, 2.6);
-  const headE = eliosHead(p, { open: 0.85, look: [0.35, 0.1], brow: -1.4, mouth: "sad", blush: 0.1, shadeSide: 1, rim: "#c8d8ff" });
+  const headE = eliosHead(p, { open: 0.85, look: [0.35, 0.1], brow: -1.4, mouth: "sad", blush: 0.1, shadeSide: 1, rim: "#c8d8ff" }, 3, 1.5);
   b += place(HX, HY, HS, HR, false, headE);
   b += cel("M880 470C900 440 920 432 940 440C970 452 1000 452 1020 440C1030 460 1030 490 1016 510C970 520 910 516 872 500Z", "#1c2346", COAT_LINE, 2.6);
   b += ln("M892 452C920 470 980 470 1014 452", "#e8e8f0", 3);
@@ -1121,10 +1145,9 @@ function cgDemon(): string {
   const [ex1, ey1] = wp(HX, HY, HS, HR, false, 22, 10);
   const [ex2, ey2] = wp(HX, HY, HS, HR, false, -32, 10);
   b += `<g ${A(p, "pu", 1, 3)}><circle cx="${n1(ex1)}" cy="${n1(ey1)}" r="60" fill="url(#${p}-red)" opacity=".75"/><circle cx="${n1(ex2)}" cy="${n1(ey2)}" r="40" fill="url(#${p}-gold)" opacity=".45"/></g>`;
-  b += ln(`M${n1(ex1 + 30)} ${n1(ey1 - 4)}l110 -14`, "#ff5a5a", 3, 0.7);
   // embers / red motes
   for (let i = 0; i < 20; i++) {
-    const x = 500 + r() * 900, y = 250 + r() * 600;
+    const x = r() < 0.5 ? 500 + r() * 300 : 1100 + r() * 300, y = 250 + r() * 600;
     b += `<circle cx="${n1(x)}" cy="${n1(y)}" r="${n1(1.6 + r() * 2.4)}" fill="#ff6a5a" ${A(p, "up", r() * 6, 4 + r() * 3)}/>`;
   }
   b += `<rect width="1600" height="900" fill="none" stroke="#000" stroke-width="80" opacity=".35" filter="url(#${p}-b)"/>`;

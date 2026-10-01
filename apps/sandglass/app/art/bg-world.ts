@@ -1671,6 +1671,382 @@ function sKingRoom(): string {
   return P.svg();
 }
 
+/** sun-and-hourglass royal emblem, centred at (x,y), size s */
+function emblem(x: number, y: number, s: number, c: string): string {
+  let rays = "";
+  for (let k = 0; k < 12; k++) {
+    const a = (k / 12) * TAU;
+    rays += `M${f(x + Math.cos(a) * s * 0.55)} ${f(y + Math.sin(a) * s * 0.55)}L${f(x + Math.cos(a) * s * 0.85)} ${f(y + Math.sin(a) * s * 0.85)}`;
+  }
+  return (
+    stroke(rays, c, Math.max(1, s * 0.08)) +
+    `<circle cx="${f(x)}" cy="${f(y)}" r="${f(s * 0.45)}" fill="none" stroke="${c}" stroke-width="${f(Math.max(1, s * 0.07))}"/>` +
+    path(`M${f(x - s * 0.22)} ${f(y - s * 0.3)}H${f(x + s * 0.22)}L${f(x - s * 0.22)} ${f(y + s * 0.3)}H${f(x + s * 0.22)}Z`, c)
+  );
+}
+
+/* 왕궁 대회랑 — royal grand corridor by day */
+function sCourt(): string {
+  const P = new Pic("court");
+  const r = new Rng(5150);
+  const VX = 800;
+  const VY = 440;
+  P.add(rect("#efe6d6"));
+  // ceiling
+  P.add(path(`M0 0H1600L${VX + 90} ${VY - 150}H${VX - 90}Z`, P.lin([[0, "#c9bca6"], [1, "#e8dcc8"]])));
+  // far door and glow
+  P.add(ell(VX, VY - 20, 260, 260, P.glow("#fff6df"), 1));
+  P.add(path(`M${VX - 60} ${VY + 60}V${VY - 60}A60 60 0 0 1 ${VX + 60} ${VY - 60}V${VY + 60}Z`, "#fffaf0"));
+  P.add(stroke(`M${VX - 60} ${VY + 60}V${VY - 60}A60 60 0 0 1 ${VX + 60} ${VY - 60}V${VY + 60}`, "#f5b04a", 5));
+  P.add(emblem(VX, VY - 60, 34, "#f5b04a"));
+  // floor: marble, perspective
+  P.add(path(`M0 900L${VX - 90} ${VY + 60}H${VX + 90}L1600 900Z`, P.lin([[0, "#d8cfc0"], [1, "#f3ede2"]])));
+  let ft = "";
+  for (let k = -9; k <= 9; k++) ft += `M${VX + k * 10} ${VY + 60}L${VX + k * 180} 900`;
+  for (let k = 1; k < 9; k++) {
+    const z = 1 + k * k * 0.12;
+    const y = VY + 60 + (440 / 1) * (1 - 1 / z);
+    ft += `M0 ${q(y)}H1600`;
+  }
+  P.add(stroke(ft, "#b8ab98", 2, 0.5));
+  // walls & columns (5 per side, receding)
+  const cols: string[] = [];
+  for (let k = 6; k >= 1; k--) {
+    const z = k;
+    const s = 1 / z;
+    const w = 120 * s;
+    const top = VY - 560 * s;
+    const bot = VY + 460 * s;
+    for (const side of [-1, 1]) {
+      const x = VX + side * 760 * s;
+      // tall window between this column and the next nearer one (left wall: light)
+      let c = "";
+      if (side < 0 && k > 1) {
+        const s2 = 1 / (z - 1);
+        const xa = VX - 760 * s + w * 0.6;
+        const xb = VX - 760 * s2 - (120 * s2) * 0.6;
+        c += path(`M${q(xa)} ${q(VY + 200 * s)}V${q(VY - 300 * s)}L${q(xb)} ${q(VY - 300 * s2)}V${q(VY + 200 * s2)}Z`, P.lin([[0, "#cfe8fb"], [1, "#fff6df"]]));
+      }
+      if (side > 0 && k > 1) {
+        const s2 = 1 / (z - 1);
+        const xa = VX + 760 * s - w * 0.6;
+        const xb = VX + 760 * s2 + (120 * s2) * 0.6;
+        c += path(`M${q(xa)} ${q(VY + 200 * s)}V${q(VY - 300 * s)}L${q(xb)} ${q(VY - 300 * s2)}V${q(VY + 200 * s2)}Z`, "#e0d6c4");
+        // banner hanging on the right wall
+        const bx = (xa + xb) / 2;
+        const bw = (xb - xa) * 0.45;
+        const by0 = VY - 320 * ((s + s2) / 2);
+        const bh = 420 * ((s + s2) / 2);
+        c += path(`M${q(bx - bw / 2)} ${q(by0)}H${q(bx + bw / 2)}V${q(by0 + bh)}L${q(bx)} ${q(by0 + bh * 0.85)}L${q(bx - bw / 2)} ${q(by0 + bh)}Z`, "#b8323a");
+        c += path(`M${q(bx + bw * 0.25)} ${q(by0)}H${q(bx + bw / 2)}V${q(by0 + bh)}L${q(bx + bw * 0.25)} ${q(by0 + bh * 0.93)}Z`, "#8f1d24");
+        c += stroke(`M${q(bx - bw / 2 - 4)} ${q(by0)}H${q(bx + bw / 2 + 4)}`, "#c8a060", Math.max(2, bw * 0.06));
+        c += emblem(bx, by0 + bh * 0.35, bw * 0.36, "#ffd27a");
+      }
+      // column
+      c += path(`M${q(x - w / 2)} ${q(bot)}V${q(top)}H${q(x + w / 2)}V${q(bot)}Z`, "#f6f0e6");
+      c += path(`M${q(side < 0 ? x + w * 0.15 : x - w / 2)} ${q(bot)}V${q(top)}h${q(w * 0.35)}V${q(bot)}Z`, "#d8cfc0");
+      c += rect("#e2d8c8", undefined, x - w * 0.7, top - w * 0.3, w * 1.4, w * 0.3);
+      c += rect("#c8a060", undefined, x - w * 0.7, top - w * 0.02, w * 1.4, Math.max(1, w * 0.05));
+      c += rect("#e2d8c8", undefined, x - w * 0.7, bot - w * 0.25, w * 1.4, w * 0.25);
+      cols.push(c);
+    }
+  }
+  P.add(cols.join(""));
+  // vault arches across the ceiling
+  let ar = "";
+  for (let k = 1; k <= 6; k++) {
+    const s = 1 / k;
+    ar += `M${q(VX - 760 * s)} ${q(VY - 560 * s)}Q${VX} ${q(VY - 900 * s)} ${q(VX + 760 * s)} ${q(VY - 560 * s)}`;
+  }
+  P.add(stroke(ar, "#b8ab98", 8, 0.6));
+  P.add(stroke(ar, "#c8a060", 2, 0.7));
+  // chandelier glows
+  for (let k = 2; k <= 4; k++) P.add(circ(VX, VY - 400 / k, 90 / k * 2, P.glow("#fff1c4"), 0.6));
+  // red carpet
+  P.add(path(`M${VX - 22} ${VY + 60}H${VX + 22}L${VX + 300} 900H${VX - 300}Z`, "#b8323a"));
+  P.add(path(`M${VX - 22} ${VY + 60}H${VX - 14}L${VX - 270} 900H${VX - 300}Z M${VX + 22} ${VY + 60}H${VX + 14}L${VX + 270} 900H${VX + 300}Z`, "#e8c98a"));
+  P.add(path(`M${VX + 4} ${VY + 60}H${VX + 22}L${VX + 300} 900H${VX + 100}Z`, "#8f1d24", 0.35));
+  // sunlight from the left windows onto the floor
+  for (let k = 1; k <= 4; k++) {
+    const s = 1 / (k + 0.5);
+    const x0 = VX - 700 * s;
+    P.add(path(`M${q(x0)} ${q(VY + 200 * s)}L${q(x0 + 260 * s)} ${q(VY + 200 * s)}L${q(x0 + 900 * s)} ${q(VY + 470 * s)}L${q(x0 + 300 * s)} ${q(VY + 470 * s)}Z`, "#fff6df", 0.45));
+    P.add(beam(P, [[x0, VY - 300 * s], [x0 + 60 * s, VY - 300 * s], [x0 + 900 * s, VY + 470 * s], [x0 + 300 * s, VY + 470 * s]], "#fffbe8", 0.25));
+  }
+  // sparkles in the air
+  for (let k = 0; k < 10; k++) P.add(g(circ(r.r(400, 1200), r.r(150, 600), r.r(1.5, 3), "#ffffff"), P.tw(r.r(3, 6), r.r(0, 6), 0.1)));
+  P.add(vignette(P, "#8a7a64", 0.35, 0.5));
+  return P.svg();
+}
+
+/* 왕궁 정원 — afternoon garden: white roses, sundial, fountain */
+function sRoyalGarden(): string {
+  const P = new Pic("royal_garden");
+  const r = new Rng(6262);
+  P.add(rect(P.lin([[0, "#6fb0e8"], [0.45, "#a8d4f4"], [0.7, "#e6f2fb"], [1, "#fff6df"]])));
+  P.add(circ(1350, 90, 380, P.glow("#fff6df"), 0.7));
+  P.add(cloud(r, 330, 160, 420, 70, "#ffffff", "#ffffff", "#d6e6f4"));
+  P.add(cloud(r, 1150, 250, 300, 50, "#ffffff", "#ffffff", "#d6e6f4"));
+  P.add(cloud(r, 820, 110, 200, 34, "#ffffff", "#ffffff", "#dce9f5", 0.9));
+  // castle in the distance
+  const cw = "#f3ede2";
+  const cs = "#d8cfc0";
+  let cast = "M300 520V380H520V520Z M1080 520V360H1320V520Z M520 520V420H1080V520Z";
+  cast += "M360 380V300h50v80Z M1180 360V260h60v100Z M760 420V250h80v170Z";
+  P.add(path(cast, mix(cw, "#cfe8fb", 0.35)));
+  P.add(path("M470 520V380h50v140Z M1270 520V360h50v160Z M810 420V250h30v170Z", mix(cs, "#cfe8fb", 0.35)));
+  P.add(path("M352 300L385 240L418 300Z M1172 260L1210 190L1248 260Z M752 250L800 170L848 250Z M290 382L410 330L530 382Z M1070 362L1200 310L1330 362Z", mix("#e0764a", "#cfe8fb", 0.3)));
+  P.add(dawnTower(P, 960, 430, 330, { stone: mix(cw, "#cfe8fb", 0.3), shade: mix(cs, "#cfe8fb", 0.3), gold: "#f5b04a", dial: "#fff1c4" }));
+  // tree line
+  const trees = (y: number, c1: string, c2: string, amp: number): string => path(waveD(r, -20, 1620, y, amp, 70), c1) + path(waveD(r, -20, 1620, y + 14, amp * 0.8, 60), c2);
+  P.add(trees(500, "#6f9e6a", "#5b8a5a", 40));
+  // lawn
+  P.add(path("M0 560H1600V900H0Z", P.lin([[0, "#8fbf6a"], [1, "#5f9048"]])));
+  // hedges (clipped)
+  const hedge = (x0: number, x1: number, y: number, h: number): string =>
+    path(`M${x0} ${y + h}V${y + 8}Q${x0} ${y} ${x0 + 8} ${y}H${x1 - 8}Q${x1} ${y} ${x1} ${y + 8}V${y + h}Z`, "#3f6b4a") + path(`M${x0} ${y + 10}Q${x0} ${y} ${x0 + 8} ${y}H${x1 - 8}Q${x1} ${y} ${x1} ${y + 10}Z`, "#6f9e6a");
+  P.add(hedge(0, 560, 540, 60));
+  P.add(hedge(1040, 1600, 540, 60));
+  // gravel path to fountain
+  P.add(path("M740 600H860L1100 900H500Z", "#efe6d6"));
+  P.add(ell(800, 640, 300, 60, "#e8dcc8"));
+  // white rose bushes
+  const roses = (cx: number, cy: number, rx: number, ry: number, n: number): string => {
+    let leaf = "";
+    let lit = "";
+    const fl: Pt[] = [];
+    for (let k = 0; k < n; k++) {
+      const x = cx + r.r(-rx, rx);
+      const y = cy + r.r(-ry, ry) * Math.sqrt(1 - Math.min(1, Math.pow((x - cx) / rx, 2)));
+      const rr = r.r(14, 26);
+      leaf += circD(x, y, rr);
+      if (r.n() < 0.5) lit += circD(x - 4, y - 5, rr * 0.6);
+    }
+    for (let k = 0; k < n * 1.4; k++) fl.push([cx + r.r(-rx * 0.9, rx * 0.9), cy + r.r(-ry, ry * 0.6)]);
+    return path(leaf, "#2f5a3e") + path(lit, "#4f7a55") + dots(fl, 12, "#f4f1ec") + dots(fl, 7, "#ffffff") + dots(fl, 3, "#f2d8a8", 0.9);
+  };
+  P.add(roses(220, 560, 200, 50, 30));
+  P.add(roses(1380, 560, 200, 50, 30));
+  P.add(roses(560, 590, 110, 30, 14));
+  P.add(roses(1040, 590, 110, 30, 14));
+  // fountain
+  P.add(ell(800, 610, 220, 44, "#d8cfc0"));
+  P.add(ell(800, 604, 204, 36, "#9ec2f0"));
+  P.add(ell(800, 604, 204, 36, P.lin([[0, "#e4efff", 0.9], [1, "#4a6fb5", 0.3]])));
+  P.add(path("M580 610V630Q800 690 1020 630V610Q800 670 580 610Z", "#c8bca8"));
+  P.add(path("M785 600V480h30v120Z", "#e2d8c8"));
+  P.add(ell(800, 480, 80, 16, "#d8cfc0"));
+  P.add(ell(800, 476, 72, 11, "#b8d8f4"));
+  P.add(path("M790 476V420h20v56Z", "#e2d8c8"));
+  P.add(emblem(800, 404, 30, "#f5b04a"));
+  // water arcs
+  const arcs = "M800 404Q740 400 730 476M800 404Q860 400 870 476M725 480Q680 500 650 600M875 480Q920 500 950 600";
+  P.add(stroke(arcs, "#e4efff", 4, 0.8));
+  P.add(g(stroke(arcs, "#ffffff", 2), P.tw(1.6, 0, 0.3)));
+  for (let k = 0; k < 10; k++) P.add(g(path(sparkD(r.r(640, 960), r.r(420, 620), r.r(4, 8)), "#ffffff"), P.tw(r.r(1.5, 3), r.r(0, 3), 0)));
+  // sundial (foreground left of centre)
+  P.add(`<g transform="translate(-130 40) scale(1.25) translate(-112 -152)">`);
+  P.add(ell(560, 760, 70, 14, "#3f6b4a", 0.4));
+  P.add(path("M540 760V680h40v80Z", "#e2d8c8"));
+  P.add(path("M566 760V680h14v80Z", "#c8bca8"));
+  P.add(ell(560, 676, 60, 16, "#d8cfc0"));
+  P.add(ell(560, 672, 54, 12, "#c8a060"));
+  P.add(tickRing(560, 672, 40, 50, 12, "#6a4a2a", 3));
+  P.add(path("M560 672L592 640L592 672Z", "#8a6a45"));
+  P.add(path("M560 672L600 684L520 680Z", "#6a4a2a", 0.35));
+  P.add("</g>");
+  // petals and light
+  P.add(ell(1250, 150, 600, 300, P.glow("#fffbe8"), 0.4));
+  P.add(bottomShade(P, "#2f4a2e", 0.35, 0.7));
+  return P.svg();
+}
+
+/* 청탑 서재와 테라스 — Sian's blue tower study at night */
+function sMagetower(): string {
+  const P = new Pic("magetower");
+  const r = new Rng(7373);
+  P.add(rect(P.lin([[0, "#101a36"], [1, "#1b2a4a"]])));
+  // terrace opening (arch) — sky
+  P.def(`<clipPath id="${P.id("arch")}"><path d="M540 640V300A260 260 0 0 1 1060 300V640Z"/></clipPath>`);
+  let sky = rect(P.lin([[0, "#0b1233"], [0.55, "#1d2d6a"], [1, "#4a6fb5"]]), undefined, 540, 0, 520, 640);
+  sky += starField(P, r, 150, [540, 40, 1060, 560], "#e4efff");
+  // milky band
+  sky += path("M540 480Q800 200 1060 120V200Q800 280 540 560Z", "#9ec2f0", 0.12);
+  sky += circ(930, 170, 120, P.glow("#e4efff"), 0.4);
+  sky += circ(930, 170, 30, "#f4f8ff");
+  sky += path(waveD(r, 520, 1080, 560, 10, 80, 640), "#27386a");
+  // terrace balustrade
+  let bal = "";
+  for (let x = 552; x < 1060; x += 26) bal += `M${x} 640V592`;
+  sky += stroke(bal, "#3a5086", 9) + path("M540 584H1060V594H540Z", "#4a6fb5");
+  // telescope silhouette
+  sky += stroke("M880 640L910 520M940 640L910 520M910 640V520", "#15204a", 5);
+  sky += path("M860 470L1010 400L1022 428L872 498Z", "#c8a060");
+  sky += path("M860 470L1010 400L1013 408L863 478Z", "#fff1c4", 0.8);
+  sky += path("M1010 396l20-8 14 34-20 8Z", "#8a6a45");
+  sky += circ(910, 510, 9, "#c8a060");
+  P.add(g(sky, `clip-path="${P.ref("arch")}"`));
+  P.add(stroke("M540 640V300A260 260 0 0 1 1060 300V640", "#4a6fb5", 14));
+  P.add(stroke("M540 640V300A260 260 0 0 1 1060 300V640", "#9ec2f0", 2.5, 0.8));
+  // bookshelves (left and right)
+  const shelf = (x0: number, x1: number): string => {
+    let s = path(`M${x0} 40H${x1}V700H${x0}Z`, "#1f2c52");
+    let books = "";
+    let booksB = "";
+    let booksC = "";
+    for (let y = 80; y < 690; y += 120) {
+      s += rect("#34487e", undefined, x0, y + 96, x1 - x0, 12);
+      let x = x0 + 10;
+      while (x < x1 - 14) {
+        const bw = r.r(10, 22);
+        const bh = r.r(60, 94);
+        const d = `M${q(x)} ${q(y + 96)}V${q(y + 96 - bh)}h${q(bw)}V${q(y + 96)}Z`;
+        const v = r.n();
+        if (v < 0.4) books += d;
+        else if (v < 0.75) booksB += d;
+        else booksC += d;
+        x += bw + (r.n() < 0.1 ? 14 : 2);
+      }
+    }
+    s += path(books, "#2e4a8a") + path(booksB, "#4a6fb5") + path(booksC, "#8a6a9a");
+    return s;
+  };
+  P.add(shelf(0, 460));
+  P.add(shelf(1140, 1600));
+  P.add(rect(P.lin([[0, "#101a36", 0], [1, "#101a36", 0.6]], 0, 0, 1, 0), undefined, 0, 0, 460, 700));
+  P.add(rect(P.lin([[0, "#101a36", 0.6], [1, "#101a36", 0]], 0, 0, 1, 0), undefined, 1140, 0, 460, 700));
+  // floor
+  P.add(path("M0 700H1600V900H0Z", P.lin([[0, "#22325e"], [1, "#0e1630"]])));
+  P.add(path("M460 640H1140L1600 700H0Z", "#1b2a4a"));
+  // magic circle on floor
+  const mc = (rx: number, ry: number, w: number, o: number): string =>
+    `<ellipse cx="800" cy="760" rx="${rx}" ry="${ry}" fill="none" stroke="#9ec2f0" stroke-width="${w}" stroke-opacity="${o}"/>`;
+  P.add(ell(800, 760, 420, 90, P.glow("#4a6fb5"), 0.6));
+  P.add(g(mc(360, 70, 3, 0.8) + mc(300, 58, 1.5, 0.6) + `<ellipse cx="800" cy="760" rx="330" ry="64" fill="none" stroke="#e4efff" stroke-width="6" stroke-dasharray="4 18" stroke-opacity=".7"/>`, P.tw(5, 0, 0.55)));
+  // desk (left foreground)
+  P.add(path("M120 620H520V650H120Z", "#3a2e4a"));
+  P.add(path("M140 650H170V820H140Z M470 650H500V820H470Z", "#2a2238"));
+  P.add(path("M200 620V586h110v34Z", "#e4efff", 0.85));
+  P.add(path("M210 596h90M210 606h70", "none", undefined, ' stroke="#4a6fb5" stroke-width="2"'));
+  P.add(path("M340 620V570h40v50Z M384 620V580h30v40Z", "#4a6fb5"));
+  P.add(circ(450, 596, 22, "#9ec2f0", 0.5));
+  P.add(circ(450, 596, 60, P.glow("#9ec2f0"), 0.6));
+  // floating spell lamps
+  const lamps: Pt[] = [[380, 200], [620, 140], [1000, 150], [1230, 240], [300, 420], [1320, 460], [700, 330], [1080, 380]];
+  lamps.forEach(([x, y], k) => {
+    const s = k < 4 ? 1 : 0.75;
+    const inner =
+      circ(x, y, 70 * s, P.glow("#9ec2f0")) +
+      circ(x, y, 12 * s, "#e4efff") +
+      `<circle cx="${x}" cy="${y}" r="${f(22 * s)}" fill="none" stroke="#9ec2f0" stroke-width="1.5" stroke-dasharray="3 5"/>`;
+    P.add(g(inner, P.drift(r.r(6, 10), r.r(0, 8), r.r(-16, -8), r.r(-6, 6))));
+  });
+  P.add(vignette(P, "#050a1a", 0.7, 0.45));
+  return P.svg();
+}
+
+/* 리아나의 방 — a small girl's room at the tower top, frozen in time */
+function sLianaRoom(): string {
+  const P = new Pic("liana_room");
+  const r = new Rng(1225);
+  P.add(rect(P.lin([[0, "#dcd6e4"], [1, "#e9e4ea"]])));
+  // slanted ceiling beams (tower top)
+  P.add(path("M0 0H1600V60L1100 160H500L0 60Z", "#c8c0d0"));
+  P.add(stroke("M500 160L0 60M1100 160L1600 60M500 160H1100", "#b0a6b8", 6));
+  // tiny wallpaper stars
+  const st: Pt[] = [];
+  for (let x = 40; x < 1600; x += 70) for (let y = 200; y < 560; y += 70) st.push([x + ((y / 70) % 2) * 35, y]);
+  P.add(dots(st, 4, "#c9bcd6", 0.7));
+  // round window with pale light
+  P.add(circ(800, 300, 230, P.glow("#f6f4ff"), 0.9));
+  P.add(circ(800, 300, 110, "#b8b0c4"));
+  P.add(circ(800, 300, 96, P.lin([[0, "#e4efff"], [1, "#fbf8ff"]])));
+  P.add(stroke("M800 204V396M704 300H896", "#b8b0c4", 7));
+  // frozen stopped clock
+  P.add(clock(1080, 250, 30, { rim: "#b8a0b0", rimHi: "#ffffff", face: "#fbf6f8", ink: "#8a7a90", h: 128, m: 240 }));
+  // floor
+  P.add(path("M0 600H1600V900H0Z", P.lin([[0, "#cfc4c8"], [1, "#b0a4ac"]])));
+  P.add(path("M0 590H1600V604H0Z", "#bdb2c0"));
+  // pale beam onto the bed
+  P.add(beam(P, [[710, 300], [890, 300], [860, 900], [420, 900]], "#ffffff", 0.35));
+  // furniture group, scaled up so the little room feels close
+  P.add(`<g transform="translate(800 610) scale(1.45) translate(-800 -610)">`);
+  // small bed (left of centre)
+  P.add(path("M520 470Q610 430 700 470V640H520Z", "#e8d8e4"));
+  P.add(path("M534 480Q610 446 686 480V640H534Z", "#f4eaf2"));
+  P.add(path("M520 600H880V660H520Z", "#f7eef4"));
+  P.add(path("M530 612H880V660H530Z", "#f2c8d6"));
+  let qd = "";
+  for (let x = 560; x < 880; x += 40) qd += circD(x, 636, 5);
+  P.add(path(qd, "#ffffff", 0.8));
+  P.add(path("M540 600Q560 572 610 578Q640 582 646 600Z", "#ffffff"));
+  P.add(path("M860 600Q900 610 880 680H860Z", "#e8d8e4"));
+  P.add(path("M520 660H880V676H520Z", "#d8c2d2"));
+  P.add(path("M530 676V740h14v-64Z M860 676V740h14v-64Z", "#c8b4c4"));
+  // dolls on the bed
+  const doll = (x: number, y: number, dress: string, hair: string): string =>
+    path(`M${x - 18} ${y + 4}Q${x} ${y - 30} ${x + 18} ${y + 4}Z`, dress) +
+    circ(x, y - 30, 14, "#fbeee8") +
+    path(`M${x - 15} ${y - 30}Q${x - 14} ${y - 48} ${x} ${y - 46}Q${x + 14} ${y - 48} ${x + 15} ${y - 30}Q${x + 8} ${y - 40} ${x} ${y - 38}Q${x - 8} ${y - 40} ${x - 15} ${y - 30}Z`, hair) +
+    circ(x - 5, y - 30, 1.6, "#6a5a70") + circ(x + 5, y - 30, 1.6, "#6a5a70") + circ(x - 8, y - 25, 3, "#f2b8c6", 0.6) + circ(x + 8, y - 25, 3, "#f2b8c6", 0.6);
+  P.add(doll(650, 604, "#a8c4e8", "#e8c98a"));
+  P.add(doll(700, 608, "#f2a8b8", "#8a6a55"));
+  // small table with the music box (centre)
+  P.add(path("M930 560H1080V574H930Z", "#d8c8d4"));
+  P.add(path("M944 574V700h10V574Z M1056 574V700h10V574Z", "#c8b4c4"));
+  P.add(circ(1005, 520, 90, P.glow("#fff1c4"), 0.5));
+  P.add(path("M965 560V528h80v32Z", "#c8a0b4"));
+  P.add(path("M965 528h80v6h-80Z", "#e8c98a"));
+  P.add(path("M965 528L975 480h70l-10 48Z", "#e6c4d4"));
+  P.add(path("M972 524L980 488h58l-8 36Z", "#fff6df", 0.7));
+  P.add(stroke("M1005 528V512", "#e8c98a", 2));
+  P.add(path("M1005 494q6 8 0 18q-6-10 0-18Z", "#fbf6f8"));
+  // tiny shoes on the floor
+  P.add(path("M600 780q0-14 18-14h14q10 0 10 10v6h-42Z M650 786q0-14 18-14h14q10 0 10 10v6h-42Z", "#f2a8b8"));
+  P.add(path("M606 776h20M656 782h20", "none", undefined, ' stroke="#ffffff" stroke-width="2"'));
+  // a ribbon on the chair
+  P.add(path("M1150 700V520h16v180Z M1250 700V520h16v180Z M1150 520h116v14h-116Z M1150 600h116v12h-116Z", "#d8c8d4"));
+  P.add(path("M1190 526l-20-12 4 22Z M1210 526l20-12-4 22Z", "#f2a8b8"));
+  P.add("</g>");
+  P.add(circ(800, 300, 420, P.glow("#ffffff"), 0.2));
+  P.add(vignette(P, "#8a7a90", 0.4, 0.45));
+  return P.svg();
+}
+
+/* 기억 — white void with floating fragments of clocks and pages */
+function sMemory(): string {
+  const P = new Pic("memory");
+  const r = new Rng(9090);
+  P.add(rect("#f6f3ee"));
+  P.add(ell(800, 400, 900, 600, P.glow("#ffffff"), 1));
+  P.add(ell(800, 420, 400, 260, P.glow("#fff1c4"), 0.5));
+  const frag = (k: number): string => {
+    const x = r.r(120, 1480);
+    const y = r.r(60, 620);
+    const s = r.r(1, 2) * (Math.abs(x - 800) < 260 ? 0.85 : 1);
+    const rot = r.r(-40, 40);
+    let d = "";
+    const kind = k % 3;
+    if (kind === 0) {
+      // page
+      d += rect("#ffffff", undefined, -40, -52, 80, 104);
+      d += rect("#e8e2d8", undefined, 30, -52, 10, 104);
+      d += stroke("M-28-34h52M-28-22h46M-28-10h52M-28 2h38M-28 14h52M-28 26h30", "#c9c4bc", 3);
+    } else if (kind === 1) {
+      // clock fragment
+      d += clock(0, 0, 44, { rim: "#c8a060", rimHi: "#fff1c4", face: "#fffaf0", ink: "#8a7a6a", broken: 100 + k, h: k * 40, m: k * 90 });
+    } else {
+      d += gear(0, 0, 28, 12, "#d8c098", "#fff6df", k, 5);
+    }
+    return g(g(d, `transform="translate(${q(x)} ${q(y)}) rotate(${q(rot)}) scale(${f2(s)})" opacity="${f2(r.r(0.45, 0.9))}"`), P.drift(r.r(10, 18), r.r(0, 18), r.r(-20, -8), r.r(-8, 8)));
+  };
+  for (let k = 0; k < 18; k++) P.add(frag(k));
+  // gold motes
+  for (let k = 0; k < 10; k++) P.add(g(path(sparkD(r.r(300, 1300), r.r(100, 650), r.r(4, 9)), "#f5c870"), P.tw(r.r(3, 6), r.r(0, 6), 0.1)));
+  P.add(vignette(P, "#d8cfc0", 0.4, 0.45));
+  return P.svg();
+}
+
 export const WORLD_BACKGROUNDS: Record<string, string> = {
   black: sBlack(),
   white: sWhite(),
@@ -1684,4 +2060,9 @@ export const WORLD_BACKGROUNDS: Record<string, string> = {
   guestroom: sGuestroom(),
   villa_hall: sVillaHall(),
   king_room: sKingRoom(),
+  court: sCourt(),
+  royal_garden: sRoyalGarden(),
+  magetower: sMagetower(),
+  liana_room: sLianaRoom(),
+  memory: sMemory(),
 };

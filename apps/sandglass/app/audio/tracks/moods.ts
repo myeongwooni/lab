@@ -80,7 +80,7 @@ export function tension(): Track {
     bpm: 104,
     len: 128,
     ev: s.ev,
-    gain: 0.85,
+    gain: 0.72,
     ch: {
       ost: { inst: "strs", pan: -0.15, rev: 0.25, fx: "body" },
       ostlo: { inst: "strs", pan: 0.15, rev: 0.2, gain: 0.9, bright: 0.6 },
@@ -155,7 +155,7 @@ export function death(): Track {
     bpm: BPM,
     len: CYCLE * 3,
     ev: s.ev,
-    gain: 1.4,
+    gain: 1.6,
     ch: {
       mb: { inst: "mbox", pan: 0.1, rev: 0.7, prio: 2, gain: 1.1 },
       mbLo: { inst: "mbox", pan: -0.2, rev: 0.7, gain: 0.8 },
@@ -209,7 +209,7 @@ export function sorrow(): Track {
     bpm: 56,
     len: 104,
     ev: s.ev,
-    gain: 1.2,
+    gain: 1.0,
     ch: {
       vc: { inst: "cello", pan: 0.2, rev: 0.45, prio: 2, gain: 1.1 },
       vln: { inst: "str", pan: -0.25, rev: 0.5, fx: "body", prio: 2, gain: 1.1 },

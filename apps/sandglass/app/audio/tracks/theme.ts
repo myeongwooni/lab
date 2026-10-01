@@ -153,7 +153,7 @@ export function between(): Track {
     bpm: BPM,
     len: 120,
     ev: s.ev,
-    gain: 1.25,
+    gain: 1.8,
     ch: {
       glassM: { inst: "glass", pan: 0.05, rev: 0.75, prio: 2, gain: 1.05 },
       rbM: { inst: "rglass", pan: 0.05, rev: 0.7, prio: 2 },
@@ -265,7 +265,7 @@ export function climax(): Track {
     bpm: 144,
     len: 160,
     ev: s.ev,
-    gain: 0.8,
+    gain: 0.6,
     ch: {
       ost: { inst: "strs", pan: -0.1, rev: 0.25, fx: "body" },
       ostlo: { inst: "strs", pan: 0.1, rev: 0.2, gain: 0.9, bright: 0.7 },
@@ -344,7 +344,7 @@ export function ending(): Track {
     bpm: 76,
     len: 160,
     ev: s.ev,
-    gain: 0.95,
+    gain: 0.85,
     ch: {
       vln: { inst: "str", pan: -0.3, rev: 0.4, fx: "body", prio: 2, gain: 1.1 },
       fl: { inst: "flute", pan: 0.2, rev: 0.45, prio: 2, gain: 0.8 },

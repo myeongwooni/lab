@@ -97,7 +97,7 @@ export const audio = {
         listen();
         engine.startTimer();
         // warm up the most common instruments in the background
-        engine.bank.warm(["piano", "celesta", "harp", "mbox", "pizz", "glass", "timp", "cbell", "heart", "lute", "fdrum", "fslap", "tamb", "bdrum"]);
+        engine.bank.warm(["piano", "mbox", "tick", "celesta", "pizz", "harp", "glass", "rglass", "lute", "timp", "heart", "cbell", "fdrum", "fslap", "tamb", "bdrum"]);
         const e = engine;
         p.catch(() => undefined).then(() => {
           if (state.bgm) e.playBgm(state.bgm, 1200);

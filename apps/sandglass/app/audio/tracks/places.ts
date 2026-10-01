@@ -47,7 +47,7 @@ export function seoul(): Track {
     bpm: 56,
     len: 96,
     ev: s.ev,
-    gain: 1.35,
+    gain: 2.0,
     ch: {
       pnoR: { inst: "piano", pan: 0.05, rev: 0.5, prio: 2 },
       pnoL: { inst: "piano", pan: -0.1, rev: 0.45, gain: 0.9 },
@@ -319,7 +319,7 @@ export function villa(): Track {
     bpm: 96,
     len: 160,
     ev: s.ev,
-    gain: 1.2,
+    gain: 1.5,
     ch: {
       mb: { inst: "mbox", pan: 0.1, rev: 0.35, prio: 2, gain: 1.1 },
       pzM: { inst: "pizz", pan: -0.05, rev: 0.28, prio: 2, gain: 1.1 },

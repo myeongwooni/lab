@@ -537,7 +537,7 @@ function rooftop(): string {
   A.add(A.rect(90, 400, 90, 60, "#2f2d4c") + A.rect(96, 406, 78, 48, A.v("win", 406, 454, [[0, "#ffe4b8"], [1, "#f3b478"]])));
   A.add(A.ell(215, 410, 14, 14, "#fff4d6") + A.ell(215, 410, 90, 90, A.glowG("bulb", "#ffd9a0"), 0.55, A.a("fl", 1, 3)));
   // 자판기 (주인공)
-  const vx = 570, vy = 400, vw = 150, vh = 320;
+  const vx = 610, vy = 400, vw = 150, vh = 320;
   A.add(A.ell(vx + vw / 2, 720, 260, 40, A.glowG("vspill", "#dff2ff"), 0.6));
   A.add(A.ell(vx + vw / 2, 540, 250, 250, A.glowG("vglow", "#cfe8ff"), 0.45, A.a("br", 2, 6)));
   A.add(A.rect(vx + vw, vy + 6, 26, vh - 6, "#7a2632") + A.rect(vx, vy, vw, vh, A.lin("vb", 0, 0, 1, 0, [[0, "#b73644"], [0.7, "#d44a52"], [1, "#a82e3c"]])));
@@ -1124,7 +1124,7 @@ function southgate(): string {
   for (let x = -20; x < 1600; x += 110) mrim += `M${x} 521h64`;
   A.add(A.line(mrim, "#fff4e4", 3));
   // 망루 (왼쪽 중앙)
-  const tx = 560, tw = 150;
+  const tx = 680, tw = 150;
   A.add(A.rect(tx - tw / 2, 170, tw, 480, A.lin("tw", 0, 0, 1, 0, [[0, "#f0d8cc"], [0.6, "#d8bcb8"], [1, "#9a8494"]])));
   let tm = "";
   for (let k = 0; k < 5; k++) tm += rp(tx - tw / 2 - 10 + k * 36, 150, 22, 24);
@@ -1514,7 +1514,7 @@ function festival(): string {
   const blur = A.blur("soft", 12);
   const HZ = "#2a3470";
   A.add(A.rect(0, 0, 1600, 900, A.v("sky", 0, 560, [[0, "#070b24"], [0.45, "#18205a"], [0.8, "#3a3478"], [1, "#6a4a7a"]])));
-  A.add(starField(r, 110, 0, 0, 1600, 380, "#e8eeff", 0.9));
+  A.add(starField(r, 70, 0, 0, 1600, 380, "#e8eeff", 0.9));
   A.add(A.ell(800, 520, 900, 260, A.glowG("haze", "#ffa060"), 0.35));
   // 여명탑 (불 밝힌)
   A.add(A.ell(800, 160, 170, 240, A.glowG("tg", "#8aa0f0"), 0.3));
@@ -1523,14 +1523,14 @@ function festival(): string {
   // 도시 (양 둑)
   const lights: P2[] = [];
   const hb = (k: number) => (x: number) => 420 + k * 34 - (80 - k * 20) * bell(x, 800, 500);
-  A.add(town(A, { seed: 131, x0: -20, x1: 1620, base: hb(0), hMin: 14, hMax: 26, wMin: 18, wMax: 30, haze: 0.55, hazeC: HZ, win: 0.5, wall: "#8a90c0", wallS: "#4a4f80", roof: "#7a4a6a", roofS: "#4a3050", winC: "#3a3a6a", lit: "#ffc870", litP: 0.6 }));
-  A.add(town(A, { seed: 132, x0: -20, x1: 1620, base: hb(1), hMin: 20, hMax: 34, wMin: 26, wMax: 42, haze: 0.4, hazeC: HZ, win: 0.6, wall: "#8a90c0", wallS: "#4a4f80", roof: "#8a4a5a", roofS: "#4a3050", winC: "#3a3a6a", lit: "#ffc870", litP: 0.6 }));
-  A.add(town(A, { seed: 133, x0: -30, x1: 1630, base: (x) => 540, hMin: 50, hMax: 90, wMin: 60, wMax: 100, haze: 0.2, hazeC: HZ, win: 0.7, wall: "#6a70a8", wallS: "#34386a", roof: "#7a3a4a", roofS: "#3a2440", winC: "#2a2a50", lit: "#ffc870", litP: 0.65, lights }));
+  A.add(town(A, { seed: 131, x0: 300, x1: 1300, base: hb(0), hMin: 14, hMax: 26, wMin: 18, wMax: 30, haze: 0.55, hazeC: HZ, win: 0.5, wall: "#8a90c0", wallS: "#4a4f80", roof: "#7a4a6a", roofS: "#4a3050", winC: "#3a3a6a", lit: "#ffc870", litP: 0.6 }));
+  A.add(town(A, { seed: 132, x0: 120, x1: 1480, base: hb(1), hMin: 20, hMax: 34, wMin: 26, wMax: 42, haze: 0.4, hazeC: HZ, win: 0.6, wall: "#8a90c0", wallS: "#4a4f80", roof: "#8a4a5a", roofS: "#4a3050", winC: "#3a3a6a", lit: "#ffc870", litP: 0.6 }));
+  A.add(town(A, { seed: 133, x0: -30, x1: 1630, base: (x) => 540, hMin: 50, hMax: 90, wMin: 60, wMax: 100, haze: 0.2, hazeC: HZ, win: 0.5, wall: "#6a70a8", wallS: "#34386a", roof: "#7a3a4a", roofS: "#3a2440", winC: "#2a2a50", lit: "#ffc870", litP: 0.65, lights }));
   // 등불 줄 (건물 사이)
   const lg = A.glowG("lg", "#ffb050");
-  A.add(lanternLine(A, r, [0, 440], [620, 470], 30, 9, 9, ["#ff7a4a", "#ffc24a", "#ff9a5a"], lg, 4, "#1a1430") + lanternLine(A, r, [980, 470], [1600, 430], 30, 9, 9, ["#ff7a4a", "#ffc24a", "#ff9a5a"], lg, 4, "#1a1430"));
+  A.add(lanternLine(A, r, [0, 440], [620, 470], 30, 7, 9, ["#ff7a4a", "#ffc24a", "#ff9a5a"], lg, 4, "#1a1430") + lanternLine(A, r, [980, 470], [1600, 430], 30, 7, 9, ["#ff7a4a", "#ffc24a", "#ff9a5a"], lg, 4, "#1a1430"));
   // 풍등 (하늘로)
-  A.add(skyLanterns(A, r, 110, 0, 1600, 40, 520, 10, 1.3));
+  A.add(skyLanterns(A, r, 80, 0, 1600, 40, 520, 8, 1.3));
   // 다리
   A.add(A.path("M300 560q500-110 1000 0v14q-500-100-1000 0z", "#2a2450") + A.rect(300, 548, 1000, 4, "#4a4080", 'opacity=".0"'));
   let bl: P2[] = [];
@@ -1542,17 +1542,17 @@ function festival(): string {
   lights.slice(0, 26).forEach(([x]) => A.add(A.rect(x - 2, 566 + r() * 20, 4, 30 + r() * 40, "#ffc870", 'opacity=".35"')));
   // 물에 뜬 등불
   const fg = A.glowG("fg", "#ffb050", "#fff0c8");
-  for (let i = 0; i < 26; i++) {
-    const t = r(), y = 575 + t * t * 140, x = r() * 1600, sc = 0.4 + t * 1.2;
+  for (let i = 0; i < 16; i++) {
+    const t = r(), y = 575 + t * t * 140, x = r() * 1600, sc = 0.8 + t * 1.8;
     A.add(A.ell(x, y, 26 * sc, 12 * sc, fg, 0.7, i < 8 ? A.a("br", r() * 6, 4 + r() * 3) : "") + A.ell(x, y + 10 * sc, 8 * sc, 22 * sc, "#ffc870", 0.25) + A.path(rel(`M${f(x - 7 * sc)} ${f(y)}h${f(14 * sc)}l${f(-3 * sc)} ${f(-10 * sc)}h${f(-8 * sc)}z`), "#ffe0a0"));
   }
   // 군중 실루엣 (앞 둑)
   let crowd = "";
   const rim: string[] = [];
-  for (let x = -20; x < 1620; x += 22 + r() * 16) {
+  for (let x = -20; x < 1620; x += 28 + r() * 18) {
     const h = 90 + r() * 40, y = 900 - 130 + r() * 12, hw = 12 + r() * 5;
-    crowd += cp(x, y - h, hw) + rel(`M${f(x - hw * 2)} ${f(900)}V${f(y - h + hw * 2.6)}q${f(hw * 2)} ${f(-hw * 1.8)} ${f(hw * 4)} 0V900z`);
-    rim.push(`M${f(x + hw * 0.6)} ${f(y - h - hw * 0.8)}a${f(hw)} ${f(hw)} 0 0 1 ${f(hw * 0.4)} ${f(hw * 0.8)}`);
+    crowd += cp(x, y - h, hw) + rel(`M${i0(x - hw * 2)} 900V${i0(y - h + hw * 2.6)}q${i0(hw * 2)} ${i0(-hw * 1.8)} ${i0(hw * 4)} 0V900z`);
+    rim.push(`M${i0(x + hw * 0.6)} ${i0(y - h - hw * 0.8)}a${i0(hw)} ${i0(hw)} 0 0 1 ${i0(hw * 0.4)} ${i0(hw * 0.8)}`);
   }
   A.add(A.path(crowd, "#0c0a1c") + A.line(rel(rim.join("")), "#ffb870", 2, 'opacity=".7"'));
   A.add(A.ell(800, 470, 800, 300, A.glowG("bloom", "#ffb870"), 0.18));
@@ -1616,7 +1616,7 @@ function hill(): string {
   A.add(A.path(ridge(r, 400, 1200, 20, (x) => 470 - 70 * bell(x, 760, 200), 1), mix("#8a8680", HZ, 0.3)));
   A.add(dawnTower(A, 760, 420, 170, 0.55, HZ, false, 1.1));
   for (let k = 0; k < 3; k++) A.add(town(A, { seed: 151 + k, x0: 520, x1: 1000, base: (x) => 420 + k * 20 - (50 - k * 12) * bell(x, 760, 180), hMin: 8, hMax: 16, wMin: 10, wMax: 18, haze: 0.6 - k * 0.08, hazeC: HZ, win: 0.2, roof: "#b08a78", roofS: "#8a6e64" }));
-  A.add(A.path("M520 480V440h24l6-10 6 10h420l6-10 6 10h24V480z", mix("#a8a098", HZ, 0.4)));
+  
   // 안개
   A.add(A.rect(0, 440, 1600, 120, A.v("mist", 440, 560, [[0, "#dcd6cc", 0], [0.5, "#dcd6cc", 0.85], [1, "#dcd6cc", 0.3]])));
   // 언덕 (가까운 풀밭)
@@ -1658,9 +1658,9 @@ function birch(A: Art, r: Rnd, x: number, yb: number, h: number, w: number, lean
   s += A.line(br, "#5a524a", Math.max(1.5, w * 0.12));
   // 잎
   const lv: string[] = leaves.map(() => "");
-  for (let k = 0; k < 26; k++) {
-    const t = 0.5 + r() * 0.55, cx = x + lean * t * t + gauss(r) * h * 0.2, cy = yb - h * t + gauss(r) * h * 0.08;
-    lv[k % leaves.length] += cp(cx, cy, h * (0.035 + r() * 0.04));
+  for (let k = 0; k < 44; k++) {
+    const t = 0.5 + r() * 0.55, cx = x + lean * t * t + gauss(r) * h * 0.16, cy = yb - h * t + gauss(r) * h * 0.08;
+    lv[k % leaves.length] += ep(cx, cy, h * (0.02 + r() * 0.02), h * (0.012 + r() * 0.012));
   }
   const g = lv.map((d, i) => A.path(d, leaves[i])).join("");
   s += anim ? `<g ${A.a("sw", r() * 5, 7)}>${g}</g>` : g;
