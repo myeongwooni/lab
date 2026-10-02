@@ -21,8 +21,11 @@ export function Typed({
   const doneRef = useRef(onDone);
   doneRef.current = onDone;
   const finishRef = useRef(finish);
+  // 클릭으로 끝까지 펼친 뒤에는 남은 타이머가 글자 수를 되돌리지 못하게 막습니다.
+  const finishedRef = useRef(false);
 
   useEffect(() => {
+    finishedRef.current = false;
     if (msPerChar <= 0) {
       setN(total);
       return;
@@ -32,6 +35,7 @@ export function Typed({
     let pi = 0;
     let timer: ReturnType<typeof setTimeout>;
     const tick = () => {
+      if (finishedRef.current) return;
       // 멈춤 조각을 만나면 그만큼 쉽니다. 문장부호 뒤에서도 살짝 쉽니다.
       let delay = msPerChar;
       while (pi < pieces.length && pieces[pi].t === "pause") {
@@ -57,6 +61,7 @@ export function Typed({
   useEffect(() => {
     if (finish !== finishRef.current) {
       finishRef.current = finish;
+      finishedRef.current = true;
       setN(total);
     }
   }, [finish, total]);
