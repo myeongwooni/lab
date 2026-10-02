@@ -85,6 +85,10 @@ button:focus-visible { outline: 1px solid var(--gold); outline-offset: 3px; }
 
 .cg-layer { animation: fadeIn 1s ease both; z-index: 3; }
 .cg-layer.out { animation: fadeOut 0.9s ease both; }
+.cg-box { position: absolute; inset: 0; overflow: hidden; }
+/* 두 인물이 멀리 떨어진 CG를 좁은 화면에서 통째로 보여 줄 때: 가운데에 전체 그림, 위아래는 흐린 같은 그림 */
+.cg-layer img.cg-fit { object-fit: contain; animation: none; }
+.cg-layer img.cg-backdrop { filter: blur(22px) brightness(0.45) saturate(1.1); transform: scale(1.15); animation: none; }
 
 /* 스탠딩 */
 .actors { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
