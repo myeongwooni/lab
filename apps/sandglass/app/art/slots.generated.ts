@@ -9,5 +9,9 @@ export type ArtSlots = {
 export const ART_SLOTS: ArtSlots = {
   bg: {},
   cg: {},
-  char: {},
+  char: {
+    "elios": {
+      "normal": "/art/char/elios/normal.webp?v=7fbb67b0"
+    }
+  },
 };
