@@ -4,6 +4,7 @@
 // 그림 슬롯(public/art)에 파일이 있으면 <img>로, 없으면 코드로 그린 SVG로 그립니다.
 import { memo, useEffect, useRef, useState } from "react";
 import { artCharId, backgroundSvg, bgImage, cgImage, cgSvg, charImage, characterSvg } from "../art";
+import { CG_FOCUS, cgObjectX } from "../art/cg-focus";
 import type { Actor, StageState } from "../engine/runtime";
 import type { CharId, Transition } from "../engine/script";
 import { Particles } from "./Particles";
@@ -25,6 +26,46 @@ export function BgArt({ id, className = "bg-art" }: { id: string; className?: st
 export function CgArt({ id, className = "bg-art" }: { id: string; className?: string }) {
   const src = cgImage(id);
   return src ? <Img className={`${className} art-img`} src={src} /> : <Svg className={className} markup={cgSvg(id)} />;
+}
+
+// 무대 위 CG. 화면이 16:9보다 좁으면 그림마다 정한 초점(CG_FOCUS)을 가운데로 잘라 보여 줍니다.
+// 회상록의 CG 보기는 늘 전체를 보여 주므로 CgArt를 그대로 씁니다.
+function StageCgArt({ id }: { id: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [aspect, setAspect] = useState(16 / 9);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const measure = () => el.clientHeight > 0 && setAspect(el.clientWidth / el.clientHeight);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const src = cgImage(id);
+  if (!src) return <CgArt id={id} />;
+  const focus = CG_FOCUS[id] ?? 50;
+  const narrow = aspect < 16 / 9 - 0.01;
+  return (
+    <div ref={box} className="cg-box">
+      {focus === "fit" && narrow ? (
+        <>
+          <Img className="bg-art art-img cg-backdrop" src={src} />
+          <Img className="bg-art art-img cg-fit" src={src} />
+        </>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className="bg-art art-img"
+          src={src}
+          alt=""
+          draggable={false}
+          decoding="async"
+          style={{ objectPosition: `${cgObjectX(focus === "fit" ? 50 : focus, aspect)}% 50%` }}
+        />
+      )}
+    </div>
+  );
 }
 
 function CharArt({ id, expr, className }: { id: string; expr: string; className: string }) {
@@ -189,7 +230,7 @@ function Cg({ id }: { id: string | null }) {
     <>
       {shown.map((s) => (
         <div key={s.id} className={`cg-layer${s.out ? " out" : ""}`}>
-          <CgArt id={s.id} />
+          <StageCgArt id={s.id} />
         </div>
       ))}
     </>
