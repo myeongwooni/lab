@@ -14,6 +14,7 @@
 | [dicetale](apps/dicetale) | 첫 배포 뒤 추가 | 다이스테일 — d20을 굴려 새끼 용이 훔쳐 간 등불을 되찾는 도트 TRPG |
 | [jamotris](apps/jamotris) | [jamotris.vercel.app](https://jamotris.vercel.app/) | 자모트리스 — 떨어지는 자모를 쌓아 글자를, 글자를 이어 단어를 만드는 한글 테트리스 |
 | [starscribe](apps/starscribe) | 첫 배포 뒤 추가 | 이름을 잃은 별에게 — 지워야 할 남자의 일생을 받아 적는 필경사의 판타지 로맨스 비주얼 노벨 |
+| [sandglass](apps/sandglass) | 첫 배포 뒤 추가 | 천 번째 새벽, 당신에게 — 죽을 때마다 되돌아가는 간호사의 사망 회귀 판타지 로맨스 비주얼 노벨 |
 
 ## 개발
 
@@ -28,6 +29,7 @@ npm run omikuji      # apps/omikuji 개발 서버 (:3003)
 npm run dicetale     # apps/dicetale 개발 서버 (:3004)
 npm run jamotris     # apps/jamotris 개발 서버 (:3005)
 npm run starscribe   # apps/starscribe 개발 서버 (:3006)
+npm run sandglass   # apps/sandglass 개발 서버 (:3007)
 ```
 
 앱마다 포트를 다르게 고정해 두었으므로 동시에 띄워도 부딪히지 않습니다.
@@ -55,6 +57,7 @@ npm run starscribe   # apps/starscribe 개발 서버 (:3006)
 | dicetale | `apps/dicetale` | 없음 |
 | jamotris | `apps/jamotris` | 없음 |
 | starscribe | `apps/starscribe` | 없음 |
+| sandglass | `apps/sandglass` | 없음 |
 
 Root Directory만 지정해서는 푸시마다 모든 앱이 다시 빌드됩니다. 그래서 프로젝트마다
 **변경 없는 커밋은 배포 건너뛰기**(Settings → Build and Deployment → Root Directory 아래)를
