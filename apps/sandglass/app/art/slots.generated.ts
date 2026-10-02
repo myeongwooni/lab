@@ -40,7 +40,26 @@ export const ART_SLOTS: ArtSlots = {
     "villa_roof": "/art/bg/villa_roof.webp?v=4e155a22",
     "workshop": "/art/bg/workshop.webp?v=193ecb16"
   },
-  cg: {},
+  cg: {
+    "cg_ashking": "/art/cg/cg_ashking.webp?v=db1007ae",
+    "cg_betrayal": "/art/cg/cg_betrayal.webp?v=78e8ddf3",
+    "cg_clocks": "/art/cg/cg_clocks.webp?v=93c360c3",
+    "cg_demon": "/art/cg/cg_demon.webp?v=5617b717",
+    "cg_e_bad": "/art/cg/cg_e_bad.webp?v=8f7341a2",
+    "cg_e_good": "/art/cg/cg_e_good.webp?v=4f9bf4e5",
+    "cg_e_waltz": "/art/cg/cg_e_waltz.webp?v=a4622cdf",
+    "cg_fall": "/art/cg/cg_fall.webp?v=b1360073",
+    "cg_first_death": "/art/cg/cg_first_death.webp?v=3ba3510a",
+    "cg_lanterns": "/art/cg/cg_lanterns.webp?v=a9025a0a",
+    "cg_lili": "/art/cg/cg_lili.webp?v=60db8d6c",
+    "cg_r_back": "/art/cg/cg_r_back.webp?v=3fe6c38c",
+    "cg_r_bad": "/art/cg/cg_r_bad.webp?v=0b131a21",
+    "cg_r_good": "/art/cg/cg_r_good.webp?v=b3c70dd9",
+    "cg_s_eye": "/art/cg/cg_s_eye.webp?v=7f21fa93",
+    "cg_sand": "/art/cg/cg_sand.webp?v=83d9060a",
+    "cg_tea": "/art/cg/cg_tea.webp?v=18a29b85",
+    "cg_unmask": "/art/cg/cg_unmask.webp?v=5d4378da"
+  },
   char: {
     "adelhart": {
       "angry": "/art/char/adelhart/angry.webp?v=033b2985",
