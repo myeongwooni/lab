@@ -7,7 +7,18 @@ export type ArtSlots = {
 };
 
 export const ART_SLOTS: ArtSlots = {
-  bg: {},
+  bg: {
+    "alley": "/art/bg/alley.webp?v=f8a9a3a8",
+    "between": "/art/bg/between.webp?v=eb1bc11f",
+    "chapel": "/art/bg/chapel.webp?v=58634af5",
+    "er": "/art/bg/er.webp?v=b198e9c7",
+    "inn": "/art/bg/inn.webp?v=e175f087",
+    "market": "/art/bg/market.webp?v=093778e1",
+    "plaza": "/art/bg/plaza.webp?v=a4a89f7d",
+    "rooftop": "/art/bg/rooftop.webp?v=5dce323d",
+    "seoul": "/art/bg/seoul.webp?v=d29d6da8",
+    "tavern": "/art/bg/tavern.webp?v=8226cb72"
+  },
   cg: {},
   char: {
     "adelhart": {
