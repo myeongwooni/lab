@@ -11,16 +11,40 @@ export const ART_SLOTS: ArtSlots = {
   cg: {},
   char: {
     "adelhart": {
-      "normal": "/art/char/adelhart/normal.webp?v=c6f998d5"
+      "angry": "/art/char/adelhart/angry.webp?v=033b2985",
+      "normal": "/art/char/adelhart/normal.webp?v=c6f998d5",
+      "serious": "/art/char/adelhart/serious.webp?v=bb27ad5d",
+      "surprise": "/art/char/adelhart/surprise.webp?v=d1d7cbaa"
     },
     "ashking": {
-      "normal": "/art/char/ashking/normal.webp?v=d940a926"
+      "cry": "/art/char/ashking/cry.webp?v=ee83c587",
+      "normal": "/art/char/ashking/normal.webp?v=d940a926",
+      "pain": "/art/char/ashking/pain.webp?v=d76a0788",
+      "sad": "/art/char/ashking/sad.webp?v=1e43f38f",
+      "serious": "/art/char/ashking/serious.webp?v=0a30436a",
+      "smile": "/art/char/ashking/smile.webp?v=0c50b288",
+      "surprise": "/art/char/ashking/surprise.webp?v=16e88e0b",
+      "tender": "/art/char/ashking/tender.webp?v=e0e06413"
     },
     "ashking_bare": {
-      "normal": "/art/char/ashking_bare/normal.webp?v=78fab477"
+      "cry": "/art/char/ashking_bare/cry.webp?v=52358031",
+      "normal": "/art/char/ashking_bare/normal.webp?v=78fab477",
+      "pain": "/art/char/ashking_bare/pain.webp?v=726d84c8",
+      "sad": "/art/char/ashking_bare/sad.webp?v=e91a7430",
+      "serious": "/art/char/ashking_bare/serious.webp?v=409a4868",
+      "smile": "/art/char/ashking_bare/smile.webp?v=b7b92d5a",
+      "surprise": "/art/char/ashking_bare/surprise.webp?v=277f4b4f",
+      "tender": "/art/char/ashking_bare/tender.webp?v=5f910a99"
     },
     "cecilia": {
-      "normal": "/art/char/cecilia/normal.webp?v=8447e305"
+      "cry": "/art/char/cecilia/cry.webp?v=40e5366a",
+      "normal": "/art/char/cecilia/normal.webp?v=8447e305",
+      "pain": "/art/char/cecilia/pain.webp?v=b41adb8b",
+      "sad": "/art/char/cecilia/sad.webp?v=d2d57c37",
+      "smile": "/art/char/cecilia/smile.webp?v=c5b027ba",
+      "smirk": "/art/char/cecilia/smirk.webp?v=d4990547",
+      "surprise": "/art/char/cecilia/surprise.webp?v=cdd9a6f2",
+      "tender": "/art/char/cecilia/tender.webp?v=6622b50d"
     },
     "elios": {
       "angry": "/art/char/elios/angry.webp?v=27004e7a",
@@ -36,7 +60,8 @@ export const ART_SLOTS: ArtSlots = {
       "normal": "/art/char/faceless/normal.webp?v=03080118"
     },
     "herman": {
-      "normal": "/art/char/herman/normal.webp?v=a717ba10"
+      "normal": "/art/char/herman/normal.webp?v=a717ba10",
+      "smile": "/art/char/herman/smile.webp?v=f71c647c"
     },
     "lili": {
       "angry": "/art/char/lili/angry.webp?v=cd3c821f",
@@ -72,7 +97,13 @@ export const ART_SLOTS: ArtSlots = {
       "tender": "/art/char/sian/tender.webp?v=b83ba4c4"
     },
     "toby": {
-      "normal": "/art/char/toby/normal.webp?v=2cb95fd7"
+      "angry": "/art/char/toby/angry.webp?v=33511a5d",
+      "cry": "/art/char/toby/cry.webp?v=acdf3802",
+      "normal": "/art/char/toby/normal.webp?v=2cb95fd7",
+      "sad": "/art/char/toby/sad.webp?v=2ec0cb52",
+      "serious": "/art/char/toby/serious.webp?v=5d1244fb",
+      "smile": "/art/char/toby/smile.webp?v=75f339ab",
+      "surprise": "/art/char/toby/surprise.webp?v=dd3ef14c"
     }
   },
 };
