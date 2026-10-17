@@ -11,10 +11,10 @@
 | [cointower](apps/cointower) | [cointower-luck.vercel.app](https://cointower-luck.vercel.app/) | 동전탑 — 앞면만으로 몇 층까지 쌓는지 겨루는 기록판 |
 | [quest](apps/quest) | [quest-guild.vercel.app](https://quest-guild.vercel.app/) | 오늘의 퀘스트 — 파티원 중 오늘의 용사를 소환하는 랜덤 추첨기 |
 | [omikuji](apps/omikuji) | [lab-omikuji.vercel.app](https://lab-omikuji.vercel.app/) | 오늘의 냥쿠지 — 도트 고양이가 흔들어 주는 하루 한 번의 운세 뽑기 |
-| [dicetale](apps/dicetale) | 첫 배포 뒤 추가 | 다이스테일 — d20을 굴려 새끼 용이 훔쳐 간 등불을 되찾는 도트 TRPG |
+| [dicetale](apps/dicetale) | [dicetale.vercel.app](https://dicetale.vercel.app/) | 다이스테일 — d20을 굴려 새끼 용이 훔쳐 간 등불을 되찾는 도트 TRPG |
 | [jamotris](apps/jamotris) | [jamotris.vercel.app](https://jamotris.vercel.app/) | 자모트리스 — 떨어지는 자모를 쌓아 글자를, 글자를 이어 단어를 만드는 한글 테트리스 |
-| [starscribe](apps/starscribe) | 첫 배포 뒤 추가 | 이름을 잃은 별에게 — 지워야 할 남자의 일생을 받아 적는 필경사의 판타지 로맨스 비주얼 노벨 |
-| [sandglass](apps/sandglass) | 첫 배포 뒤 추가 | 천 번째 새벽, 당신에게 — 죽을 때마다 되돌아가는 간호사의 사망 회귀 판타지 로맨스 비주얼 노벨 |
+| [starscribe](apps/starscribe) | [starscribe.vercel.app](https://starscribe.vercel.app/) | 이름을 잃은 별에게 — 지워야 할 남자의 일생을 받아 적는 필경사의 판타지 로맨스 비주얼 노벨 |
+| [sandglass](apps/sandglass) | [sandglass.vercel.app](https://sandglass.vercel.app/) | 천 번째 새벽, 당신에게 — 죽을 때마다 되돌아가는 간호사의 사망 회귀 판타지 로맨스 비주얼 노벨 |
 
 ## 개발
 
