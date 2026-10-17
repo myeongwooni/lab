@@ -13,6 +13,7 @@
     "dicetale": "npm run dev --workspace apps/dicetale",
     "jamotris": "npm run dev --workspace apps/jamotris",
     "starscribe": "npm run dev --workspace apps/starscribe",
-    "sandglass": "npm run dev --workspace apps/sandglass"
+    "sandglass": "npm run dev --workspace apps/sandglass",
+    "pixelroom": "npm run dev --workspace apps/pixelroom"
   }
 }

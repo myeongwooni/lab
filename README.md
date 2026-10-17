@@ -15,6 +15,7 @@
 | [jamotris](apps/jamotris) | [jamotris.vercel.app](https://jamotris.vercel.app/) | 자모트리스 — 떨어지는 자모를 쌓아 글자를, 글자를 이어 단어를 만드는 한글 테트리스 |
 | [starscribe](apps/starscribe) | [starscribe-seven.vercel.app](https://starscribe-seven.vercel.app/) | 이름을 잃은 별에게 — 지워야 할 남자의 일생을 받아 적는 필경사의 판타지 로맨스 비주얼 노벨 |
 | [sandglass](apps/sandglass) | [sandglass-pi.vercel.app](https://sandglass-pi.vercel.app/) | 천 번째 새벽, 당신에게 — 죽을 때마다 되돌아가는 간호사의 사망 회귀 판타지 로맨스 비주얼 노벨 |
+| [pixelroom](apps/pixelroom) | 첫 배포 뒤 실제 주소 확인 후 추가 | 픽셀룸 — 매일 달라지는 방의 단서를 모아 10분 안에 탈출하는 도트 방탈출 게임 |
 
 ## 개발
 
@@ -30,6 +31,7 @@ npm run dicetale     # apps/dicetale 개발 서버 (:3004)
 npm run jamotris     # apps/jamotris 개발 서버 (:3005)
 npm run starscribe   # apps/starscribe 개발 서버 (:3006)
 npm run sandglass   # apps/sandglass 개발 서버 (:3007)
+npm run pixelroom   # apps/pixelroom 개발 서버 (:3008)
 ```
 
 앱마다 포트를 다르게 고정해 두었으므로 동시에 띄워도 부딪히지 않습니다.
@@ -58,6 +60,7 @@ npm run sandglass   # apps/sandglass 개발 서버 (:3007)
 | jamotris | `apps/jamotris` | 없음 |
 | starscribe | `apps/starscribe` | 없음 |
 | sandglass | `apps/sandglass` | 없음 |
+| pixelroom | `apps/pixelroom` | 없음 |
 
 Root Directory만 지정해서는 푸시마다 모든 앱이 다시 빌드됩니다. 그래서 프로젝트마다
 **변경 없는 커밋은 배포 건너뛰기**(Settings → Build and Deployment → Root Directory 아래)를

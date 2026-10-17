@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="crispEdges">
+<rect width="64" height="64" fill="#172331"/>
+<path d="M12 8h40v48H12z" fill="#f3cb89"/>
+<path d="M16 12h32v40H16z" fill="#3a4d5f"/>
+<rect x="24" y="24" width="16" height="20" fill="#202f40"/>
+<rect x="36" y="32" width="4" height="4" fill="#facb77"/>
+<rect x="16" y="8" width="32" height="4" fill="#ffebba"/>
+<rect x="8" y="56" width="48" height="4" fill="#7fd0bc"/>
+</svg>
